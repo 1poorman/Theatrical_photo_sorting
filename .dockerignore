@@ -1,0 +1,47 @@
+# 忽略dinov2目录
+dinov2/
+
+# Python缓存
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# 虚拟环境
+venv/
+env/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 输出和日志
+outputs/
+*.log
+
+# 测试图片（可选，如果需要测试可以注释掉）
+# test_images/
+
+# 模型权重（建议通过volume挂载）
+weights/*.pt
+weights/*.pth
+
+# 数据目录（通过volume挂载）
+data/
+
+# Git
+.git/
+.gitignore
+
+# Docker文件本身
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# 其他
+*.md
+!README.md

@@ -1,0 +1,2 @@
+model: resnet50
+dimension: 2048

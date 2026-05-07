@@ -1,0 +1,18 @@
+elasticsearch:
+  host: localhost
+  port: 9200
+  username: elastic
+  password: elastic
+  index_name: face_recognition
+
+models:
+  detector: models/dbface.pth
+  extractor: models/facenet.pth
+
+recognition:
+  similarity_threshold: 0.7
+  top_k: 5
+
+performance:
+  batch_size: 32
+  use_gpu: true

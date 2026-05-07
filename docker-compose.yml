@@ -1,0 +1,97 @@
+version: '3.8'
+
+services:
+  theatrical-photo-sorting:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: theatrical-photo-sorting:latest
+    container_name: theatrical-photo-sorting
+    
+    # GPU支持
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    
+    # 端口映射
+    ports:
+      - "8089:8089"
+    
+    # 卷挂载
+    volumes:
+      # 模型权重目录（需要在宿主机准备）
+      - ./weights:/app/weights:ro
+      
+      # 数据输入目录
+      - ./data:/app/data
+      
+      # 输出目录
+      - ./outputs:/app/outputs
+      
+      # 嵌入索引目录（持久化）
+      - ./embedding/index:/app/embedding/index
+    
+    # 环境变量
+    environment:
+      - CUDA_VISIBLE_DEVICES=0
+      - PYTHONUNBUFFERED=1
+      - FLASK_ENV=production
+    
+    # 工作目录
+    working_dir: /app
+    
+    # 重启策略
+    restart: unless-stopped
+    
+    # 健康检查
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8089/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    
+    # 命令（可选，覆盖Dockerfile中的CMD）
+    # command: ["Server.py"]
+
+  # 可选：使用myserver.py的独立服务
+  theatrical-photo-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: theatrical-photo-sorting:latest
+    container_name: theatrical-photo-api
+    
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    
+    ports:
+      - "8090:8089"
+    
+    volumes:
+      - ./weights:/app/weights:ro
+      - ./data:/app/data
+      - ./outputs:/app/outputs
+      - ./embedding/index:/app/embedding/index
+    
+    environment:
+      - CUDA_VISIBLE_DEVICES=0
+      - PYTHONUNBUFFERED=1
+    
+    working_dir: /app
+    restart: unless-stopped
+    
+    # 使用myserver.py启动
+    command: ["myserver.py"]
+    
+    profiles:
+      - api
