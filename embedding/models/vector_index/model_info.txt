@@ -1,2 +1,0 @@
-model: dinov2_base
-dimension: 768
