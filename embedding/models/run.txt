@@ -1,0 +1,16 @@
+python main.py \n
+    --model nomic_vision --optimized \n
+    --mode build --image_folder /home/huachenghao/codes/NCPA照片档案与视频【测试用】/舞剧《马可·波罗》/【原始3】20141012歌剧院-舞剧《马可·波罗 》B组演出-摄影凌风/ \n
+    
+
+python main.py \n 
+    --index_path vector_index \n
+    --mode search --query_image /path/to/query.jpg \n
+    # --model_path  ./huggingface/nomic
+
+
+yolo predict \n 
+    model=yolo11x.pt \n
+    source='/home/huachenghao/codes/NCPA照片档案与视频【测试用】/京剧《天下归心》/【整理完成】京剧《天下归心》彩排/'  \n
+    classes=0 conf=0.4 save=True imgsz=960 \n
+    project='runs/detect' name='batch_person_v11x' 
