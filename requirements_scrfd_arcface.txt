@@ -1,5 +1,8 @@
 # SCRFD + ArcFace 人脸识别运行依赖
 # 环境：conda create -n face_scrfd_arcface python=3.10
+# CUDA 13.0 -> torch 2.9.0+cu130
+torch==2.9.0
+torchvision
 onnxruntime-gpu==1.23.2
 opencv-python==4.13.0.92
 numpy==2.2.6
@@ -7,4 +10,22 @@ onnx==1.22.0
 tqdm==4.70.0
 pillow==12.3.0
 scipy==1.15.3
-elasticsearch==9.5.0
+elasticsearch>=8.12,<9
+# FastAPI 服务
+fastapi
+uvicorn
+python-multipart
+werkzeug
+# 其他模型依赖
+ultralytics
+modelscope
+faiss-cpu
+scikit-learn
+matplotlib
+simplejson
+sortedcontainers
+kornia
+pandas
+pyarrow
+huggingface_hub
+safetensors

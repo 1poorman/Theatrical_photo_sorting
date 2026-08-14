@@ -1,5 +1,5 @@
 elasticsearch:
-  host: localhost
+  host: 172.25.75.23
   port: 9200
   username: elastic
   password: elastic

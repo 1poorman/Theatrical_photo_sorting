@@ -78,5 +78,5 @@ EXPOSE 8089
 # 设置入口点 - 使用conda环境运行
 ENTRYPOINT ["conda", "run", "--no-capture-output", "-n", "inpaint", "python"]
 
-# 默认启动Server.py
-CMD ["Server.py"]
+# 默认启动server.py（main.py 定义 API，server.py 实现启动）
+CMD ["server.py"]

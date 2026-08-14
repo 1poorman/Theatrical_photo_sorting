@@ -5,10 +5,10 @@ POST_URL = "http://172.25.67.254:8040/"
 HOST = "0.0.0.0"
 PORT = 8040
 
-# dev-local（120服务器消息对列和es）配置
+# dev-local（ES 向量库）配置
 
 
-ELASTIC_URL = "http://172.25.67.120:9200"
+ELASTIC_URL = "http://172.25.75.23:9200"
 ELASTIC_USER = "elastic"
 ELASTIC_PASSWORD = "elastic"
  
