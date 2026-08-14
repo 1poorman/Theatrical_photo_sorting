@@ -1,12 +1,11 @@
 import os, sys, random
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '.'))
-import torch
 from datetime import datetime
 from tqdm import tqdm
-from core.dbface import DBFaceDetector
+from scrfd.scrfd_det import SCRFDDetector
 from core.database import FaceDatabase
-from core.face_extractor import FaceFeatureExtractor
+from arcface.arcface_onnx import ArcFaceFeatureExtractor
 from utils.assess import assess_face_quality_optimized, assess_face_quality_simple
 from utils.alignment import FaceAlignment
 from utils.visualization import VisualizationUtils
@@ -15,13 +14,19 @@ import numpy as np
 
 class FaceRecognitionSystem:
     def __init__(self, detect_path=None, extractor_path=None, device=None):
-        # 如果没有指定设备，则使用默认设置
+        # 如果没有指定设备，则使用默认设置（onnxruntime）
         if device is None:
-            device = 'cuda:1' if torch.cuda.is_available() else 'cpu'
-            
+            device = 'cpu'
+            try:
+                import onnxruntime
+                if 'CUDAExecutionProvider' in onnxruntime.get_available_providers():
+                    device = 'cuda'
+            except ImportError:
+                pass
+
         self.device = device
-        self.detector = DBFaceDetector(detect_path, device=device)
-        self.extractor = FaceFeatureExtractor(extractor_path, device=device)
+        self.detector = SCRFDDetector(detect_path, device=device)
+        self.extractor = ArcFaceFeatureExtractor(extractor_path, device=device)
         self.database = FaceDatabase()
         self.face_aligner = FaceAlignment()
         self.visualizer = VisualizationUtils()
@@ -75,14 +80,13 @@ class FaceRecognitionSystem:
                             print(f"  Warning: Could not read image {img_path}")
                             continue
                             
-                        # 对于已经是160*160的人脸图片，进行对齐处理
+                        # 对于已经是160*160的人脸图片，进行对齐处理（居中裁剪到112x112）
                         h, w = image.shape[:2]
                         if h == 160 and w == 160:
-                            # 对已裁剪的人脸进行对齐
-                            # aligned_face = self._align_cropped_face(image)
+                            aligned_face = self.extractor.align_face(image, None)
                             
                             # 提取特征
-                            embeddings = self.extractor.extract_features([image])
+                            embeddings = self.extractor.extract_features([aligned_face])
                             if embeddings.shape[0] == 0:
                                 print(f"  Warning: Failed to extract features from {img_path}")
                                 continue
@@ -202,14 +206,14 @@ class FaceRecognitionSystem:
             print(f"Overall success rate: {successful_persons/total_persons*100:.1f}%")
             print(f"{'#'*60}\n")
     
-    def recognize_face(self, image_path, image_size=1920, known_threshold=0.85, unknown_threshold=0.7, 
+    def recognize_face(self, image_path, image_size=1920, known_threshold=0.55, unknown_threshold=0.4, 
                    iou_threshold=0.4, min_face_size=20, debug=False):
         """
         人脸识别函数
         Args:
             image_path: 输入图片路径
-            known_threshold: 已知人脸的匹配阈值（降低到0.75）
-            unknown_threshold: 未知人脸的匹配阈值（降低到0.5）
+            known_threshold: 已知人脸的匹配阈值（ArcFace 余弦相似度，建议 0.5~0.6）
+            unknown_threshold: 未知人脸的匹配阈值（建议 0.35~0.45）
             iou_threshold: 重复人脸检测的IOU阈值
             min_face_size: 最小人脸尺寸
             debug: 调试模式，显示更多信息
@@ -296,27 +300,26 @@ class FaceRecognitionSystem:
                 # 计算人脸质量分数（简化评估）
                 face_quality = assess_face_quality_simple(face_image)
                 
-                # 调整人脸图像大小以适应特征提取器
-                target_size = (160, 160)  # 假设特征提取器输入为112x112
-                face_resized = cv2.resize(face_image, target_size, interpolation=cv2.INTER_LINEAR)
-                # face_resized = face_image
+                # 人脸对齐（SCRFD 提供 5 关键点，ArcFace 标准对齐）
+                aligned_face = None
+                if hasattr(face_obj, 'landmark') and face_obj.landmark is not None:
+                    try:
+                        aligned_face = self.extractor.align_face(image, face_obj.landmark)
+                    except Exception as e:
+                        if debug:
+                            print(f"  Face {i+1}: Alignment failed: {e}")
                 
-                # 颜色空间转换
-                if len(face_resized.shape) == 2:
-                    face_resized = cv2.cvtColor(face_resized, cv2.COLOR_GRAY2BGR)
-                elif face_resized.shape[2] == 4:
-                    face_resized = face_resized[:, :, :3]
-                
-                # 人脸对齐（如果有关键点）
-                
-                # if hasattr(face_obj, 'landmark') and face_obj.landmark is not None:
-                #     try:
-                #         aligned_face = self.extractor.align_face(image, face_obj.landmark)
-                #         if aligned_face is not None:
-                #             face_resized = cv2.resize(aligned_face, target_size, interpolation=cv2.INTER_AREA)
-                #     except Exception as e:
-                #         if debug:
-                #             print(f"  Face {i+1}: Alignment failed: {e}")
+                if aligned_face is not None:
+                    face_resized = aligned_face
+                else:
+                    # 无关键点时居中裁剪
+                    target_size = (112, 112)  # ArcFace 输入尺寸
+                    face_resized = cv2.resize(face_image, target_size, interpolation=cv2.INTER_LINEAR)
+                    # 颜色空间转换
+                    if len(face_resized.shape) == 2:
+                        face_resized = cv2.cvtColor(face_resized, cv2.COLOR_GRAY2BGR)
+                    elif face_resized.shape[2] == 4:
+                        face_resized = face_resized[:, :, :3]
                 
                 # 提取特征
                 try:
@@ -334,8 +337,8 @@ class FaceRecognitionSystem:
                 # L2归一化
                 embedding = self.extractor.l2_normalize([embedding])[0]
                 
-                # 搜索匹配
-                matches = self.database.search_face(embedding, top_k=10, threshold=0.6)  # Increase top_k to get more candidates
+                # 搜索匹配（ArcFace 余弦经 ES ((cos+1)/2)^2 变换，0.4 对应余弦≈0.26，保证召回）
+                matches = self.database.search_face(embedding, top_k=10, threshold=0.4)
 
                 # Group matches by person name and keep the best score for each person
                 person_matches = {}
@@ -370,13 +373,15 @@ class FaceRecognitionSystem:
                     seen_persons.add(match['person_name'])
                     raw_score = match['score']
                     
-                    # 使用更强的校准函数来增加区分度
-                    if raw_score > 0.9:
-                        calibrated = raw_score  # 保持高分不变
-                    elif raw_score > 0.8:
-                        calibrated = raw_score * 0.9  # 中等分数适度降低
-                    elif raw_score > 0.7:
-                        calibrated = raw_score * 0.7  # 较低分数显著降低
+                    # ArcFace 余弦相似度校准函数（同人通常 0.5~0.8，异人 <0.3）
+                    if raw_score > 0.75:
+                        calibrated = raw_score  # 强匹配保持
+                    elif raw_score > 0.65:
+                        calibrated = raw_score * 0.95  # 良好匹配微降
+                    elif raw_score > 0.55:
+                        calibrated = raw_score * 0.85  # 中等匹配适度降低
+                    elif raw_score > 0.45:
+                        calibrated = raw_score * 0.7  # 弱匹配显著降低
                     else:
                         calibrated = raw_score * 0.5  # 很低分数大幅降低
                     
@@ -668,7 +673,7 @@ class FaceRecognitionSystem:
                 results, annotated_image = self.recognize_face(
                     img_path, 
                     known_threshold=known_threshold,
-                    unknown_threshold=0.3
+                    unknown_threshold=0.35
                 )
                 
                 # 统计检测到的人脸数量
@@ -743,11 +748,11 @@ class FaceRecognitionSystem:
         }
 
 if __name__ == '__main__':
-    dbface_model_dir = '/home/huachenghao/codes/Theatrical_photo_sorting-251212/face_recognition/dbface/model/dbface.pth'
-    facenet_model_dir = '/home/huachenghao/codes/Theatrical_photo_sorting-251212/face_recognition/facenet/model_data/final_model_webface-2.pt'  # 20180408-102900-casia-webface.pt， final_model_webface
+    scrfd_model_dir = '/home/huachenghao/codes/Theatrical_photo_sorting-251212/weights/scrfd/scrfd_10g_bnkps.onnx'
+    arcface_model_dir = '/home/huachenghao/codes/Theatrical_photo_sorting-251212/weights/arcface/Glint100.onnx'
     image_path = '/home/huachenghao/codes/Theatrical_photo_sorting-251212/test_images/4.jpg' 
     
-    recognizer = FaceRecognitionSystem(dbface_model_dir, facenet_model_dir)
+    recognizer = FaceRecognitionSystem(scrfd_model_dir, arcface_model_dir)
     # 建立人脸索引（第一次），批量添加人脸
     # recognizer.build_face_database('/home/huachenghao/codes/face_index-160', first_run=True)
 
@@ -761,7 +766,7 @@ if __name__ == '__main__':
         input_folder='/home/huachenghao/codes/NCPA_test-images/话剧《样式雷》/【原始】20160609戏剧场-话剧《样式雷》-摄影凌风',
         output_folder='./out/test-7/',
         fraction=1,
-        known_threshold=0.85
+        known_threshold=0.55
     )
     # results, annotated_image = recognizer.recognize_face(image_path, known_threshold=0.8, unknown_threshold=0.3)
     # print(f"Found {len(results)} faces:")

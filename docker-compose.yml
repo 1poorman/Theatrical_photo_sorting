@@ -78,7 +78,7 @@ services:
       - "8090:8089"
     
     volumes:
-      - ./weights:/app/weights:ro
+      - ./weights:/app/weights
       - ./data:/app/data
       - ./outputs:/app/outputs
       - ./embedding/index:/app/embedding/index

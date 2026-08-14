@@ -4,7 +4,6 @@ from elasticsearch.helpers import bulk
 import numpy as np
 from datetime import datetime
 import json
-import torch
 from config.base import ELASTIC_URL, ELASTIC_USER, ELASTIC_PASSWORD 
 
 class FaceDatabase:

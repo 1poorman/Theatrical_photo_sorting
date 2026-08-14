@@ -50,9 +50,8 @@ DEFAULT_SEGPERSONES_MODEL_PATH = "./weights/yolo11x-seg.pt"
 DEFAULT_INPAINTER_MODEL_PATH = "./weights/cv_fft_inpainting_lama"
 DEFAULT_POSE_MODEL_PATH = "./weights/yolo11l-pose.pt"
 DEFAULT_OUTPUT_DIR = "./outputs"
-DEFAULT_DBFACE_MODEL_PATH = "./face_recognition/dbface/model/dbface.pth"
-# DEFAULT_FACENET_MODEL_PATH = "./face_recognition/facenet/model_data/facenet_inception_resnetv1.pth"
-DEFAULT_FACENET_MODEL_PATH = "./face_recognition/facenet/model_data/final_model_webface.pt"
+DEFAULT_SCRFD_MODEL_PATH = "./weights/scrfd/scrfd_10g_bnkps.onnx"
+DEFAULT_ARCFACE_MODEL_PATH = "./weights/arcface/Glint100.onnx"
 DEFAULT_FACE_DATABASE_PATH = "./outputs/face_index"  # Default path for face database
 
 # Create directories if they don't exist
@@ -159,8 +158,8 @@ def initialize_models(detection_model_path=DEFAULT_DETECTION_MODEL_PATH,
                      segpersones_model_path=DEFAULT_SEGPERSONES_MODEL_PATH,
                      inpainter_model_path=DEFAULT_INPAINTER_MODEL_PATH,
                      pose_model_path=DEFAULT_POSE_MODEL_PATH,
-                     dbface_model_path=DEFAULT_DBFACE_MODEL_PATH,
-                     facenet_model_path=DEFAULT_FACENET_MODEL_PATH):
+                     scrfd_model_path=DEFAULT_SCRFD_MODEL_PATH,
+                     arcface_model_path=DEFAULT_ARCFACE_MODEL_PATH):
     """
     Initialize all models
     """
@@ -176,14 +175,14 @@ def initialize_models(detection_model_path=DEFAULT_DETECTION_MODEL_PATH,
             device = "cpu"
             print("CUDA is not available. Using CPU.")
 
-        if os.path.exists(dbface_model_path) and os.path.exists(facenet_model_path):
+        if os.path.exists(scrfd_model_path) and os.path.exists(arcface_model_path):
             try:
-                face_recognition_model = FaceRecognitionSystem(dbface_model_path, facenet_model_path, device=device)
+                face_recognition_model = FaceRecognitionSystem(scrfd_model_path, arcface_model_path, device=device)
                 print(f"Face recognition model loaded")
             except Exception as e:
                 print(f"Failed to load face recognition model: {e}")
         else:
-            print(f"Face recognition models not found at {dbface_model_path} or {facenet_model_path}")
+            print(f"Face recognition models not found at {scrfd_model_path} or {arcface_model_path}")
             
         if detection_model_path and os.path.exists(detection_model_path):
             detection_model = PersonMaskCreator(detection_model_path)
@@ -961,8 +960,8 @@ def recognize_faces():
         
         # Recognize faces with more verbose output
         print("Calling recognize_face method...")
-        # Recognize faces
-        results, annotated_image = face_recognition_model.recognize_face(image_path, known_threshold=0.85, unknown_threshold=0.6)
+        # Recognize faces（ArcFace 余弦相似度阈值）
+        results, annotated_image = face_recognition_model.recognize_face(image_path, known_threshold=0.55, unknown_threshold=0.4)
         print(f"Recognition complete. Found {len(results)} faces.")
 
         # 保存带注释的图像

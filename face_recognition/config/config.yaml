@@ -6,11 +6,11 @@ elasticsearch:
   index_name: face_recognition
 
 models:
-  detector: models/dbface.pth
-  extractor: models/facenet.pth
+  detector: weights/scrfd/scrfd_10g_bnkps.onnx
+  extractor: weights/arcface/Glint100.onnx
 
 recognition:
-  similarity_threshold: 0.7
+  similarity_threshold: 0.55
   top_k: 5
 
 performance:
