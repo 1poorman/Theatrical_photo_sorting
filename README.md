@@ -91,6 +91,22 @@ python server.py          # 端口 8198，仅提供 RESTful API
 
 > 启动时自动加载全部模型（人脸识别 / 人像检测 / 分割 / 修复 / 姿态），需要 GPU 且耗时约 1 分钟。
 
+### 停止服务
+
+```bash
+# 按端口停止对应的服务进程
+fuser -k 8199/tcp        # 停止可视化界面服务（server_ui.py）
+fuser -k 8198/tcp        # 停止纯 API 服务（server.py）
+
+# 或按进程名停止
+pkill -f "python server_ui.py"
+pkill -f "python server.py"
+
+# 查看服务是否在运行
+ps aux | grep -E "server(_ui)?\.py" | grep -v grep
+ss -tlnp | grep -E "8198|8199"      # 查看端口监听状态
+```
+
 ## 可视化界面（server_ui.py）
 
 `server_ui.py` 复用 `main.py` 的全部 API 路由，提供现代化浏览器操作界面：
