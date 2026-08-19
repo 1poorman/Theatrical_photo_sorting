@@ -29,3 +29,7 @@ pandas
 pyarrow
 huggingface_hub
 safetensors
+# 多模态嵌入（SigLIP 2 / Nomic / BLIP2）
+transformers>=4.50
+sentencepiece
+protobuf
