@@ -1,1 +1,1 @@
-python main.py --model_name "dinov2_base" 
+python app/main.py --model_name "dinov2_base" 

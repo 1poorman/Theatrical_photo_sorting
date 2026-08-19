@@ -33,7 +33,7 @@ services:
       - ./outputs:/app/outputs
       
       # 嵌入索引目录（持久化）
-      - ./embedding/index:/app/embedding/index
+      - ./data/embedding_index:/app/data/embedding_index
     
     # 环境变量
     environment:
@@ -57,41 +57,3 @@ services:
     
     # 命令（可选，覆盖Dockerfile中的CMD）
     # command: ["Server.py"]
-
-  # 可选：使用myserver.py的独立服务
-  theatrical-photo-api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: theatrical-photo-sorting:latest
-    container_name: theatrical-photo-api
-    
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
-    
-    ports:
-      - "8090:8089"
-    
-    volumes:
-      - ./weights:/app/weights
-      - ./data:/app/data
-      - ./outputs:/app/outputs
-      - ./embedding/index:/app/embedding/index
-    
-    environment:
-      - CUDA_VISIBLE_DEVICES=0
-      - PYTHONUNBUFFERED=1
-    
-    working_dir: /app
-    restart: unless-stopped
-    
-    # 使用myserver.py启动
-    command: ["myserver.py"]
-    
-    profiles:
-      - api

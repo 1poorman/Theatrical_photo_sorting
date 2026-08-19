@@ -107,7 +107,7 @@ class FaceRecognitionSystem:
                             print(f"  ✓ Added face to database: {img_path}")
                         else:
                             # 对于非标准尺寸的图片，使用原来的检测流程
-                            # 使用DBFace内置的检测方法，包括面积过滤和NMS
+                            # 使用 SCRFD 检测器（detect_image 兼容接口），包括面积过滤和 NMS
                             face_rects, processed_image, ratio = self.detector.detect_image(
                                 image, pixel_threshold=100
                             )
@@ -748,22 +748,22 @@ class FaceRecognitionSystem:
         }
 
 if __name__ == '__main__':
-    scrfd_model_dir = '/home/huachenghao/codes/Theatrical_photo_sorting-251212/weights/scrfd/scrfd_10g_bnkps.onnx'
-    arcface_model_dir = '/home/huachenghao/codes/Theatrical_photo_sorting-251212/weights/arcface/Glint100.onnx'
-    image_path = '/home/huachenghao/codes/Theatrical_photo_sorting-251212/test_images/4.jpg' 
+    scrfd_model_dir = './weights/scrfd/scrfd_10g_bnkps.onnx'
+    arcface_model_dir = './weights/arcface/Glint100.onnx'
+    image_path = 'data/sample_images/4.jpg'
     
     recognizer = FaceRecognitionSystem(scrfd_model_dir, arcface_model_dir)
     # 建立人脸索引（第一次），批量添加人脸
-    # recognizer.build_face_database('/home/huachenghao/codes/face_index-160', first_run=True)
+    # recognizer.build_face_database('data/face_database', first_run=True)
 
-    # recognizer.build_face_database('/home/huachenghao/codes/face_index-160')
+    # recognizer.build_face_database('data/face_database')
     
     # 测试embedding和人像检索准确率
-    # test_results = recognizer.test_embedding_accuracy('/home/huachenghao/codes/face_index-160')
+    # test_results = recognizer.test_embedding_accuracy('data/face_database')
 
     # 随机抽样识别人脸
     recognizer.recognize_random_samples(
-        input_folder='/home/huachenghao/codes/NCPA_test-images/话剧《样式雷》/【原始】20160609戏剧场-话剧《样式雷》-摄影凌风',
+        input_folder='data/ncpa_test/话剧《样式雷》/【原始】20160609戏剧场-话剧《样式雷》-摄影凌风',
         output_folder='./out/test-7/',
         fraction=1,
         known_threshold=0.55

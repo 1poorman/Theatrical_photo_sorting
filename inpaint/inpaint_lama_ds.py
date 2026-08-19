@@ -13,7 +13,7 @@ class ImageInpainter:
         :param max_size: 输入图像长边最大尺寸（用于显存控制）
         """
         if not model_path:
-            model_path = '/home/huachenghao/codes/cv_fft_inpainting_lama'
+            model_path = './weights/cv_fft_inpainting_lama'
         self.inpainting_pipeline = pipeline(Tasks.image_inpainting, model=model_path)
         self.max_size = max_size
 

@@ -430,8 +430,8 @@ class ClothesSegmenter:
 # ========== 使用示例 ==========
 if __name__ == "__main__":
     model_dir = "./models--mattmdjaga--segformer_b2_clothes/snapshots/61046"
-    image_path = "../test_images/2.jpg"
-    output_dir = "../output/seg_clothes/image-2/"
+    image_path = "data/sample_images/2.jpg"
+    output_dir = "outputs/seg_clothes/image-2/"
 
     segmenter = ClothesSegmenter(model_dir=model_dir)
     

@@ -11,6 +11,25 @@ import cv2
 import onnxruntime
 
 
+class FaceBBox:
+    """轻量人脸框（替代原 dbface.common.BBox，供兼容接口使用）"""
+    def __init__(self, x, y, r, b, score=0.0, landmark=None):
+        self.x = x
+        self.y = y
+        self.r = r
+        self.b = b
+        self.score = score
+        self.landmark = landmark
+
+    @property
+    def width(self):
+        return self.r - self.x + 1
+
+    @property
+    def height(self):
+        return self.b - self.y + 1
+
+
 def distance2bbox(points, distance, max_shape=None):
     """Decode distance prediction to bounding box.（官方实现）"""
     x1 = points[:, 0] - distance[:, 0]
@@ -258,14 +277,9 @@ class SCRFDDetector:
             order = order[inds + 1]
         return keep
 
-    # ---- 兼容原有 DBFaceDetector 接口 ----
+    # ---- 兼容原有检测器接口 ----
     def _detect_single(self, image, threshold=None, nms_iou=None):
-        """兼容接口：返回 dbface.common.BBox 列表（带 landmark）"""
-        import sys
-        _pkg_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        if _pkg_dir not in sys.path:
-            sys.path.insert(0, _pkg_dir)
-        from dbface.common import BBox
+        """兼容接口：返回 FaceBBox 列表（带 landmark）"""
         det, kpss = self.detect(image)
         objs = []
         if det.shape[0] == 0:
@@ -275,7 +289,7 @@ class SCRFDDetector:
             landmark = None
             if kpss is not None and kpss.shape[0] > i:
                 landmark = [(kp[0], kp[1]) for kp in kpss[i]]
-            objs.append(BBox(0, xyrb=(x1, y1, x2, y2), score=float(score), landmark=landmark))
+            objs.append(FaceBBox(x1, y1, x2, y2, score=float(score), landmark=landmark))
         return objs
 
     def detect_image(self, image, pixel_threshold=0):
@@ -308,9 +322,9 @@ def get_scrfd(name, download=False, root='~/.insightface/models', **kwargs):
 
 if __name__ == '__main__':
     det = SCRFDDetector(
-        model_path='/home/huachenghao/codes/Theatrical_photo_sorting-251212/weights/scrfd/scrfd_10g_bnkps.onnx',
+        model_path='./weights/scrfd/scrfd_10g_bnkps.onnx',
         device='cpu', det_thresh=0.3)
-    img = cv2.imread('/home/huachenghao/codes/Theatrical_photo_sorting-251212/test_images/4.jpg')
+    img = cv2.imread('data/sample_images/4.jpg')
     import time
     t0 = time.time()
     bboxes, kpss = det.detect(img)

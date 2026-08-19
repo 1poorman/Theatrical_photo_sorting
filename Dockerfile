@@ -67,7 +67,7 @@ WORKDIR /app
 COPY . /app/
 
 # 创建必要的目录
-RUN mkdir -p /app/outputs /app/weights /app/data
+RUN mkdir -p /app/outputs /app/weights /app/data/embedding_index /app/data/face_database /app/data/sample_images /app/data/ncpa_test
 
 # 设置权限
 RUN chmod -R 755 /app
@@ -79,4 +79,4 @@ EXPOSE 8089
 ENTRYPOINT ["conda", "run", "--no-capture-output", "-n", "inpaint", "python"]
 
 # 默认启动server.py（main.py 定义 API，server.py 实现启动）
-CMD ["server.py"]
+CMD ["app/server.py"]

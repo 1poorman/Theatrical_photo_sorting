@@ -18,12 +18,12 @@ IMAGE_INDEX = "image"
 VOICEPRINT_INDEX = "voiceprint"
 # FACE_INFO_INDEX = "face_info"
 
-# DBFace输入图像的目标尺寸，根据显卡显存可进行调节
+# SCRFD 输入图像的目标尺寸，根据显卡显存可进行调节
 TARGET_SIZE = 1920
 # 置信度阈值
 FACE_THRESH = 0.4
 
-# dbface识别人脸图片像素阈值
+# SCRFD 识别人脸图片像素阈值
 IMAGE_PIXEL_THRESHOLD = 200
 
 # 进行人脸检测的图像最低阈值，小于该阈值则resize到该阈值

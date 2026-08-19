@@ -1,0 +1,16 @@
+__pycache__/*
+*.pyc
+*.pyo
+.ipynb_checkpoints/
+.DS_Store
+outputs/
+logs/
+weights/*
+third_party/dinov2/
+# 下载的模型权重产物（不应入库）
+data/embedding_models_artifacts/huggingface/
+# 大体积测试原图（仅本地使用，不入库，避免仓库膨胀）
+data/ncpa_test/
+face_recognition/out/*
+
+.vscode/

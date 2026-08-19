@@ -655,7 +655,12 @@ def create_results_image(query_path: str, results: List[Dict], save_path: Option
     # Load and resize result images
     result_imgs = []
     for result in results[:5]:  # Only take top 5 results
-        img = Image.open(result['image_path'])
+        try:
+            img = Image.open(result['image_path'])
+        except (FileNotFoundError, OSError) as e:
+            # 命中图片路径不存在（如索引过期）时跳过，避免整体请求 500
+            print(f"Warning: skip missing result image {result['image_path']}: {e}")
+            continue
         img_width, img_height = img.size
         
         # Each result image occupies 1/4 of the remaining 2/3 width (i.e., 1/6 of total width)

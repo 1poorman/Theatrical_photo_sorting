@@ -201,7 +201,7 @@ class ArcFaceFeatureExtractor:
 
 if __name__ == '__main__':
     extractor = ArcFaceFeatureExtractor(
-        model_path='/home/huachenghao/codes/Theatrical_photo_sorting-251212/weights/arcface/Glint100.onnx',
+        model_path='./weights/arcface/Glint100.onnx',
         device='cpu')
     # 测试：随机噪声
     img = np.random.randint(0, 255, (112, 112, 3), dtype=np.uint8)

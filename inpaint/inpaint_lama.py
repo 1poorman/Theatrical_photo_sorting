@@ -12,7 +12,7 @@ class ImageInpainter:
         :param model_path: 模型路径
         """
         if not model_path:
-            model_path = '/home/huachenghao/codes/cv_fft_inpainting_lama'
+            model_path = './weights/cv_fft_inpainting_lama'
         self.inpainting_pipeline = pipeline(Tasks.image_inpainting, model=model_path)
 
     def inpaint(self, img_path: str, mask_path: str) -> cv2.Mat:
@@ -36,10 +36,10 @@ class ImageInpainter:
 
 # 使用示例：
 if __name__ == "__main__":
-    model_path='/home/huachenghao/codes/cv_fft_inpainting_lama'
+    model_path='./weights/cv_fft_inpainting_lama'
     inpainter = ImageInpainter(model_path)
     output_img = inpainter.inpaint(
-        img_path='../test_images/1.JPG',
-        mask_path='../output/detection/image-1/output_no_persons.jpg'
+        img_path='data/sample_images/1.JPG',
+        mask_path='outputs/detection/image-1/output_no_persons.jpg'
     )
     cv2.imwrite('result.png', output_img)

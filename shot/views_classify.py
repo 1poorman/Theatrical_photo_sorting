@@ -272,7 +272,7 @@ class ShotTypeClassifier:
 if __name__ == "__main__":
     classifier = ShotTypeClassifier()
     
-    img_path = "/home/huachenghao/codes/NCPA_test-images/舞剧《马可·波罗》/【原始3】20141012歌剧院-舞剧《马可·波罗》B组演出-摄影凌风/20141012歌剧院-舞剧《马可·波罗》B演-前右起：苏鹏饰马可·波罗、李祎然饰中国公主- (23)-摄影凌风.JPG"
+    img_path = "data/ncpa_test/舞剧《马可·波罗》/【原始3】20141012歌剧院-舞剧《马可·波罗》B组演出-摄影凌风/20141012歌剧院-舞剧《马可·波罗》B演-前右起：苏鹏饰马可·波罗、李祎然饰中国公主- (23)-摄影凌风.JPG"
     save_path = "./out"
    
 

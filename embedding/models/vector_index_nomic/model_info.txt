@@ -1,2 +1,0 @@
-model: nomic_vision
-dimension: 768

@@ -1,5 +1,5 @@
 # 忽略dinov2目录
-dinov2/
+third_party/
 
 # Python缓存
 __pycache__/

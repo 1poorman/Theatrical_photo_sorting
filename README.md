@@ -16,9 +16,9 @@
 ## 目录结构
 
 ```
-├── main.py                    # FastAPI API 定义（输入输出）
-├── server.py                  # 模型管理与服务启动（uvicorn，纯 API）
-├── server_ui.py               # 可视化界面服务（复用 main.app，端口 8199）
+├── app/main.py                    # FastAPI API 定义（输入输出）
+├── app/server.py                  # 模型管理与服务启动（uvicorn，纯 API）
+├── app/server_ui.py               # 可视化界面服务（复用 main.app，端口 8199）
 ├── face_recognition/
 │   ├── face_recognition.py    # 人脸识别系统（SCRFD + ArcFace）
 │   ├── scrfd/                 # SCRFD ONNX 检测器
@@ -35,10 +35,11 @@
 │   ├── arcface/Glint100.onnx
 │   ├── rtdetr-x.pt / yolo11x-seg.pt / yolo11l-pose.pt
 │   └── cv_fft_inpainting_lama/
-├── test_images/               # 人脸识别测试图
-├── face_index-160/            # 人脸库（按人物命名的子目录，160x160）
-├── test_scrfd_arcface.py      # SCRFD+ArcFace 相似度与识别测试
-├── test_real_images.py        # 真实剧照端到端测试
+├── outputs/                    # 结果存储目录（检测/分割/人脸库/聚类等输出）
+├── data/sample_images/               # 人脸识别测试图
+├── data/face_database/            # 人脸库（按人物命名的子目录，160x160）
+├── tests/test_scrfd_arcface.py      # SCRFD+ArcFace 相似度与识别测试
+├── tests/test_real_images.py        # 真实剧照端到端测试
 ├── requirements_scrfd_arcface.txt
 └── environment_scrfd_arcface.yml
 ```
@@ -95,21 +96,21 @@ python server.py          # 端口 8198，仅提供 RESTful API
 
 ```bash
 # 按端口停止对应的服务进程
-fuser -k 8199/tcp        # 停止可视化界面服务（server_ui.py）
-fuser -k 8198/tcp        # 停止纯 API 服务（server.py）
+fuser -k 8199/tcp        # 停止可视化界面服务（app/server_ui.py）
+fuser -k 8198/tcp        # 停止纯 API 服务（app/server.py）
 
 # 或按进程名停止
-pkill -f "python server_ui.py"
-pkill -f "python server.py"
+pkill -f "python app/server_ui.py"
+pkill -f "python app/server.py"
 
 # 查看服务是否在运行
 ps aux | grep -E "server(_ui)?\.py" | grep -v grep
 ss -tlnp | grep -E "8198|8199"      # 查看端口监听状态
 ```
 
-## 可视化界面（server_ui.py）
+## 可视化界面（app/server_ui.py）
 
-`server_ui.py` 复用 `main.py` 的全部 API 路由，提供现代化浏览器操作界面：
+`app/server_ui.py` 复用 `app/main.py` 的全部 API 路由，提供现代化浏览器操作界面：
 
 - **👤 人脸识别**：上传图片，展示每张人脸的识别结果、置信度与标注图
 - **📂 构建人脸库**：输入文件夹路径一键构建（子目录按人物命名）
@@ -139,15 +140,15 @@ ss -tlnp | grep -E "8198|8199"      # 查看端口监听状态
 ```bash
 # 人脸识别
 curl -X POST http://localhost:8198/api/face/recognize \
-     -F "image=@test_images/4.jpg"
+     -F "image=@data/sample_images/4.jpg"
 
 # 组合处理
 curl -X POST http://localhost:8198/api/image/process \
-     -F "image=@test_images/4.jpg"
+     -F "image=@data/sample_images/4.jpg"
 
 # 构建人脸库（face_db_folder 下每个子目录对应一个人物）
 curl -X POST http://localhost:8198/api/face/build_database \
-     -F "face_db_folder=face_index-160"
+     -F "face_db_folder=data/face_database"
 
 # 图像检索
 curl -X POST http://localhost:8198/api/embedding/build_index \
@@ -177,10 +178,10 @@ curl -X POST http://localhost:8198/api/embedding/search \
 
 ```bash
 # 相似度分布分析 + 测试图识别
-python test_scrfd_arcface.py
+python tests/test_scrfd_arcface.py
 
 # 真实剧照端到端识别（验证识别结果与演员标注一致性）
-python test_real_images.py
+python tests/test_real_images.py
 ```
 
 ## Docker
@@ -189,11 +190,11 @@ python test_real_images.py
 docker-compose up -d
 ```
 
-> Dockerfile 默认 `CMD ["server.py"]`；docker-compose 中 `./weights` 以可写方式挂载，便于下载权重。
+> Dockerfile 默认 `CMD ["app/server.py"]`；docker-compose 中 `./weights` 以可写方式挂载，便于下载权重。
 
 ## 注意事项
 
 - 需 **GPU**（CUDA 13.0，如 RTX 3090）以获得最佳性能；无 GPU 时自动回退 CPU（onnxruntime CPU provider）
-- 服务默认使用 `cuda:1`（`server.py` 中 `CUDA_VISIBLE_DEVICES=1`，可按需修改）
+- 服务默认使用 `cuda:1`（`app/server.py` 中 `CUDA_VISIBLE_DEVICES=1`，可按需修改）
 - 人脸库构建使用 `first_run=True` 时会重建 `face_database_512` 索引（其他 ES 索引不受影响）
 - 临时文件存放于 `outputs/temp/`，超过 1 小时自动清理
