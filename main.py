@@ -16,6 +16,7 @@ import datetime
 import tempfile
 import shutil
 import cv2
+from typing import Optional
 
 sys.path.append(".")
 
@@ -70,12 +71,17 @@ async def health_check():
 
 @app.get("/api/file")
 async def serve_file(path: str):
-    """从临时目录和输出目录提供文件访问"""
+    """提供文件访问（临时目录 / 输出目录 / 项目根目录）"""
     try:
         if not path:
             return JSONResponse(status_code=400, content=srv.get_error(message="File path not provided"))
 
-        allowed_dirs = [srv.TEMP_DIR, srv.DEFAULT_OUTPUT_DIR, "/tmp"]
+        # 允许目录：
+        # - 临时目录与输出目录（人脸标注图、检索结果拼图等）
+        # - 项目根目录（检索索引指向的原始图片文件夹可能位于项目内，
+        #   如 NCPA_test-images，需允许其缩略图在前端展示）
+        project_root = os.path.dirname(os.path.abspath(__file__))
+        allowed_dirs = [srv.TEMP_DIR, srv.DEFAULT_OUTPUT_DIR, "/tmp", project_root]
         is_allowed = any(
             os.path.commonpath([os.path.abspath(path), os.path.abspath(d)]) == os.path.abspath(d)
             for d in allowed_dirs
@@ -396,12 +402,18 @@ async def search_similar_images(query_image: UploadFile = File(...),
 @app.post("/api/embedding/group_similar")
 async def group_similar_images(image_folder: str = Form(...),
                                model_name: str = Form("resnet50"),
-                               save_dir: str = Form("similar_groups")):
+                               save_dir: str = Form("similar_groups"),
+                               n_clusters: Optional[int] = Form(None),
+                               min_cluster_size: int = Form(2),
+                               images_per_group: int = Form(4)):
     """相似图片聚类分组
     Form 参数:
     - image_folder: 图片文件夹路径
     - model_name: 嵌入模型名称 (默认 resnet50)
     - save_dir: 结果保存目录 (默认 ./outputs/similar_groups)
+    - n_clusters: 聚类数量 (可选，留空则通过轮廓系数自动选择最优值)
+    - min_cluster_size: 每个聚类最少图片数，小于该值的聚类被过滤 (默认 2)
+    - images_per_group: 每组拼图中展示的代表图片数 (默认 4)
     """
     try:
         if not image_folder:
@@ -409,16 +421,23 @@ async def group_similar_images(image_folder: str = Form(...),
         if not os.path.exists(image_folder):
             return JSONResponse(status_code=400, content=srv.get_error(message=f"Image folder does not exist: {image_folder}"))
 
-        groups, collage_paths = find_similar_image_groups_from_folder(
-            image_folder, model_name, images_per_group=4, save_dir=save_dir, min_cluster_size=5)
+        groups, collage_paths, per_group_collages = find_similar_image_groups_from_folder(
+            image_folder, model_name,
+            images_per_group=images_per_group,
+            save_dir=save_dir,
+            min_cluster_size=min_cluster_size,
+            n_clusters=n_clusters)
 
         group_info = []
         for i, group in enumerate(groups):
             image_names = [os.path.basename(img_path) for img_path in group]
+            group_collages = per_group_collages[i] if i < len(per_group_collages) else []
             group_info.append({
                 "group_id": i + 1,
                 "image_count": len(group),
-                "image_names": image_names
+                "image_names": image_names,
+                "collage_paths": group_collages,
+                "collage_count": len(group_collages)
             })
 
         return JSONResponse({

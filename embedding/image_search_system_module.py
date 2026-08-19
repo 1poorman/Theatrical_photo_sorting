@@ -22,11 +22,34 @@ except ImportError:
     print("BLIP2 not available. Install transformers package to enable BLIP2 support.")
 
 try:
-    from transformers import AutoImageProcessor, AutoModel
+    from transformers import AutoImageProcessor, AutoModel, AutoProcessor
     NOMIC_AVAILABLE = True
 except ImportError:
     NOMIC_AVAILABLE = False
     print("Nomic model components not available.")
+
+# SigLIP 2 本地权重根目录（可通过环境变量 SIGLIP_WEIGHTS_ROOT 覆盖）
+SIGLIP_WEIGHTS_ROOT = os.environ.get(
+    "SIGLIP_WEIGHTS_ROOT", "/home/huachenghao/codes/SigLip2/weights")
+
+# SigLIP 2 模型映射: 名称 -> (本地权重路径, 在线 model_id, 特征维度)
+SIGLIP_MODEL_MAP = {
+    "siglip2_base": {
+        "local": os.path.join(SIGLIP_WEIGHTS_ROOT, "siglip2-base-patch16-512"),
+        "online": "google/siglip2-base-patch16-384",
+        "dim": 768,
+    },
+    "siglip2_so400m": {
+        "local": os.path.join(SIGLIP_WEIGHTS_ROOT, "siglip2-so400m-patch16-512"),
+        "online": "google/siglip2-so400m-patch14-384",
+        "dim": 1152,
+    },
+    "siglip2_large": {
+        "local": None,
+        "online": "google/siglip2-large-patch16-384",
+        "dim": 1024,
+    },
+}
 
 
 
@@ -50,6 +73,8 @@ class ImageEmbedder:
             return self._load_nomic(model_name) if NOMIC_AVAILABLE else self._load_resnet('resnet50')
         elif model_name.startswith('blip2'):
             return self._load_blip2(model_name) if BLIP2_AVAILABLE else self._load_resnet('resnet50')
+        elif model_name.startswith('siglip'):
+            return self._load_siglip(model_name)
         else:
             print(f"Unknown model: {model_name}, using default ResNet50")
             return self._load_resnet('resnet50')
@@ -121,6 +146,43 @@ class ImageEmbedder:
             print(f"Failed to load Nomic model: {e}")
             print("Using ResNet50 as fallback")
             return self._load_resnet('resnet50')
+
+    def _load_siglip(self, model_name):
+        """Load SigLIP 2 model (multilingual vision-language encoder).
+
+        优先从本地权重目录加载（SIGLIP_WEIGHTS_ROOT），
+        本地不存在时回退到 Hugging Face 在线下载。
+        """
+        try:
+            print(f"Loading SigLIP 2 model: {model_name}")
+
+            cfg = SIGLIP_MODEL_MAP.get(model_name)
+            if cfg is None:
+                cfg = SIGLIP_MODEL_MAP["siglip2_base"]
+            feature_dim = cfg["dim"]
+
+            # 优先使用本地权重
+            local_path = cfg.get("local")
+            if local_path and os.path.isdir(local_path):
+                model_id = local_path
+                print(f"Loading from local weights: {model_id}")
+            else:
+                model_id = cfg["online"]
+                print(f"Local weights not found, loading from HuggingFace: {model_id}")
+
+            processor = AutoProcessor.from_pretrained(model_id)
+            model = AutoModel.from_pretrained(model_id)
+
+            model.eval()
+            model.to(self.device)
+
+            print("SigLIP 2 model loaded successfully!")
+            return model, feature_dim, processor
+
+        except Exception as e:
+            print(f"Failed to load SigLIP model: {e}")
+            print("Using ResNet50 as fallback")
+            return self._load_resnet('resnet50')
     
     def _load_blip2(self, model_name):
         """Load BLIP2 model"""
@@ -161,8 +223,8 @@ class ImageEmbedder:
                     std=[0.229, 0.224, 0.225]
                 )
             ])
-        elif model_name.startswith('nomic') or model_name.startswith('blip2'):
-            # Nomic/BLIP2 models use their own processors, return placeholder
+        elif model_name.startswith('nomic') or model_name.startswith('blip2') or model_name.startswith('siglip'):
+            # Nomic/BLIP2/SigLIP models use their own processors, return placeholder
             return lambda x: x
         else:
             # ResNet preprocessing
@@ -187,6 +249,9 @@ class ImageEmbedder:
             elif self.model_name.startswith('blip2'):
                 # Use BLIP2 model for feature extraction
                 return self._extract_features_blip2(image)
+            elif self.model_name.startswith('siglip'):
+                # Use SigLIP model for feature extraction
+                return self._extract_features_siglip(image)
             else:
                 # Use local model for feature extraction
                 input_tensor = self.preprocess(image).unsqueeze(0).to(self.device)
@@ -221,6 +286,28 @@ class ImageEmbedder:
             return img_embeddings.cpu().numpy().flatten()
         except Exception as e:
             print(f"Nomic local model feature extraction failed: {e}")
+            return None
+
+    def _extract_features_siglip(self, image: Image.Image) -> Optional[np.ndarray]:
+        """Extract features using SigLIP 2 model"""
+        try:
+            # Process image with SigLIP processor
+            inputs = self.processor(images=image, return_tensors="pt")
+            inputs = {k: v.to(self.device) for k, v in inputs.items()}
+
+            with torch.no_grad():
+                # Get image embeddings (CLS token pooled) and normalize.
+                # 兼容两种返回类型：
+                # - transformers 5.x 中 SiglipModel.get_image_features 返回带 pooler_output 的输出对象
+                # - Siglip2Model.get_image_features 直接返回张量
+                img_emb = self.model.get_image_features(**inputs)
+                if hasattr(img_emb, 'pooler_output'):
+                    img_emb = img_emb.pooler_output
+                img_embeddings = F.normalize(img_emb, p=2, dim=-1)
+
+            return img_embeddings.cpu().numpy().flatten()
+        except Exception as e:
+            print(f"SigLIP feature extraction failed: {e}")
             return None
 
     def _extract_features_blip2(self, image: Image.Image) -> Optional[np.ndarray]:
@@ -298,6 +385,33 @@ class ImageEmbedder:
             features = []
             for image in images:
                 feat = self._extract_features_blip2(image)
+                if feat is not None:
+                    features.append(feat)
+            
+            return np.array(features), valid_paths
+
+        # For SigLIP model, process individually (no true batching)
+        elif self.model_name.startswith('siglip'):
+            images = []
+            valid_paths = []
+            
+            # Load all images
+            for path in image_paths:
+                try:
+                    image = Image.open(path).convert('RGB')
+                    images.append(image)
+                    valid_paths.append(path)
+                except Exception as e:
+                    print(f"Error loading {path}: {e}")
+                    continue
+            
+            if not images:
+                return np.array([]), []
+            
+            # Process each image
+            features = []
+            for image in images:
+                feat = self._extract_features_siglip(image)
                 if feat is not None:
                     features.append(feat)
             
@@ -698,6 +812,8 @@ def build_index(image_folder: str, index_save_path: str, model_name: str = 'resn
         dimension = 768  # nomic-embed-vision-v1.5 feature dimension
     elif model_name.startswith('blip2'):
         dimension = 768  # BLIP2 image embedding dimension
+    elif model_name.startswith('siglip'):
+        dimension = SIGLIP_MODEL_MAP.get(model_name, SIGLIP_MODEL_MAP["siglip2_base"])["dim"]
     else:
         if model_name == 'resnet50' or model_name == 'resnet101':
             dimension = 2048
@@ -780,22 +896,25 @@ def search_image(query_image_path: str, index_path: str, top_k: int = 5,
 
 
 
-def find_similar_image_groups_from_folder(image_folder: str, model_name: str = 'resnet50', 
+def find_similar_image_groups_from_folder(image_folder: str, model_name: str = 'resnet50',
                                         images_per_group: int = 4, save_dir: str = "similar_groups",
-                                        min_cluster_size: Optional[int] = None) -> List[List[str]]:
+                                        min_cluster_size: Optional[int] = None,
+                                        n_clusters: Optional[int] = None) -> Tuple[List[List[str]], List[str]]:
     """
     Find similar image groups by clustering image embeddings from a folder using the improved workflow:
-    Feature Extraction → L2 Normalization → PCA Dimensionality Reduction → HDBSCAN Clustering
-    
+    Feature Extraction → L2 Normalization → PCA Dimensionality Reduction → KMeans Clustering (auto k)
+
     Args:
         image_folder: Path to the folder containing images
         model_name: Name of the model to use for embedding extraction
-        images_per_group: Number of images to include in each group visualization
+        images_per_group: Number of representative images per group used in collage visualization
         save_dir: Directory to save group visualization results
-        min_cluster_size: Minimum cluster size for HDBSCAN. If None, automatically determined.
-    
+        min_cluster_size: Minimum number of images for a cluster to be kept (default 2)
+        n_clusters: Number of clusters. If None, automatically selected via silhouette score.
+
     Returns:
-        List of image groups, where each group is a list of image paths
+        Tuple of (all image groups with full member paths, flat collage paths,
+        per-group collage page paths)
     """
     print(f"Finding similar image groups in folder: {image_folder}")
     print(f"Using model: {model_name}")
@@ -843,18 +962,19 @@ def find_similar_image_groups_from_folder(image_folder: str, model_name: str = '
     print("Performing L2 normalization...")
     faiss.normalize_L2(embeddings)
     
-    # Step 2: PCA Dimensionality Reduction (if needed)
+    # Step 2: PCA Dimensionality Reduction (denoising, improves clustering)
     print("Performing PCA dimensionality reduction...")
     reduced_embeddings = _pca_reduce_dimensions(embeddings)
-    
-    # Step 3: HDBSCAN Clustering
-    # print("Performing HDBSCAN clustering...")
-    # cluster_labels = _hdbscan_clustering(reduced_embeddings, min_cluster_size)
+
+    # Step 3: KMeans Clustering on the reduced embeddings.
+    # If n_clusters is not specified, the optimal k is selected automatically
+    # by maximizing the silhouette score (cosine metric).
     print("Performing K-means clustering...")
-    n_clusters = max(2, min(20, len(embeddings) // 5))  # Heuristic for cluster count
-    kmeans = KMeans(n_clusters=n_clusters, random_state=42)
-    cluster_labels = kmeans.fit_predict(embeddings)
-    
+    cluster_labels = _kmeans_clustering_auto(reduced_embeddings, n_clusters=n_clusters)
+
+    if min_cluster_size is None:
+        min_cluster_size = 2
+
     # Group images by cluster
     unique_labels = np.unique(cluster_labels)
     unique_labels = unique_labels[unique_labels != -1]  # Exclude noise points
@@ -862,9 +982,8 @@ def find_similar_image_groups_from_folder(image_folder: str, model_name: str = '
     image_groups = []
     for label in unique_labels:
         indices = np.where(cluster_labels == label)[0]
-        group_images = [valid_image_paths[i] for i in indices]
-        if len(group_images) >= 2:  # Only include groups with at least 2 images
-            image_groups.append(group_images)
+        if len(indices) >= min_cluster_size:  # Only keep clusters meeting the size threshold
+            image_groups.append([valid_image_paths[i] for i in indices])
     
     # Sort groups by size (largest first)
     image_groups.sort(key=len, reverse=True)
@@ -884,47 +1003,45 @@ def find_similar_image_groups_from_folder(image_folder: str, model_name: str = '
 
     os.makedirs(model_save_dir, exist_ok=True)
     
-    # Process each group to find most similar images and create visualizations
-    result_groups = []
-    
+    # Sort images within each group by representativeness (closest to centroid first),
+    # so the first collage page contains the most representative images.
+    path_to_idx = {p: i for i, p in enumerate(valid_image_paths)}
+    ordered_groups = []
+
     for group_idx, group_images in enumerate(image_groups):
-        print(f"Processing group {group_idx+1} with {len(group_images)} images...")
-        
-        # For small groups, use all images
-        if len(group_images) <= images_per_group:
-            selected_images = group_images
-        else:
-            # For larger groups, find the most representative images
-            group_embeddings = []
-            for img_path in group_images:
-                idx = valid_image_paths.index(img_path)
-                group_embeddings.append(reduced_embeddings[idx])
-            
-            group_embeddings = np.array(group_embeddings)
-            
+        print(f"Group {group_idx+1}: {len(group_images)} images")
+
+        if len(group_images) > images_per_group:
+            group_embeddings = np.array([reduced_embeddings[path_to_idx[p]] for p in group_images])
+
             # Calculate centroid of the group
             centroid = np.mean(group_embeddings, axis=0, keepdims=True)
             faiss.normalize_L2(centroid)
-            
-            # Find images closest to centroid
-            similarities = np.dot(group_embeddings, centroid.T).flatten()
-            top_indices = np.argsort(similarities)[::-1][:images_per_group]
-            selected_images = [group_images[i] for i in top_indices]
-        
-        result_groups.append(selected_images)
 
-        # Save group images
-    if result_groups:
-        print(f"Found {len(result_groups)} groups of similar images")
-        collage_paths = save_group_images(result_groups, model_save_dir)
-        print(f"Saved {len(collage_paths)} group collages")
+            # Sort ALL images by similarity to centroid (descending)
+            similarities = np.dot(group_embeddings, centroid.T).flatten()
+            order = np.argsort(similarities)[::-1]
+            ordered_groups.append([group_images[i] for i in order])
+        else:
+            ordered_groups.append(list(group_images))
+
+    # Save group collages: groups larger than images_per_group are paginated,
+    # every images_per_group images produce one collage page, so no image is hidden.
+    per_group_collage_paths: List[List[str]] = []
+    if ordered_groups:
+        print(f"Found {len(ordered_groups)} groups of similar images")
+        per_group_collage_paths = save_group_images(ordered_groups, model_save_dir,
+                                                    images_per_group=images_per_group)
+        n_pages = sum(len(c) for c in per_group_collage_paths)
+        print(f"Saved {n_pages} group collages")
     else:
         print("No similar image groups found")
 
-        
-        
-    print(f"Found {len(result_groups)} similar image groups")
-    return result_groups, collage_paths
+    collage_paths = [p for group_paths in per_group_collage_paths for p in group_paths]
+
+    print(f"Found {len(image_groups)} similar image groups")
+    # Return FULL groups (all members) plus per-group collage page paths
+    return image_groups, collage_paths, per_group_collage_paths
 
 
 def _pca_reduce_dimensions(embeddings: np.ndarray, target_dim: int = 128) -> np.ndarray:
@@ -961,6 +1078,77 @@ def _pca_reduce_dimensions(embeddings: np.ndarray, target_dim: int = 128) -> np.
           f"(explained variance ratio: {np.sum(pca.explained_variance_ratio_):.3f})")
     
     return reduced_embeddings
+
+
+def _kmeans_clustering_auto(embeddings: np.ndarray, n_clusters: Optional[int] = None,
+                            k_min: int = 2, k_max: int = 20,
+                            max_candidates: int = 10) -> np.ndarray:
+    """
+    KMeans clustering with automatic selection of the number of clusters.
+
+    If n_clusters is given, it is used directly (clamped to a valid range).
+    Otherwise the optimal k is selected by maximizing the silhouette score
+    (cosine metric) over a bounded set of candidate values.
+
+    Args:
+        embeddings: Input embeddings matrix (n_samples, n_features)
+        n_clusters: User-specified cluster count. If None, auto-selected.
+        k_min: Minimum candidate cluster count
+        k_max: Maximum candidate cluster count
+        max_candidates: Max number of candidate ks to evaluate (for speed)
+
+    Returns:
+        Cluster labels for each sample
+    """
+    from sklearn.metrics import silhouette_score
+
+    n_samples = len(embeddings)
+    if n_samples < 2:
+        return np.array([], dtype=int)
+
+    def _fit(k):
+        return KMeans(n_clusters=k, random_state=42, n_init=10).fit_predict(embeddings)
+
+    # User-specified cluster count
+    if n_clusters is not None:
+        k = max(2, min(int(n_clusters), n_samples))
+        print(f"Using user-specified cluster count: {k}")
+        return _fit(k)
+
+    # Too few samples for silhouette-based search
+    if n_samples < 8:
+        print("Too few samples for auto k selection, using k=2")
+        return _fit(2)
+
+    # Build candidate ks (bounded count to keep runtime manageable)
+    upper = min(k_max, n_samples - 1)
+    if upper <= k_min:
+        candidate_ks = [k_min]
+    else:
+        step = max(1, (upper - k_min + 1) // max_candidates)
+        candidate_ks = list(range(k_min, upper + 1, step))
+        if upper not in candidate_ks:
+            candidate_ks.append(upper)
+
+    sample_size = min(n_samples, 2000)
+    best_k, best_score = candidate_ks[0], -np.inf
+    for k in candidate_ks:
+        try:
+            labels = _fit(k)
+            if len(np.unique(labels)) < 2:
+                continue
+            score = silhouette_score(
+                embeddings, labels, metric='cosine',
+                sample_size=sample_size if sample_size < n_samples else None,
+                random_state=42)
+            print(f"  Evaluating k={k}: silhouette={score:.3f}")
+            if score > best_score:
+                best_score, best_k = score, k
+        except Exception as e:
+            print(f"  Evaluating k={k} failed: {e}")
+
+    print(f"Auto-selected cluster count: {best_k} (silhouette={best_score:.3f})")
+    return _fit(best_k)
 
 
 def _hdbscan_clustering(embeddings: np.ndarray, min_cluster_size: Optional[int] = None) -> np.ndarray:
@@ -1001,14 +1189,15 @@ def _hdbscan_clustering(embeddings: np.ndarray, min_cluster_size: Optional[int] 
     
     return cluster_labels
 
-def create_group_collage(group_images, group_idx, output_dir, max_width=1200):
+def create_group_collage(group_images, group_idx, output_dir, max_width=1200, page_num=None):
     """
-    Create a collage of images in a group
+    Create a collage of images in a group (adaptive grid layout for any count)
     
     :param group_images: List of image paths in the group
     :param group_idx: Group index for naming
     :param output_dir: Directory to save the collage
     :param max_width: Maximum width of the collage
+    :param page_num: Page number for paginated collages (None or 1 = first page, no suffix)
     :return: Path to the saved collage
     """
     if not group_images:
@@ -1026,14 +1215,14 @@ def create_group_collage(group_images, group_idx, output_dir, max_width=1200):
     if not images:
         return None
     
-    # Determine layout (up to 2 rows)
+    # Adaptive layout: near-square grid, at most 4 columns, unlimited rows
     num_images = len(images)
     if num_images <= 3:
         cols = num_images
-        rows = 1
     else:
-        cols = min(3, (num_images + 1) // 2)
-        rows = 2
+        cols = min(4, int(np.ceil(np.sqrt(num_images))))
+    cols = max(1, cols)
+    rows = int(np.ceil(num_images / cols))
     
     # Resize images to fit in grid
     target_width = max_width // cols
@@ -1043,7 +1232,6 @@ def create_group_collage(group_images, group_idx, output_dir, max_width=1200):
     for i, img in enumerate(images):
         # Calculate row and column
         row = i // cols
-        col = i % cols
         
         # Resize image
         aspect_ratio = img.height / img.width
@@ -1073,24 +1261,30 @@ def create_group_collage(group_images, group_idx, output_dir, max_width=1200):
         
         y_offset += max_heights[row] + 20
     
-    # Save collage
-    collage_path = os.path.join(output_dir, f"group_{group_idx}_collage.jpg")
+    # Save collage (first page keeps the original filename for compatibility)
+    if page_num is None or page_num <= 1:
+        collage_path = os.path.join(output_dir, f"group_{group_idx}_collage.jpg")
+    else:
+        collage_path = os.path.join(output_dir, f"group_{group_idx}_collage_p{page_num}.jpg")
     collage.save(collage_path, "JPEG", quality=85)
     return collage_path
 
-def save_group_images(groups, output_dir):
+def save_group_images(groups, output_dir, images_per_group=None):
     """
-    Save groups of images as individual files and collages
+    Save groups of images as individual files and collages.
+    
+    Groups larger than images_per_group are paginated: every images_per_group
+    images produce one collage page (group_N_collage.jpg, group_N_collage_p2.jpg, ...),
+    so every image in the group is visible in the collages.
     
     :param groups: List of image groups (each group is a list of image paths)
     :param output_dir: Directory to save group images
-    :return: List of saved collage paths
+    :param images_per_group: Max images per collage page. None means all in one page.
+    :return: List (one entry per group) of saved collage paths for that group (all pages, in order)
     """
-    # group_output_dir = os.path.join(output_dir, "similar_groups")
-    
     os.makedirs(output_dir, exist_ok=True)
     
-    collage_paths = []
+    group_collage_paths = []
     
     for idx, group in enumerate(groups):
         # Create directory for this group
@@ -1107,13 +1301,26 @@ def save_group_images(groups, output_dir):
             except Exception as e:
                 print(f"Error copying image {img_path}: {e}")
         
-        # Create and save collage for the group
-        collage_path = create_group_collage(group, idx+1, output_dir)
-        if collage_path:
-            collage_paths.append(collage_path)
-            print(f"Saved group {idx+1} collage to: {collage_path}")
+        # Create collage(s) for the group, paginated if larger than images_per_group
+        current_group_collages = []
+        if images_per_group and len(group) > images_per_group:
+            n_pages = int(np.ceil(len(group) / images_per_group))
+            for page in range(n_pages):
+                page_images = group[page * images_per_group:(page + 1) * images_per_group]
+                collage_path = create_group_collage(page_images, idx + 1, output_dir,
+                                                    page_num=page + 1)
+                if collage_path:
+                    current_group_collages.append(collage_path)
+                    print(f"Saved group {idx+1} collage page {page+1}/{n_pages} to: {collage_path}")
+        else:
+            collage_path = create_group_collage(group, idx + 1, output_dir)
+            if collage_path:
+                current_group_collages.append(collage_path)
+                print(f"Saved group {idx+1} collage to: {collage_path}")
+
+        group_collage_paths.append(current_group_collages)
     
-    return collage_paths
+    return group_collage_paths
 
 # Update the usage example in the main section:
 if __name__ == "__main__":

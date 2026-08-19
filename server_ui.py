@@ -282,6 +282,9 @@ UI_HTML = """<!DOCTYPE html>
                         <option value="dinov2_small">DINOv2 Small</option>
                         <option value="dinov2_base">DINOv2 Base</option>
                         <option value="dinov2_large">DINOv2 Large</option>
+                        <option value="siglip2_base">SigLIP 2 Base</option>
+                        <option value="siglip2_large">SigLIP 2 Large</option>
+                        <option value="siglip2_so400m">SigLIP 2 So400m</option>
                     </select>
                 </div>
                 <button type="submit" class="btn btn-green">构建索引</button>
@@ -328,11 +331,27 @@ UI_HTML = """<!DOCTYPE html>
                         <option value="dinov2_small">DINOv2 Small</option>
                         <option value="dinov2_base">DINOv2 Base</option>
                         <option value="dinov2_large">DINOv2 Large</option>
+                        <option value="siglip2_base">SigLIP 2 Base</option>
+                        <option value="siglip2_large">SigLIP 2 Large</option>
+                        <option value="siglip2_so400m">SigLIP 2 So400m</option>
                     </select>
                 </div>
                 <div class="form-group">
                     <label>保存目录</label>
                     <input type="text" id="group-save-dir" name="save_dir" placeholder="similar_groups">
+                </div>
+                <div class="form-group">
+                    <label>聚类数量（可选，留空自动优化）</label>
+                    <input type="number" id="group-n-clusters" name="n_clusters" min="2" max="50"
+                           placeholder="留空则按轮廓系数自动选择">
+                </div>
+                <div class="form-group">
+                    <label>每聚类最少图片数（小于该值的聚类将被过滤）</label>
+                    <input type="number" id="group-min-cluster-size" name="min_cluster_size" value="2" min="1" max="100">
+                </div>
+                <div class="form-group">
+                    <label>每组拼图展示图片数</label>
+                    <input type="number" id="group-images-per-group" name="images_per_group" value="4" min="1" max="12">
                 </div>
                 <button type="submit" class="btn btn-green">聚类分组</button>
             </form>
@@ -419,13 +438,28 @@ UI_HTML = """<!DOCTYPE html>
             }
             // 聚类分组
             if (data.groups) {
+                if (data.groups.length === 0) {
+                    el.innerHTML = html + '<p>未找到满足条件的聚类分组</p>';
+                    return;
+                }
                 html += `<p>共 ${data.group_count} 个分组</p>`;
                 data.groups.forEach(g => {
-                    html += `<p><b>分组 ${g.group_id}</b>：${g.image_count} 张</p><div class="image-grid">`;
-                    g.image_names.slice(0, 4).forEach(n => {
-                        html += `<div class="image-item"><p>${n}</p></div>`;
-                    });
-                    html += '</div>';
+                    html += `<p><b>分组 ${g.group_id}</b>：<span style="color:#2563eb">${g.image_count} 张</span></p>`;
+                    const collages = g.collage_paths || [];
+                    if (collages.length > 0) {
+                        html += '<div class="image-grid">';
+                        collages.forEach((cp, pi) => {
+                            const label = collages.length > 1 ? `分组拼图 第${pi+1}/${collages.length}页` : '分组拼图';
+                            html += `<div class="image-item">
+                                <img src="/api/file?path=${encodeURIComponent(cp)}" alt="分组 ${g.group_id} 拼图${pi+1}" style="height:auto">
+                                <p>${label}</p>
+                            </div>`;
+                        });
+                        html += '</div>';
+                    }
+                    const shown = g.image_names.slice(0, 8);
+                    const more = g.image_count > shown.length ? ` … 等共 ${g.image_count} 张` : '';
+                    html += `<p style="font-size:11px;color:#64748b;word-break:break-all">${shown.join('、')}${more}</p>`;
                 });
                 el.innerHTML = html;
                 return;
