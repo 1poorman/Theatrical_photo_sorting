@@ -1,16 +1,13 @@
 import os, sys, random
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(os.path.join(os.path.dirname(__file__), '.'))
-from datetime import datetime
 from tqdm import tqdm
 from scrfd.scrfd_det import SCRFDDetector
 from core.database import FaceDatabase
 from arcface.arcface_onnx import ArcFaceFeatureExtractor
-from utils.assess import assess_face_quality_optimized, assess_face_quality_simple
-from utils.alignment import FaceAlignment
+from utils.assess import assess_face_quality_simple
 from utils.visualization import VisualizationUtils
 import cv2
-import numpy as np
 
 class FaceRecognitionSystem:
     @staticmethod
@@ -54,183 +51,118 @@ class FaceRecognitionSystem:
         self.detector = SCRFDDetector(detect_path, device=device)
         self.extractor = ArcFaceFeatureExtractor(extractor_path, device=device)
         self.database = FaceDatabase()
-        self.face_aligner = FaceAlignment()
         self.visualizer = VisualizationUtils()
-    
+
     def build_face_database(self, image_folder, label_file=None, first_run=False):
         """
         建立人脸库
         Args:
-            image_folder: 包含人脸图片的文件夹
-            label_file: 可选的标签文件（person_id, person_name, image_path）
+            image_folder: 包含人脸图片的文件夹（子目录按人物命名）
+            label_file: 预留参数（当前仅支持目录结构推断，传入时忽略并警告）
+            first_run: 预留参数（索引创建由 FaceDatabase 内部管理）
         """
         if label_file:
-            # 从标签文件读取
-            pass
-        else:
-            # 从文件夹结构推断：person_name/image.jpg
-            total_persons = 0
-            successful_persons = 0
-            
-            person_dirs = [d for d in os.listdir(image_folder) 
-                          if os.path.isdir(os.path.join(image_folder, d))]
-            
-            print(f"Found {len(person_dirs)} persons to process")
-            
-            for person_name in person_dirs:
-                person_folder = os.path.join(image_folder, person_name)
-                
-                print(f"\n{'='*50}")
-                print(f"Processing person: {person_name}")
-                print(f"{'='*50}")
-                
-                total_persons += 1
-                person_id = person_name.lower().replace(" ", "_")
-                
-                image_files = [f for f in os.listdir(person_folder) 
-                              if f.lower().endswith(('.jpg', '.png', '.jpeg'))]
-                
-                print(f"Found {len(image_files)} images for {person_name}")
-                
-                processed_count = 0
-                success_count = 0
-                
-                for img_file in tqdm(image_files, desc=f"Processing {person_name}", leave=False):
-                    img_path = os.path.join(person_folder, img_file)
-                    processed_count += 1
-                    
-                    # 处理已裁剪的人脸图片
-                    try:
-                        image = cv2.imread(img_path)
-                        if image is None:
-                            print(f"  Warning: Could not read image {img_path}")
-                            continue
-                            
-                        # 对于已经是160*160的人脸图片，进行对齐处理（居中裁剪到112x112）
-                        h, w = image.shape[:2]
-                        if h == 160 and w == 160:
-                            aligned_face = self.extractor.align_face(image, None)
-                            
-                            # 提取特征
-                            embeddings = self.extractor.extract_features([aligned_face])
-                            if embeddings.shape[0] == 0:
-                                print(f"  Warning: Failed to extract features from {img_path}")
-                                continue
-                                
-                            embedding = embeddings[0]
-                            embedding = self.extractor.l2_normalize([embedding])[0]
-                            
-                            # 存储到数据库
-                            # if first_run:
-                            #     self.database.create_index()
-                            self.database.add_face(
-                                person_id=person_id,
-                                person_name=person_name,
-                                embedding=embedding,
-                                image_path=img_path
-                            )
-                            success_count += 1
-                            print(f"  ✓ Added face to database: {img_path}")
-                        else:
-                            # 对于非标准尺寸的图片，使用原来的检测流程
-                            # 使用 SCRFD 检测器（detect_image 兼容接口），包括面积过滤和 NMS
-                            face_rects, processed_image, ratio = self.detector.detect_image(
-                                image, pixel_threshold=100
-                            )
-                            
-                            if len(face_rects) > 0:
-                                # 取最大的人脸（按面积）
-                                largest_face_idx = 0
-                                largest_area = 0
-                                for i, (x, y, w, h) in enumerate(face_rects):
-                                    area = w * h
-                                    if area > largest_area:
-                                        largest_area = area
-                                        largest_face_idx = i
-                                
-                                # 获取最大人脸的坐标
-                                x, y, w, h = face_rects[largest_face_idx]
-                                
-                                # 调整坐标到原始图像尺寸
-                                x_orig = int(x / ratio)
-                                y_orig = int(y / ratio)
-                                w_orig = int(w / ratio)
-                                h_orig = int(h / ratio)
-                                
-                                # 提取人脸区域
-                                face_image = image[y_orig:y_orig+h_orig, x_orig:x_orig+w_orig]
-                                
-                                if face_image is None or face_image.size == 0:
-                                    print(f"  Warning: Could not extract face from {img_path}")
-                                    continue
-                                
-                                # 使用关键点进行对齐
-                                faces = self.detector._detect_single(image)
-                                if len(faces) > 0:
-                                    # 过滤面积过小的人脸
-                                    filtered_faces = [face for face in faces 
-                                                    if face.width * face.height > 300]
-                                    if len(filtered_faces) > 0:
-                                        # 取最大人脸
-                                        face = max(filtered_faces, key=lambda f: f.width * f.height)
-                                        
-                                        # 对齐人脸
-                                        aligned_face = self.extractor.align_face(image, face.landmark)
-                                        
-                                        # 检查对齐是否成功
-                                        if aligned_face is None:
-                                            print(f"  Warning: Failed to align face in {img_path}")
-                                            continue
-                                        
-                                        # 提取特征
-                                        embeddings = self.extractor.extract_features([aligned_face])
-                                        if embeddings.shape[0] == 0:
-                                            print(f"  Warning: Failed to extract features from {img_path}")
-                                            continue
-                                            
-                                        embedding = embeddings[0]
-                                        embedding = self.extractor.l2_normalize([embedding])[0]
-                                        
-                                        # 存储到数据库
-                                        self.database.add_face(
-                                            person_id=person_id,
-                                            person_name=person_name,
-                                            embedding=embedding,
-                                            image_path=img_path
-                                        )
-                                        success_count += 1
-                                        print(f"  ✓ Added face to database: {img_path}")
-                            else:
-                                print(f"  ✗ No faces detected in {img_path}")
-                            
-                    except Exception as e:
-                        print(f"  Error processing {img_path}: {str(e)}")
+            print(f"Warning: label_file mode not implemented, ignored: {label_file}")
+
+        # 从文件夹结构推断：person_name/image.jpg
+        total_persons = 0
+        successful_persons = 0
+
+        person_dirs = [d for d in os.listdir(image_folder)
+                      if os.path.isdir(os.path.join(image_folder, d))]
+
+        print(f"Found {len(person_dirs)} persons to process")
+
+        for person_name in person_dirs:
+            person_folder = os.path.join(image_folder, person_name)
+
+            print(f"\n{'='*50}")
+            print(f"Processing person: {person_name}")
+            print(f"{'='*50}")
+
+            total_persons += 1
+            person_id = person_name.lower().replace(" ", "_")
+
+            image_files = [f for f in os.listdir(person_folder)
+                          if f.lower().endswith(('.jpg', '.png', '.jpeg'))]
+
+            print(f"Found {len(image_files)} images for {person_name}")
+
+            processed_count = 0
+            success_count = 0
+
+            for img_file in tqdm(image_files, desc=f"Processing {person_name}", leave=False):
+                img_path = os.path.join(person_folder, img_file)
+                processed_count += 1
+
+                try:
+                    image = cv2.imread(img_path)
+                    if image is None:
+                        print(f"  Warning: Could not read image {img_path}")
                         continue
-                
-                # Print summary for this person
-                print(f"\nSummary for {person_name}:")
-                print(f"  Total images: {len(image_files)}")
-                print(f"  Processed: {processed_count}")
-                print(f"  Successfully added: {success_count}")
-                print(f"  Success rate: {success_count/len(image_files)*100:.1f}%")
-                
-                if success_count > 0:
-                    successful_persons += 1
-                    print(f"  Status: ✓ SUCCESS")
-                else:
-                    print(f"  Status: ✗ FAILED (no faces added)")
-                
-                print(f"{'='*50}\n")
-            
-            # Print overall summary
-            print(f"\n{'#'*60}")
-            print(f"BUILD DATABASE COMPLETE")
-            print(f"{'#'*60}")
-            print(f"Total persons processed: {total_persons}")
-            print(f"Successful persons: {successful_persons}")
-            print(f"Failed persons: {total_persons - successful_persons}")
-            print(f"Overall success rate: {successful_persons/total_persons*100:.1f}%")
-            print(f"{'#'*60}\n")
+
+                    # 已是 160x160 标准人脸图：直接居中裁剪到 112x112，无需检测
+                    h, w = image.shape[:2]
+                    if h == 160 and w == 160:
+                        aligned_face = self.extractor.align_face(image, None)
+                    else:
+                        # 非标准尺寸：检测并取最大人脸（单次检测，基于关键点对齐）
+                        faces = self.detector._detect_single(image)
+                        # 过滤面积过小的人脸
+                        filtered = [f for f in faces if f.width * f.height > 300]
+                        if not filtered:
+                            print(f"  ✗ No faces detected in {img_path}")
+                            continue
+                        face = max(filtered, key=lambda f: f.width * f.height)
+                        aligned_face = self.extractor.align_face(image, face.landmark)
+                        if aligned_face is None:
+                            print(f"  Warning: Failed to align face in {img_path}")
+                            continue
+
+                    # 提取特征并入库
+                    embeddings = self.extractor.extract_features([aligned_face])
+                    if embeddings.shape[0] == 0:
+                        print(f"  Warning: Failed to extract features from {img_path}")
+                        continue
+
+                    embedding = self.extractor.l2_normalize([embeddings[0]])[0]
+                    self.database.add_face(
+                        person_id=person_id,
+                        person_name=person_name,
+                        embedding=embedding,
+                        image_path=img_path
+                    )
+                    success_count += 1
+                    print(f"  ✓ Added face to database: {img_path}")
+
+                except Exception as e:
+                    print(f"  Error processing {img_path}: {str(e)}")
+                    continue
+
+            # Print summary for this person
+            print(f"\nSummary for {person_name}:")
+            print(f"  Total images: {len(image_files)}")
+            print(f"  Processed: {processed_count}")
+            print(f"  Successfully added: {success_count}")
+            print(f"  Success rate: {success_count/len(image_files)*100:.1f}%")
+
+            if success_count > 0:
+                successful_persons += 1
+                print(f"  Status: ✓ SUCCESS")
+            else:
+                print(f"  Status: ✗ FAILED (no faces added)")
+
+            print(f"{'='*50}\n")
+
+        # Print overall summary
+        print(f"\n{'#'*60}")
+        print(f"BUILD DATABASE COMPLETE")
+        print(f"{'#'*60}")
+        print(f"Total persons processed: {total_persons}")
+        print(f"Successful persons: {successful_persons}")
+        print(f"Failed persons: {total_persons - successful_persons}")
+        print(f"Overall success rate: {successful_persons/total_persons*100:.1f}%")
+        print(f"{'#'*60}\n")
     
     def recognize_face(self, image_path, image_size=1920, known_threshold=0.55, unknown_threshold=0.4, 
                    iou_threshold=0.4, min_face_size=20, debug=False, image=None):
@@ -239,12 +171,13 @@ class FaceRecognitionSystem:
         Args:
             image_path: 输入图片路径
             known_threshold: 已知人脸的匹配阈值（ArcFace 余弦相似度，建议 0.5~0.6）
-            unknown_threshold: 未知人脸的匹配阈值（建议 0.35~0.45）
+            unknown_threshold: 保留参数（历史兼容，当前逻辑未使用）
             iou_threshold: 重复人脸检测的IOU阈值
             min_face_size: 最小人脸尺寸
             debug: 调试模式，显示更多信息
+            image: 可选，外部预解码图像（与 image_path 二选一传入）
         Returns:
-            list of recognition results
+            (list of recognition results, annotated_image)
         """
         # 加载图像（降采样解码加速；支持外部传入已解码图像，配合批量预解码流水线）
         if image is None:
@@ -280,17 +213,14 @@ class FaceRecognitionSystem:
                     print(f"  Skip: Too small {face_obj.width}x{face_obj.height}")
                 continue
                 
-            # 过滤低质量人脸（降低置信度阈值到0.2）
+            # 过滤低置信度人脸
             if face_obj.score < 0.3:
                 if debug:
                     print(f"  Skip: Low confidence {face_obj.score}")
                 continue
-                
-            # 计算人脸面积和宽高比
-            area = face_obj.width * face_obj.height
+
+            # 宽高比限制（过滤异常误检）
             aspect_ratio = face_obj.width / face_obj.height
-            
-            # 放宽宽高比限制
             if aspect_ratio < 0.2 or aspect_ratio > 5.0:
                 if debug:
                     print(f"  Skip: Bad aspect ratio {aspect_ratio}")
@@ -324,7 +254,7 @@ class FaceRecognitionSystem:
                         print(f"  Face {i+1}: Empty image after cropping")
                     continue
                 
-                # 计算人脸质量分数（简化评估）
+                # 计算人脸质量分数（仅作为结果元数据保留，不参与分数调整）
                 face_quality = assess_face_quality_simple(face_image)
                 
                 # 人脸对齐（SCRFD 提供 5 关键点，ArcFace 标准对齐）
@@ -402,54 +332,27 @@ class FaceRecognitionSystem:
                         person_matches[person_name] = match
 
                 # Convert back to list and limit to top 5 unique persons
-                unique_matches = sorted(person_matches.values(), key=lambda x: x['score'], reverse=True)[:5]
-                matches = unique_matches
-                print(f"DEBUG: Database returned {len(matches)} matches before processing")
-                for idx, match in enumerate(matches):
-                    print(f"  Match {idx+1}: {match['person_name']} (Score: {match['score']:.6f})")
-                
-                if debug and matches:
-                    print(f"  Face {i+1}: Found {len(matches)} matches")
-                    for match in matches[:3]:
-                        print(f"    Match: {match['person_name']} (Score: {match['score']:.3f})")
-                elif debug and not matches:
-                    print(f"  Face {i+1}: No matches found in database (database may be empty or no matches above threshold)")
-                
-                # 根据人脸质量调整匹配分数（简化校准）
-                calibrated_matches = []
-                seen_persons = set()  # Track persons we've already added
+                # （person_matches 已按人去重并保留每人最高分，无需再次去重）
+                matches = sorted(person_matches.values(), key=lambda x: x['score'], reverse=True)[:5]
 
-                for match in matches:
-                    # Skip if we've already added this person
-                    if match['person_name'] in seen_persons:
-                        continue
-                    
-                    seen_persons.add(match['person_name'])
-                    raw_score = match['score']
-                    
-                    # ArcFace 余弦相似度校准函数（同人通常 0.5~0.8，异人 <0.3）
-                    if raw_score > 0.75:
-                        calibrated = raw_score  # 强匹配保持
-                    elif raw_score > 0.65:
-                        calibrated = raw_score * 0.95  # 良好匹配微降
-                    elif raw_score > 0.55:
-                        calibrated = raw_score * 0.85  # 中等匹配适度降低
-                    elif raw_score > 0.45:
-                        calibrated = raw_score * 0.7  # 弱匹配显著降低
+                if debug:
+                    if matches:
+                        print(f"  Face {i+1}: Found {len(matches)} matches")
+                        for match in matches[:3]:
+                            print(f"    Match: {match['person_name']} (Score: {match['score']:.3f})")
                     else:
-                        calibrated = raw_score * 0.5  # 很低分数大幅降低
-                    
-                    # 轻微应用人脸质量因子
-                    calibrated *= face_quality
-                    calibrated = min(1.0, max(0.0, calibrated))
-                    
-                    match_copy = match.copy()
-                    match_copy['score'] = calibrated
-                    match_copy['raw_score'] = raw_score
-                    calibrated_matches.append(match_copy)
+                        print(f"  Face {i+1}: No matches found in database (database may be empty or no matches above threshold)")
 
-                # 按校准后的分数排序
-                calibrated_matches.sort(key=lambda x: x['score'], reverse=True)
+                # 直接使用 ArcFace 余弦相似度作为匹配分数，不做校准/质量乘法。
+                # 原分段校准与质量因子是 FaceNet 时代的兜底手段：ArcFace 区分度高，
+                # 同人余弦通常 0.5~0.8，乘以 0.85/0.7 等系数会把真实匹配压到阈值之下
+                #（实测 raw 0.626 -> calibrated 0.532，threshold 0.55，identified 被降级为 possible）。
+                # 模糊人脸的干扰由步骤4的"最佳-次佳分差"歧义检查处理，比质量分数更可靠。
+                calibrated_matches = []
+                for match in matches:
+                    match_copy = match.copy()
+                    match_copy['raw_score'] = match['score']  # 保留字段供展示兼容
+                    calibrated_matches.append(match_copy)
                 
                 # 构建结果
                 result = {
@@ -482,7 +385,8 @@ class FaceRecognitionSystem:
         
         if not raw_results:
             print("No valid faces found after processing")
-            return []
+            # 返回值与正常路径一致：(results, annotated_image)，避免调用方解包失败
+            return [], self.visualizer.draw_faces_on_image(image, [])
         
         # 步骤3: 使用NMS去除重复检测
         unique_results = self._apply_nms(raw_results, iou_threshold)
@@ -492,9 +396,9 @@ class FaceRecognitionSystem:
         for i, result in enumerate(unique_results):
             if result['matches']:
                 best_match = result['matches'][0]
-                print(f"DEBUG: Face {i+1} best match score: {best_match['score']}, threshold: {known_threshold}")
-                
-                # 简化动态阈值：只使用基本阈值
+                if debug:
+                    print(f"DEBUG: Face {i+1} best match score: {best_match['score']}, threshold: {known_threshold}")
+
                 dynamic_threshold = known_threshold
                 
                 # Check if the best match is significantly better than other candidates
@@ -519,8 +423,9 @@ class FaceRecognitionSystem:
                 else:
                     # 检查是否有其他候选匹配接近阈值
                     potential_matches = [m for m in result['matches'] 
-                                    if m['score'] >= dynamic_threshold * 0.9]  # 降低到0.8倍阈值
-                    print(f"DEBUG: Face {i+1} potential matches: {len(potential_matches)}")
+                                    if m['score'] >= dynamic_threshold * 0.9]
+                    if debug:
+                        print(f"DEBUG: Face {i+1} potential matches: {len(potential_matches)}")
                     if potential_matches:
                         identified_as = f"可能: {potential_matches[0]['person_name']}"
                         confidence = potential_matches[0]['score']
@@ -532,7 +437,8 @@ class FaceRecognitionSystem:
                         status = 'unknown'
                         is_known = False
             else:
-                print(f"DEBUG: Face {i+1} has no matches")
+                if debug:
+                    print(f"DEBUG: Face {i+1} has no matches")
                 identified_as = '未知'
                 confidence = 0.0
                 status = 'no_match'
