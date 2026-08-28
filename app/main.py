@@ -16,6 +16,7 @@ import datetime
 import time
 import tempfile
 import shutil
+import uuid
 import cv2
 from typing import Optional
 
@@ -28,7 +29,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 import server as srv
 
-from logger import get_app_logger
+from logger import get_app_logger, StepTimer, log_key_action
 from embedding.image_search_system_module import (
     build_index, search_image, find_similar_image_groups_from_folder
 )
@@ -232,17 +233,23 @@ async def process_image(image: UploadFile = File(...)):
     Form 参数:
     - image: 待处理图片文件
     """
+    temp_dir = None
+    timer = StepTimer(app_logger, task_id=uuid.uuid4().hex[:8])
     try:
         if image is None or image.filename == '':
             return JSONResponse(status_code=400, content=srv.get_error(message="No image provided"))
 
         from werkzeug.utils import secure_filename
         filename = secure_filename(image.filename)
-        temp_dir = tempfile.mkdtemp(dir=srv.TEMP_DIR)
-        image_path = os.path.join(temp_dir, filename)
-        with open(image_path, "wb") as f:
-            f.write(await image.read())
-        image_p = cv2.imread(image_path)
+        with timer.step("prepare"):
+            temp_dir = tempfile.mkdtemp(dir=srv.TEMP_DIR)
+            image_path = os.path.join(temp_dir, filename)
+            with open(image_path, "wb") as f:
+                f.write(await image.read())
+            image_p = cv2.imread(image_path)
+            if image_p is None:
+                raise ValueError(f"Failed to load image: {image_path}")
+            app_logger.info("[%s] input image: %s (%dx%d)", timer.task_id, filename, image_p.shape[1], image_p.shape[0])
 
         # 使用预设模型路径
         detection_model_path = srv.DEFAULT_DETECTION_MODEL_PATH
@@ -251,55 +258,65 @@ async def process_image(image: UploadFile = File(...)):
         pose_model_path = srv.DEFAULT_POSE_MODEL_PATH
 
         # Step 1: 人像检测
-        if srv.detection_model is None or not hasattr(srv.detection_model, 'model_path') or srv.detection_model.model_path != detection_model_path:
-            srv.detection_model = srv.PersonMaskCreator(detection_model_path, 0.4)
+        with timer.step("detect_persons"):
+            if srv.detection_model is None or not hasattr(srv.detection_model, 'model_path') or srv.detection_model.model_path != detection_model_path:
+                app_logger.warning("[%s] detection model (re)loading: %s", timer.task_id, detection_model_path)
+                srv.detection_model = srv.PersonMaskCreator(detection_model_path, 0.4)
 
-        results = srv.detection_model.detect_persons_in_image(image_p)
-        plotted_image = results[0].plot()
-        plotted_save_path = os.path.join(temp_dir, f"detect_{os.path.splitext(filename)[0]}.png")
-        cv2.imwrite(plotted_save_path, plotted_image)
-        serialized_results = srv.serialize_results(results)
+            results = srv.detection_model.detect_persons_in_image(image_p)
+            plotted_image = results[0].plot()
+            plotted_save_path = os.path.join(temp_dir, f"detect_{os.path.splitext(filename)[0]}.png")
+            cv2.imwrite(plotted_save_path, plotted_image)
+            serialized_results = srv.serialize_results(results)
+            n_persons = len(results[0].boxes) if results and results[0].boxes is not None else 0
+            app_logger.info("[%s] detection: %d person(s)", timer.task_id, n_persons)
 
-        mask_output_path = os.path.join(temp_dir, f"mask_{os.path.splitext(filename)[0]}.png")
-        srv.detection_model.generate_and_save_mask_from_results(image_p, results, mask_output_path)
+            mask_output_path = os.path.join(temp_dir, f"mask_{os.path.splitext(filename)[0]}.png")
+            srv.detection_model.generate_and_save_mask_from_results(image_p, results, mask_output_path)
 
         # Step 2: 服装分割
-        if srv.segpersones_model is None or not hasattr(srv.segpersones_model, 'model_path') or srv.segpersones_model.model_path != segpersones_model_path:
-            srv.segpersones_model = srv.PersonesSegmenter(segpersones_model_path)
+        with timer.step("segment"):
+            if srv.segpersones_model is None or not hasattr(srv.segpersones_model, 'model_path') or srv.segpersones_model.model_path != segpersones_model_path:
+                app_logger.warning("[%s] segmentation model (re)loading: %s", timer.task_id, segpersones_model_path)
+                srv.segpersones_model = srv.PersonesSegmenter(segpersones_model_path)
 
-        pred_seg, max_mask_info = srv.segpersones_model.segment_with_yolo(image_p, results, batch_size=8)
-        seg_filepath = os.path.join(temp_dir, f"seg_{os.path.splitext(filename)[0]}.png")
-        cv2.imwrite(seg_filepath, pred_seg)
+            pred_seg, max_mask_info = srv.segpersones_model.segment_with_yolo(image_p, results, batch_size=8)
+            seg_filepath = os.path.join(temp_dir, f"seg_{os.path.splitext(filename)[0]}.png")
+            cv2.imwrite(seg_filepath, pred_seg)
 
-        extracted_img = srv.segpersones_model.generate_contour_overlay_effect(
-            image_p, pred_seg, overlay_color=(128, 128, 128), alpha=0.6)
-        extract_output_path = os.path.join(temp_dir, f"extract_{os.path.splitext(filename)[0]}.png")
-        cv2.imwrite(extract_output_path, extracted_img)
+            extracted_img = srv.segpersones_model.generate_contour_overlay_effect(
+                image_p, pred_seg, overlay_color=(128, 128, 128), alpha=0.6)
+            extract_output_path = os.path.join(temp_dir, f"extract_{os.path.splitext(filename)[0]}.png")
+            cv2.imwrite(extract_output_path, extracted_img)
+            app_logger.info("[%s] segmentation: max_mask_ratio=%.3f", timer.task_id, max_mask_info.get('max_mask_ratio', 0.0))
 
         # Step 3: 镜头分类
-        if srv.pose_model is None or not hasattr(srv.pose_model, 'model_path') or srv.pose_model.model_path != pose_model_path:
-            srv.pose_model = srv.ShotTypeClassifier(pose_model_path)
+        with timer.step("shot_classify"):
+            if srv.pose_model is None or not hasattr(srv.pose_model, 'model_path') or srv.pose_model.model_path != pose_model_path:
+                app_logger.warning("[%s] pose model (re)loading: %s", timer.task_id, pose_model_path)
+                srv.pose_model = srv.ShotTypeClassifier(pose_model_path)
 
-        result_dict, pose_results = srv.pose_model.classify_shot_type(
-            image_p, filename, max_mask_info['max_mask_ratio'], max_mask_info['max_mask_box'])
+            result_dict, pose_results = srv.pose_model.classify_shot_type(
+                image_p, filename, max_mask_info['max_mask_ratio'], max_mask_info['max_mask_box'])
 
-        pose_output_path = os.path.join(temp_dir, f"pose_{os.path.splitext(filename)[0]}.png")
-        if max_mask_info['max_mask_box'] is not None:
-            x1, y1, x2, y2 = map(int, max_mask_info['max_mask_box'])
-            h, w = image_p.shape[:2]
-            margin = int((x2 - x1 + y2 - y1) / 10)
-            x1 = max(0, x1 - margin)
-            y1 = max(0, y1 - margin)
-            offset = (x1, y1)
-        else:
-            offset = (0, 0)
-        srv.pose_model.draw_pose_result(image_p, pose_results, pose_output_path, offset=offset)
+            pose_output_path = os.path.join(temp_dir, f"pose_{os.path.splitext(filename)[0]}.png")
+            # 姿态估计在整图上进行，坐标无需偏移；绘制分类时选定的主要人物
+            srv.pose_model.draw_pose_result(
+                image_p, pose_results, pose_output_path,
+                offset=(0, 0), person_idx=result_dict.get("main_person_idx"))
+            app_logger.info("[%s] shot classification: %s (conf=%.2f)",
+                            timer.task_id, result_dict.get("shot_type"), result_dict.get("confidence", 0))
 
         # Step 4: 图像修复
-        inpainted_image = srv.inpainter_model.inpaint(image_path, mask_output_path)
-        inpainted_output_path = os.path.join(temp_dir, f"inpainted_{os.path.splitext(filename)[0]}.png")
-        cv2.imwrite(inpainted_output_path, inpainted_image)
+        with timer.step("inpaint"):
+            if srv.inpainter_model is None:
+                app_logger.warning("[%s] inpainter model (re)loading: %s", timer.task_id, srv.DEFAULT_INPAINTER_MODEL_PATH)
+                srv.inpainter_model = srv.ImageInpainter(srv.DEFAULT_INPAINTER_MODEL_PATH, max_size=1024)
+            inpainted_image = srv.inpainter_model.inpaint(image_path, mask_output_path)
+            inpainted_output_path = os.path.join(temp_dir, f"inpainted_{os.path.splitext(filename)[0]}.png")
+            cv2.imwrite(inpainted_output_path, inpainted_image)
 
+        timer.log_summary(extra=f"file={filename}")
         return JSONResponse({
             "code": 200,
             "message": "All processing steps completed successfully",
@@ -317,6 +334,7 @@ async def process_image(image: UploadFile = File(...)):
     except Exception as e:
         import traceback
         traceback.print_exc()
+        timer.log_summary(extra=f"file={getattr(image, 'filename', 'unknown')} error={str(e)}")
         return JSONResponse(status_code=500, content=srv.get_error(message=f"Error in image processing: {str(e)}"))
 
 
@@ -482,5 +500,6 @@ async def group_similar_images(image_folder: str = Form(...),
 
 @app.on_event("startup")
 async def startup_event():
-    print("Initializing models...")
-    srv.initialize_models()
+    app_logger.info("Server startup: initializing models...")
+    ok = srv.initialize_models()
+    app_logger.info("Model initialization %s", "succeeded" if ok else "failed (some models may be missing)")

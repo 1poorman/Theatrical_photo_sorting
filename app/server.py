@@ -21,7 +21,9 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, PROJECT_ROOT)
 os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 
-from logger import setup_logging
+from logger import setup_logging, get_app_logger, log_key_action
+
+logger = get_app_logger()
 
 from detection.PersonMaskCreator import PersonMaskCreator
 from inpaint.inpaint_lama_ds import ImageInpainter
@@ -94,7 +96,7 @@ def cleanup_temp_directory():
                 elif os.path.isdir(item_path):
                     shutil.rmtree(item_path)
     except Exception as e:
-        print(f"Warning: Error during temp directory cleanup: {e}")
+        logger.warning("Error during temp directory cleanup: %s", e)
 
 
 def prepare_temp_directory():
@@ -163,60 +165,61 @@ def initialize_models(detection_model_path=DEFAULT_DETECTION_MODEL_PATH,
                       pose_model_path=DEFAULT_POSE_MODEL_PATH,
                       scrfd_model_path=DEFAULT_SCRFD_MODEL_PATH,
                       arcface_model_path=DEFAULT_ARCFACE_MODEL_PATH):
-    """初始化所有模型"""
+    """初始化所有模型（带关键动作日志与逐模型耗时统计）"""
     global detection_model, segpersones_model, inpainter_model, pose_model, face_recognition_model
+
+    def _load(name, fn):
+        start = time.time()
+        try:
+            fn()
+            logger.info("[ACTION] load model %s DONE in %.2fs", name, time.time() - start)
+        except Exception as e:
+            logger.error("[ACTION] load model %s FAIL (%.2fs): %s", name, time.time() - start, e, exc_info=True)
+            raise
 
     try:
         if torch.cuda.is_available():
             device = "cuda:1"
-            print(f"CUDA is available. Using device: {device}")
-            print(f"CUDA device count: {torch.cuda.device_count()}")
+            logger.info("CUDA is available. Using device: %s (device count: %d)", device, torch.cuda.device_count())
         else:
             device = "cpu"
-            print("CUDA is not available. Using CPU.")
+            logger.warning("CUDA is not available. Using CPU.")
 
         if os.path.exists(scrfd_model_path) and os.path.exists(arcface_model_path):
-            try:
-                face_recognition_model = FaceRecognitionSystem(scrfd_model_path, arcface_model_path, device=device)
-                print(f"Face recognition model loaded")
-            except Exception as e:
-                print(f"Failed to load face recognition model: {e}")
+            _load("face_recognition", lambda: setattr(
+                globals(), "face_recognition_model",
+                FaceRecognitionSystem(scrfd_model_path, arcface_model_path, device=device)))
         else:
-            print(f"Face recognition models not found at {scrfd_model_path} or {arcface_model_path}")
+            logger.warning("Face recognition models not found at %s or %s", scrfd_model_path, arcface_model_path)
 
         if detection_model_path and os.path.exists(detection_model_path):
-            detection_model = PersonMaskCreator(detection_model_path)
-            print(f"Detection model loaded from {detection_model_path}")
+            _load("detection", lambda: setattr(
+                globals(), "detection_model", PersonMaskCreator(detection_model_path)))
         else:
-            print(f"Detection model not found at {detection_model_path}")
-
-        # if segclothes_model_path and os.path.exists(segclothes_model_path):
-        #     segclothes_model = ClothesSegmenter(segclothes_model_path)
-        #     print(f"Segmentation model loaded from {segclothes_model_path}")
-        # else:
-        #     print(f"Segmentation model not found at {segclothes_model_path}")
+            logger.warning("Detection model not found at %s", detection_model_path)
 
         if segpersones_model_path and os.path.exists(segpersones_model_path):
-            segpersones_model = PersonesSegmenter(segpersones_model_path)
-            print(f"Segmentation model loaded from {segpersones_model_path}")
+            _load("segmentation", lambda: setattr(
+                globals(), "segpersones_model", PersonesSegmenter(segpersones_model_path)))
         else:
-            print(f"Segmentation model not found at {segpersones_model_path}")
+            logger.warning("Segmentation model not found at %s", segpersones_model_path)
 
         if inpainter_model_path and os.path.exists(inpainter_model_path):
-            inpainter_model = ImageInpainter(inpainter_model_path, max_size=1024)
-            print(f"Inpainting model loaded from {inpainter_model_path}")
+            _load("inpainting", lambda: setattr(
+                globals(), "inpainter_model", ImageInpainter(inpainter_model_path, max_size=1024)))
         else:
-            print(f"Inpainting model not found at {inpainter_model_path}")
+            logger.warning("Inpainting model not found at %s", inpainter_model_path)
 
         if pose_model_path and os.path.exists(pose_model_path):
-            pose_model = ShotTypeClassifier(pose_model_path)
-            print(f"Pose model loaded from {pose_model_path}")
+            _load("pose", lambda: setattr(
+                globals(), "pose_model", ShotTypeClassifier(pose_model_path)))
         else:
-            print(f"Pose model not found at {pose_model_path}")
+            logger.warning("Pose model not found at %s", pose_model_path)
 
+        log_key_action("initialize_models", device=device)
         return True
     except Exception as e:
-        print(f"Error initializing models: {e}")
+        logger.error("Error initializing models: %s", e, exc_info=True)
         return False
 
 

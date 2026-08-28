@@ -16,6 +16,8 @@ class ShotTypeClassifier:
         """
         # 初始化模型
         self.yolo_pose_model = YOLO(pose_model_path)
+        # 记录模型路径，供服务端缓存判断使用，避免每次请求重复加载模型
+        self.model_path = pose_model_path
         
         # COCO关键点定义 (17个关键点)
         self.COCO_KEYPOINTS = [
@@ -26,29 +28,31 @@ class ShotTypeClassifier:
         ]
 
 
-    def draw_pose_result(self, image, results, save_path, offset=(0, 0)):
+    def draw_pose_result(self, image, results, save_path, offset=(0, 0), person_idx=None):
         """
-        绘制并保存姿态估计结果（仅处理第一个人）
-        
+        绘制并保存姿态估计结果（默认绘制指定的人物）
+
         Args:
             image: 原始图像
             results: 姿态估计结果
             save_path: 保存路径
             offset: 坐标偏移（用于裁剪图像）
+            person_idx: 要绘制的人物索引，None 时取第一个人
         """
         # 创建姿态估计结果图像
         # image = cv2.imread(img_path)
         pose_image = image.copy()
-        
+
         for result in results:
             if result.keypoints is not None:
                 keypoints = result.keypoints.xy.cpu().numpy()
                 confidences = result.keypoints.conf.cpu().numpy() if result.keypoints.conf is not None else None
-                
-                # 仅处理第一个人的姿态估计结果
+
+                # 仅处理指定人物（默认第一个人）的姿态估计结果
                 if len(keypoints) > 0:
-                    kps = keypoints[0]  # 选择第一个人的关键点
-                    confs = confidences[0] if confidences is not None and len(confidences) > 0 else None
+                    idx = person_idx if person_idx is not None and 0 <= person_idx < len(keypoints) else 0
+                    kps = keypoints[idx]  # 选择指定人物的关键点
+                    confs = confidences[idx] if confidences is not None and len(confidences) > idx else None
                     
                     # Apply offset to coordinates (for cropped images)
                     offset_kps = kps.copy()
@@ -117,6 +121,83 @@ class ShotTypeClassifier:
             
         return full_path
 
+    @staticmethod
+    def _compute_iou(box_a, box_b):
+        """计算两个边界框 (x1, y1, x2, y2) 的 IoU"""
+        ax1, ay1, ax2, ay2 = box_a
+        bx1, by1, bx2, by2 = box_b
+        ix1, iy1 = max(ax1, bx1), max(ay1, by1)
+        ix2, iy2 = min(ax2, bx2), min(ay2, by2)
+        inter = max(0, ix2 - ix1) * max(0, iy2 - iy1)
+        if inter <= 0:
+            return 0.0
+        area_a = max(0, ax2 - ax1) * max(0, ay2 - ay1)
+        area_b = max(0, bx2 - bx1) * max(0, by2 - by1)
+        union = area_a + area_b - inter
+        return inter / union if union > 0 else 0.0
+
+    def _select_main_person(self, pose_results, image_size, main_bbox=None):
+        """
+        从姿态估计结果中挑选画面中的"主要人物"。
+
+        评分综合考虑：
+        - 检测置信度
+        - 人物框面积占整图比例（主角通常占比更大）
+        - 画面中心度（舞台摄影主角多位于画面中心/视觉焦点处）
+        - 与外部传入的主角色框 (main_bbox) 的 IoU 加成（与分割结果对齐）
+        - 贴边惩罚（贴边人物可能是被裁切的路人/伴舞）
+
+        Args:
+            pose_results: YOLO 姿态估计结果列表
+            image_size: (width, height)
+            main_bbox: 可选的外部主角色框 (x1, y1, x2, y2)
+
+        Returns:
+            (main_person_idx, box_confidence)，未检测到人时返回 (None, 0.0)
+        """
+        if not pose_results or pose_results[0].keypoints is None \
+                or pose_results[0].boxes is None or len(pose_results[0].boxes) == 0:
+            return None, 0.0
+
+        result = pose_results[0]
+        boxes = result.boxes.xyxy.cpu().numpy()
+        box_confs = result.boxes.conf.cpu().numpy()
+
+        w, h = image_size
+        img_area = w * h
+        cx_img, cy_img = w / 2, h / 2
+        edge_margin = 0.02  # 距画面边缘 2% 以内视为贴边
+
+        best_idx, best_score = None, -1.0
+        for i, (box, conf) in enumerate(zip(boxes, box_confs)):
+            x1, y1, x2, y2 = box
+            bw = max(x2 - x1, 1.0)
+            bh = max(y2 - y1, 1.0)
+            area_ratio = (bw * bh) / img_area
+
+            cx, cy = (x1 + x2) / 2, (y1 + y2) / 2
+            centrality = 1.0 - (abs(cx - cx_img) / (w / 2) + abs(cy - cy_img) / (h / 2)) / 2
+
+            # 贴边惩罚：贴边人物可能只是路人或被裁切
+            touching_border = (x1 < w * edge_margin or y1 < h * edge_margin
+                               or x2 > w * (1 - edge_margin) or y2 > h * (1 - edge_margin))
+            border_penalty = 0.7 if touching_border else 1.0
+
+            score = (0.35 * min(float(conf), 1.0)
+                     + 0.35 * min(area_ratio * 3.0, 1.0)   # 面积占比封顶，避免极端大框独裁
+                     + 0.30 * max(centrality, 0.0))
+            score *= border_penalty
+
+            # 与分割得到的主角色框对齐时给予强加成
+            if main_bbox is not None:
+                iou = self._compute_iou((x1, y1, x2, y2), main_bbox)
+                score += 0.5 * iou
+
+            if score > best_score:
+                best_score, best_idx = score, i
+
+        return best_idx, float(box_confs[best_idx])
+
     def classify_shot_type(self, image, img_name, area_ratio, main_bbox=None):
         """
         对图像进行景别分类
@@ -135,103 +216,46 @@ class ShotTypeClassifier:
         img_area = w * h
 
         
-        # 在主角色区域内进行姿态估计
+        # 直接在整图上进行姿态估计，避免裁剪导致的坐标换算误差和上下文丢失；
+        # 再从所有检测中挑选画面主要人物
+        pose_results = self.yolo_pose_model(image, verbose=False)
+
+        main_idx, keypoints_confidence = self._select_main_person(pose_results, (w, h), main_bbox)
+
+        # 提取主要人物的可见关键点（整图坐标系，无需偏移换算）
         visible_kps = []
-        keypoints_confidence = 0.0
-        
-        if main_bbox is not None:
-            # 扩展边界框以包含完整的姿态信息
-            x1, y1, x2, y2 = map(int, main_bbox)
-            # 添加边距确保包含完整的身体部位
-            margin = int((x2 - x1 + y2 - y1) / 10)  # 10%的边距
-            x1 = max(0, x1 - margin)
-            y1 = max(0, y1 - margin)
-            x2 = min(w, x2 + margin)
-            y2 = min(h, y2 + margin)
-            
-            # 裁剪主角色区域
-            cropped_image = image[y1:y2, x1:x2]
-            
-            if cropped_image.size > 0:  # 确保裁剪区域有效
-                # 在裁剪区域进行姿态估计
-                pose_results = self.yolo_pose_model(cropped_image, verbose=False)
-                
-                # 保存姿态估计结果图
-                # if img_path:
-                #     pose_output_path = self._get_unique_filename("./out", "output_pose.png")
-                #     self.draw_pose_result(image, pose_results, pose_output_path, offset=(x1, y1))
-                
-                # 处理姿态估计结果
-                if len(pose_results) > 0:
-                    result = pose_results[-1]  # 使用最后一个结果（通常是最显著的检测）
-                    if result.keypoints is not None:
-                        keypoints = result.keypoints.xy.cpu().numpy()
-                        confidences = result.keypoints.conf.cpu().numpy() if result.keypoints.conf is not None else None
-                        
-                        # 只处理第一个人的关键点
-                        if len(keypoints) > 0:
-                            kps = keypoints[0]  # 第一个人的关键点
-                            
-                            if confidences is not None and len(confidences) > 0:
-                                confs = confidences[0]  # 第一个人的置信度
-                                
-                                # 提取可见的关键点
-                                for j in range(min(len(kps), len(confs), 17)):  # 确保不超过17个关键点
-                                    # 获取相对于裁剪图像的坐标
-                                    rel_x, rel_y = kps[j]
-                                    # 转换为原始图像中的绝对坐标
-                                    abs_x = rel_x + x1
-                                    abs_y = rel_y + y1
-                                    
-                                    # 检查点是否在原始图像范围内并且置信度足够
-                                    if (0 <= abs_x < w and 0 <= abs_y < h and 
-                                        confs[j] > 0.3):  # 使用较低的阈值
-                                        visible_kps.append(j)
-                        
-                        # 获取置信度
-                        if result.boxes is not None and len(result.boxes) > 0:
-                            keypoints_confidence = result.boxes.conf.cpu().numpy()[0] if result.boxes.conf is not None else 0.0
-        else:
-            # 如果没有边界框信息，对整张图片进行姿态估计（备选方案）
-            pose_results = self.yolo_pose_model(image, verbose=False)
-            
-            # 保存姿态估计结果图
-            # if img_path:
-            #     pose_output_path = self._get_unique_filename("./out", "output_pose.png")
-            #     self.draw_pose_result(image, pose_results, pose_output_path)
-            
-            # 处理姿态估计结果
-            if len(pose_results) > 0:
-                result = pose_results[-1]  # 使用最后一个结果
-                if result.keypoints is not None:
-                    keypoints = result.keypoints.xy.cpu().numpy()
-                    confidences = result.keypoints.conf.cpu().numpy() if result.keypoints.conf is not None else None
-                    
-                    # 只处理第一个人的关键点
-                    if len(keypoints) > 0:
-                        kps = keypoints[0]  # 第一个人的关键点
-                        
-                        if confidences is not None and len(confidences) > 0:
-                            confs = confidences[0]  # 第一个人的置信度
-                            
-                            # 提取可见的关键点
-                            for j in range(min(len(kps), len(confs), 17)):  # 确保不超过17个关键点
-                                # 检查置信度
-                                if confs[j] > 0.3:  # 使用较低的阈值
-                                    visible_kps.append(j)
-                    
-                    # 获取置信度
-                    if result.boxes is not None and len(result.boxes) > 0:
-                        keypoints_confidence = result.boxes.conf.cpu().numpy()[0] if result.boxes.conf is not None else 0.0
-                        
+        kps, confs = None, None
+        if main_idx is not None:
+            result = pose_results[0]
+            keypoints = result.keypoints.xy.cpu().numpy()
+            confidences = result.keypoints.conf.cpu().numpy() if result.keypoints.conf is not None else None
+
+            if main_idx < len(keypoints):
+                kps = keypoints[main_idx]
+                confs = confidences[main_idx] if confidences is not None and main_idx < len(confidences) else None
+
+                for j in range(min(len(kps), 17)):
+                    abs_x, abs_y = kps[j]
+                    kp_conf = confs[j] if confs is not None and j < len(confs) else 1.0
+                    if 0 <= abs_x < w and 0 <= abs_y < h and kp_conf > 0.3:
+                        visible_kps.append(j)
+
         # 判断是否包含脚部、髋部等部位以确定景别类型 (基于正确的关键点索引)
         has_ankle = any(kp in [15, 16] for kp in visible_kps)  # 脚踝关键点 (left_ankle, right_ankle)
         has_hip = any(kp in [11, 12] for kp in visible_kps)    # 髋部关键点 (left_hip, right_hip)
         has_shoulder = any(kp in [5, 6] for kp in visible_kps) # 肩膀关键点 (left_shoulder, right_shoulder)
         has_face = any(kp in [0, 1, 2, 3, 4] for kp in visible_kps)  # 面部关键点 (nose, eyes, ears)
 
-        # 根据面积比例和关键点分布判断景别
-        if not has_shoulder and has_face:
+        # 脚踝贴近画面底边，说明脚部大概率被裁切出画，视为不可见，避免误判为全景/远景
+        if has_ankle and kps is not None:
+            ankle_ys = [kps[j][1] for j in (15, 16) if j in visible_kps]
+            if ankle_ys and min(ankle_ys) > h * 0.95:
+                has_ankle = False
+
+        # 根据面积比例和主要人物的关键点分布判断景别
+        if main_idx is None or not visible_kps:
+            shot = "Unknown"                # 未检测到有效人物
+        elif not has_shoulder and has_face:
             shot = "Extreme Close-up"       #只有脸，则为特写
         elif has_shoulder and not has_hip:
             shot = "Close-up" if area_ratio < 0.1 else "Medium Close-up"   #肩部，没有髋部（半身），则为近、中近景
@@ -242,13 +266,19 @@ class ShotTypeClassifier:
         else:
             shot = "Medium Shot" if area_ratio < 0.3 else "Full Shot"        #其他情况，则为全、中景
 
-        conf = min(0.95, keypoints_confidence + 0.1)  # 简单置信度融合
-        
+        conf = min(0.95, keypoints_confidence + 0.1) if main_idx is not None else 0.0  # 简单置信度融合
+
+        main_bbox_out = None
+        if main_idx is not None:
+            main_bbox_out = [round(float(v), 1) for v in pose_results[0].boxes.xyxy.cpu().numpy()[main_idx]]
+
         # 记录日志
         result_dict = {
             "shot_type": shot,
             "confidence": round(conf, 2),
             "area_ratio": round(area_ratio, 3),
+            "main_person_idx": main_idx,
+            "main_person_bbox": main_bbox_out,
             "visible_keypoints_count": len(visible_kps),
             "visible_keypoints": list(set(visible_kps))  # 去重并转换为列表用于调试
         }
@@ -271,14 +301,21 @@ class ShotTypeClassifier:
 # 示例使用
 if __name__ == "__main__":
     classifier = ShotTypeClassifier()
-    
+
     img_path = "data/ncpa_test/舞剧《马可·波罗》/【原始3】20141012歌剧院-舞剧《马可·波罗》B组演出-摄影凌风/20141012歌剧院-舞剧《马可·波罗》B演-前右起：苏鹏饰马可·波罗、李祎然饰中国公主- (23)-摄影凌风.JPG"
     save_path = "./out"
-   
 
-    result_dict, pose_results = classifier.classify_shot_type(image_path)
-    # 绘制姿态估计结果（可选）
-    pose_output_path = self._get_unique_filename(save_path, "output_pose.png")
-    self.draw_pose_result(image_path, pose_results, pose_output_path)
+    image = cv2.imread(img_path)
+    if image is None:
+        print(f"无法读取图像: {img_path}")
+        sys.exit(1)
+
+    result_dict, pose_results = classifier.classify_shot_type(
+        image, os.path.basename(img_path), area_ratio=0.0, main_bbox=None)
+
+    # 绘制主要人物的姿态估计结果（可选）
+    pose_output_path = classifier._get_unique_filename(save_path, "output_pose.png")
+    classifier.draw_pose_result(image, pose_results, pose_output_path,
+                                person_idx=result_dict.get("main_person_idx"))
 
     print("景别判断结果：", result_dict)
