@@ -19,23 +19,24 @@
 │   ├── server.py                   #   模型加载/生命周期管理 + 服务启动（端口 8198）
 │   └── server_ui.py                #   可视化界面服务（复用 main.app，端口 8199）
 │
-├── core_modules/                   # ★ 核心功能模块（算法实现全部在此）
-│   ├── face_recognition/           #   人脸识别
+├── core_modules/                   # ★ 核心功能模块
+│   ├── face_recognition/           #   人脸识别（多文件子包）
 │   │   ├── face_recognition.py     #     识别系统主类（检测/对齐/特征/匹配/流程编排）
+│   │   ├── database.py             #     ES 人脸向量库（索引/写入/检索）
 │   │   ├── trt_utils.py            #     TensorRT 支持（库预加载、FP16、引擎缓存）
 │   │   ├── trt_cache/              #     TRT 引擎缓存（自动生成，不入库）
 │   │   ├── scrfd/                  #     SCRFD 检测器（ONNX/TRT 推理 + 解码）
-│   │   ├── arcface/                #     ArcFace 特征提取器（含标准 5 点对齐）
-│   │   ├── core/database.py        #     ES 人脸向量库（索引/写入/检索）
-│   │   └── utils/                  #     质量评估、可视化
-│   ├── detection/                  #   人像检测（RTDETR，PersonMaskCreator）
-│   ├── seg_clothes/                #   人像分割（YOLO11x-seg）
-│   ├── shot/                       #   镜头景别分类（YOLO11l-pose）
-│   ├── inpaint/                    #   背景修复（LAMA，ImageInpainter）
-│   ├── embedding/                  #   图像检索（faiss 索引/检索/聚类）
+│   │   └── arcface/                #     ArcFace 特征提取器（含标准 5 点对齐）
+│   ├── person_detection.py         #   人像检测（RTDETR，PersonMaskCreator）
+│   ├── person_segmentation.py      #   人像分割（YOLO11x-seg）
+│   ├── shot_classify.py            #   镜头景别分类（YOLO11l-pose）
+│   ├── inpaint_lama.py             #   背景修复（LAMA，ImageInpainter）
+│   ├── image_search.py             #   图像检索（faiss 索引/检索/聚类）
 │   └── tools/                      #   跨模块共享工具
 │       ├── logger.py               #     集中日志（北京时区、按天滚动、StepTimer 计时）
-│       └── image_io.py             #     降采样解码、最长边缩放、图片枚举
+│       ├── image_io.py             #     降采样解码、最长边缩放、图片枚举
+│       ├── face_quality.py         #     人脸质量评估
+│       └── visualization.py        #     检测结果可视化
 │
 ├── config/                         # ★ 项目统一参数中心
 │   └── base.py                     #   阈值/路径/向量库地址等，支持环境变量覆盖

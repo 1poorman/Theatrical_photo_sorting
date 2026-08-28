@@ -25,10 +25,10 @@ from core_modules.tools.logger import setup_logging, get_app_logger, log_key_act
 
 logger = get_app_logger()
 
-from core_modules.detection.PersonMaskCreator import PersonMaskCreator
-from core_modules.inpaint.inpaint_lama import ImageInpainter
-from core_modules.seg_clothes.yolo_seg import PersonesSegmenter
-from core_modules.shot.views_classify import ShotTypeClassifier
+from core_modules.person_detection import PersonMaskCreator
+from core_modules.inpaint_lama import ImageInpainter
+from core_modules.person_segmentation import PersonesSegmenter
+from core_modules.shot_classify import ShotTypeClassifier
 from core_modules.face_recognition.face_recognition import FaceRecognitionSystem
 
 # ---------- 全局配置 ----------

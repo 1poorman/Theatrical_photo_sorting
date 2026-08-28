@@ -7,7 +7,7 @@ import numpy as np
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, PROJECT_ROOT)
 
-from core_modules.embedding.image_search_system_module import ImageEmbedder, VectorDatabase
+from core_modules.image_search import ImageEmbedder, VectorDatabase
 
 
 def main():
@@ -53,7 +53,7 @@ def main():
     vector_db.build_index_optimized(test_dir, embedder2, batch_size=4)
     vector_db.save_index(index_dir)
 
-    from core_modules.embedding.image_search_system_module import ImageSearcher
+    from core_modules.image_search import ImageSearcher
     searcher = ImageSearcher(vector_db, embedder2)
     results = searcher.search(image_files[0], top_k=3)
     print("    检索结果:")

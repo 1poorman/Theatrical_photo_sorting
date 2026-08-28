@@ -1,4 +1,4 @@
-# image_search_system_module.py
+# image_search.py - 图像检索（embedding 索引/检索/聚类）
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

@@ -1,10 +1,10 @@
 import os, sys, random
 from tqdm import tqdm
 from core_modules.face_recognition.scrfd.scrfd_det import SCRFDDetector
-from core_modules.face_recognition.core.database import FaceDatabase
+from core_modules.face_recognition.database import FaceDatabase
 from core_modules.face_recognition.arcface.arcface_onnx import ArcFaceFeatureExtractor
-from core_modules.face_recognition.utils.assess import assess_face_quality_simple
-from core_modules.face_recognition.utils.visualization import VisualizationUtils
+from core_modules.tools.face_quality import assess_face_quality_simple
+from core_modules.tools.visualization import VisualizationUtils
 from core_modules.tools.image_io import imread_reduced, list_images
 from config.base import (
     FACE_IMAGE_MAX_SIDE, KNOWN_FACE_THRESHOLD, SEARCH_THRESHOLD, SEARCH_TOP_K,

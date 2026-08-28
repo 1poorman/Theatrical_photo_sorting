@@ -30,7 +30,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import server as srv
 
 from core_modules.tools.logger import get_app_logger, StepTimer, log_key_action
-from core_modules.embedding.image_search_system_module import (
+from core_modules.image_search import (
     build_index, search_image, find_similar_image_groups_from_folder
 )
 
