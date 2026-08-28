@@ -20,6 +20,10 @@ API_HOST = '0.0.0.0'
 API_PORT = 8198
 UI_PORT = 8199
 
+# ---------- 输出产物 ----------
+OUTPUT_DIR = os.environ.get('TRANS_OUTPUT_DIR', os.path.join(PROJECT_ROOT, 'outputs'))
+TEMP_DIR = os.path.join(OUTPUT_DIR, 'temp')
+
 # ---------- 模型权重路径 ----------
 SCRFD_MODEL_PATH = os.path.join(WEIGHTS_DIR, 'scrfd', 'scrfd_10g_bnkps.onnx')
 ARCFACE_MODEL_PATH = os.path.join(WEIGHTS_DIR, 'arcface', 'Glint100.onnx')

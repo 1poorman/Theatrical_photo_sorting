@@ -45,11 +45,12 @@ from config.base import (
     SCRFD_MODEL_PATH as DEFAULT_SCRFD_MODEL_PATH,
     ARCFACE_MODEL_PATH as DEFAULT_ARCFACE_MODEL_PATH,
     KNOWN_FACE_THRESHOLD,
+    OUTPUT_DIR as DEFAULT_OUTPUT_DIR,
+    TEMP_DIR,
 )
 
 # 创建目录
 os.makedirs(DEFAULT_OUTPUT_DIR, exist_ok=True)
-TEMP_DIR = os.path.join(DEFAULT_OUTPUT_DIR, "temp")
 os.makedirs(TEMP_DIR, exist_ok=True)
 
 # 任务进度追踪
