@@ -18,7 +18,8 @@ from contextlib import contextmanager
 from datetime import datetime, timezone, timedelta
 from logging.handlers import TimedRotatingFileHandler
 
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# 项目根 = core_modules/tools/ 向上三级
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 LOG_DIR = os.path.join(PROJECT_ROOT, "logs")
 LOG_FILE = os.path.join(LOG_DIR, "server.log")
 _BEIJING_TZ = timezone(timedelta(hours=8))  # 北京时间 UTC+8

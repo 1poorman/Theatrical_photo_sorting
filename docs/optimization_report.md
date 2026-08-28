@@ -123,3 +123,72 @@ python tests/test_trt_speed.py    # 从项目根目录运行
 - 批量模式 `imread` 与 GPU 推理进一步流水线化（当前预解码深度 4）
 - TRT INT8 量化校准（检测推理 2.5ms → ~1.5ms，需校准数据）
 - `build_face_database` 中 `detect_image` 与 `_detect_single` 的重复检测合并
+
+---
+
+# 图像检索优化测试报告
+
+> 日期：2026-08-28
+> 环境：Dell 工作站，NVIDIA RTX 3090（测试时部分显存被其他进程占用）
+> 软件栈：Python 3.10（conda `face_scrfd_arcface`）、torch 2.9.0+cu130、faiss 1.15.0、transformers 5.15.0
+> 模型：SigLIP 2 `siglip2-base-patch16-384`（本地权重）
+> 测试数据：`data/ncpa_test`（555 张图，4 个剧目）
+
+## 一、优化背景
+
+`core_modules/image_search.py` 使用 SigLIP2 + FAISS（`IndexFlatIP` 精确内积检索）。本次针对两个方向做优化与实测：
+
+1. 工程修复：SigLIP/Nomic/BLIP2 的伪 batch、`search_image` 的 `NameError`、FAISS 返回 `-1` 未过滤
+2. 检索质量：Alpha Query Expansion（QE）与 k-reciprocal re-ranking（Zhong et al., CVPR'17，参考实现 github.com/zhunzhong07/person-re-ranking）
+
+## 二、瓶颈剖析（555 张 SigLIP2-base 特征提取）
+
+| 环节 | 耗时 | 说明 |
+|------|-----:|------|
+| JPEG 解码（PIL） | ~180 ms/张 | **CPU 瓶颈** |
+| processor 预处理（CPU） | ~134 ms/张 | **CPU 瓶颈** |
+| GPU 前向 bs=1 | 16.3 ms/张 | |
+| GPU 前向 bs=32 | 2.8 ms/张 | batch 对 GPU 有效，但占比小 |
+
+结论：瓶颈在 **CPU 侧解码+预处理**（约 95%），单纯加大 GPU batch 收益有限（实测伪 batch 路径 528 ms/张反而慢于逐张 382 ms/张，受 GPU 显存争用干扰）。
+
+## 三、优化项与实测效果
+
+### 3.1 多线程预处理 + 批量 GPU 前向（`extract_features_batch`）
+
+PIL 解码与 processor 预处理释放 GIL，改用 `ThreadPoolExecutor`（8 线程）并行"解码+预处理"，再以 sub_batch=32 做 GPU 批量前向，失败 chunk 逐张回退。
+
+| 方案（555 张建索引） | 耗时 | 提速 |
+|----------------------|-----:|-----:|
+| 逐张提取（旧行为） | 382 ms/张 | 基准 |
+| 原伪 batch（逐张循环） | 528 ms/张 | 更慢 |
+| **多线程预处理 + 批量前向** | **161 ms/张** | **2.4~3.3 倍** |
+
+### 3.2 检索质量（50 张随机查询）
+
+指标：退化查询（缩小 30% + 中心裁 60% + JPEG q40）的 top-1 自检索命中率。**并列感知**：库内同一照片的重复版本（`【原始】`/`【整理完成】`目录）与原图得分并列第一时也算命中——本数据集存在大量此类重复副本，严格路径相等判定会严重低估（0.42 vs 实际 0.96）。
+
+| 方案 | 退化 top-1 | 平均名次 | 单次延迟 |
+|------|-----------:|---------:|---------:|
+| baseline（cosine） | **0.960** | 1.1 | 386 ms |
+| Alpha-QE（m=5, α=0.3） | 0.960 | 1.1 | 385 ms |
+| k-reciprocal | 0.720 | 1.9 | 616 ms |
+| QE + k-reciprocal | 0.780 | 1.6 | 612 ms |
+
+参数扫描结论（另一批 50 查询，baseline 0.920）：
+- **QE 中性偏微正**：最优配置 `top_m=5, alpha=0.3` 达 0.940（+2pp），零成本，保留为可选参数
+- **k-reciprocal 在本数据集变差**：剧照库高度同质（同舞台大量相似画面 + 重复照片），Jaccard 邻域平滑把"实例级"相似度稀释为"场景级"，不建议默认启用
+- baseline 已接近该指标天花板（0.96），后处理空间有限，**进一步提升应换更强 embedding 模型**（如 `siglip2_so400m`，代码已支持）
+
+### 3.3 实现要点与修复的存量 Bug
+
+- k-reciprocal 初版实现有 3 处偏差（距离未按官方做列归一化、互惠扩展判断条件比较错对象、用向量点积代替集合级 Jaccard 距离），已按官方参考实现修正；精确自查询重排距离归零，噪声自查询与 cosine 的一致性 66/100 → 87/100
+- `search_image` 引用未定义的 `save_path`（`save_results=True` 时 `NameError`）→ 改用 `config.base.OUTPUT_DIR`
+- `search` 结果未过滤 FAISS 的 `-1` 填充索引 → 增加 `0 <= idx` 判断
+- SigLIP/Nomic/BLIP2 伪 batch → 真 batch（失败 chunk 逐张回退）
+- 接口向后兼容：`ImageSearcher.search(..., use_qe=False, use_rerank=False)` 与 `search_image(..., use_qe, use_rerank)` 新增参数均可选且默认关闭，`app/main.py` 无需改动
+
+## 四、遗留事项
+
+- 测试脚本为临时性质（`tests/tmp/`），验证完成后已清理，未作为正式用例保留
+- GPU 当时被其他进程占用（24GB 几乎占满），速度数据存在争用干扰，但相对倍数结论可靠
