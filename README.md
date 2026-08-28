@@ -19,24 +19,26 @@
 │   ├── server.py                   #   模型加载/生命周期管理 + 服务启动（端口 8198）
 │   └── server_ui.py                #   可视化界面服务（复用 main.app，端口 8199）
 │
-├── face_recognition/               # 人脸识别包
-│   ├── face_recognition.py         #   识别系统主类（检测/对齐/特征/匹配/流程编排）
-│   ├── trt_utils.py                #   TensorRT 支持（库预加载、FP16、引擎缓存）
-│   ├── scrfd/                      #   SCRFD 检测器（ONNX/TRT 推理 + 解码）
-│   ├── arcface/                    #   ArcFace 特征提取器（含标准 5 点对齐）
-│   ├── core/database.py            #   ES 人脸向量库（索引/写入/检索）
-│   ├── config/base.py              #   ES 连接等配置
-│   └── utils/                      #   质量评估、可视化
+├── core_modules/                   # ★ 核心功能模块（算法实现全部在此）
+│   ├── face_recognition/           #   人脸识别
+│   │   ├── face_recognition.py     #     识别系统主类（检测/对齐/特征/匹配/流程编排）
+│   │   ├── trt_utils.py            #     TensorRT 支持（库预加载、FP16、引擎缓存）
+│   │   ├── trt_cache/              #     TRT 引擎缓存（自动生成，不入库）
+│   │   ├── scrfd/                  #     SCRFD 检测器（ONNX/TRT 推理 + 解码）
+│   │   ├── arcface/                #     ArcFace 特征提取器（含标准 5 点对齐）
+│   │   ├── core/database.py        #     ES 人脸向量库（索引/写入/检索）
+│   │   └── utils/                  #     质量评估、可视化
+│   ├── detection/                  #   人像检测（RTDETR，PersonMaskCreator）
+│   ├── seg_clothes/                #   人像分割（YOLO11x-seg）
+│   ├── shot/                       #   镜头景别分类（YOLO11l-pose）
+│   ├── inpaint/                    #   背景修复（LAMA，ImageInpainter）
+│   ├── embedding/                  #   图像检索（faiss 索引/检索/聚类）
+│   └── tools/                      #   跨模块共享工具
+│       ├── logger.py               #     集中日志（北京时区、按天滚动、StepTimer 计时）
+│       └── image_io.py             #     降采样解码、最长边缩放、图片枚举
 │
-├── detection/                      # 人像检测（RTDETR，PersonMaskCreator）
-├── seg_clothes/                    # 人像分割（YOLO11x-seg）
-├── shot/                           # 镜头景别分类（YOLO11l-pose）
-├── inpaint/                        # 背景修复（LAMA，ImageInpainter）
-├── embedding/                      # 图像检索（faiss 索引/检索/聚类）
-│
-├── tools/                          # ★ 跨模块共享工具
-│   ├── logger.py                   #   集中日志（北京时区、按天滚动、StepTimer 计时）
-│   └── image_io.py                 #   降采样解码、最长边缩放、图片枚举
+├── config/                         # ★ 项目统一参数中心
+│   └── base.py                     #   阈值/路径/向量库地址等，支持环境变量覆盖
 │
 ├── tests/                          # 测试脚本（见"测试"章节）
 ├── docs/                           # 文档（优化测试报告等）
@@ -48,7 +50,8 @@
 └── environment_scrfd_arcface.yml   # conda 环境
 ```
 
-> **tools/** 收敛了原先散落在各模块的重复实现（图像降采样解码、缩放、日志），新功能请优先复用。
+> **config/base.py** 是唯一的参数中心：阈值、模型路径、ES 地址等全部集中于此，支持 `TRANS_<参数名>` 环境变量覆盖。
+> **core_modules/tools/** 收敛了原先散落在各模块的重复实现，新功能请优先复用。
 
 ## 快速开始
 
@@ -105,12 +108,12 @@ curl -X POST http://localhost:8198/api/face/recognize -F "image=@data/sample_ima
 - **阈值**：`known_threshold=0.55`（ArcFace 余弦相似度，同人 0.5~0.8、异人 <0.3，无需分数校准）
 
 ```python
-from face_recognition.face_recognition import FaceRecognitionSystem
+from core_modules.face_recognition.face_recognition import FaceRecognitionSystem
 system = FaceRecognitionSystem(scrfd_path, arcface_path, device='tensorrt')
 results, annotated = system.recognize_face('photo.jpg', known_threshold=0.55)
 ```
 
-人脸向量存储于 Elasticsearch 8.x（索引 `face_database_512`），连接配置见 `face_recognition/config/base.py`。
+人脸向量存储于 Elasticsearch 8.x（索引 `face_database_512`），连接配置见 `config/base.py`（支持环境变量覆盖）。
 
 ## 测试
 

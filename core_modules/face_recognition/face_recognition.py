@@ -1,13 +1,11 @@
 import os, sys, random
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-sys.path.append(os.path.join(os.path.dirname(__file__), '.'))
 from tqdm import tqdm
-from scrfd.scrfd_det import SCRFDDetector
-from core.database import FaceDatabase
-from arcface.arcface_onnx import ArcFaceFeatureExtractor
-from utils.assess import assess_face_quality_simple
-from utils.visualization import VisualizationUtils
-from tools.image_io import imread_reduced, list_images
+from core_modules.face_recognition.scrfd.scrfd_det import SCRFDDetector
+from core_modules.face_recognition.core.database import FaceDatabase
+from core_modules.face_recognition.arcface.arcface_onnx import ArcFaceFeatureExtractor
+from core_modules.face_recognition.utils.assess import assess_face_quality_simple
+from core_modules.face_recognition.utils.visualization import VisualizationUtils
+from core_modules.tools.image_io import imread_reduced, list_images
 from config.base import (
     FACE_IMAGE_MAX_SIDE, KNOWN_FACE_THRESHOLD, SEARCH_THRESHOLD, SEARCH_TOP_K,
     FACE_DETECT_MIN_SCORE, FACE_MIN_SIZE, FACE_ASPECT_RATIO_RANGE, FACE_NMS_IOU,

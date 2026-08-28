@@ -4,10 +4,8 @@ import sys, os
 ROOT = os.path.realpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 sys.path.insert(0, ROOT)
 os.environ['CUDA_VISIBLE_DEVICES'] = '1'
-# 注意：不要把 ROOT/face_recognition 加进 sys.path，
-# 否则同名模块文件会遮蔽 face_recognition 包（与 server.py 的导入方式保持一致）
 
-from face_recognition.face_recognition import FaceRecognitionSystem
+from core_modules.face_recognition.face_recognition import FaceRecognitionSystem
 
 face_recognition_model = None
 

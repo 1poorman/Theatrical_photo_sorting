@@ -10,7 +10,7 @@
 import os
 
 # ---------- 基础路径 ----------
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # 模型权重根目录
 WEIGHTS_DIR = os.environ.get('TRANS_WEIGHTS_DIR', os.path.join(PROJECT_ROOT, 'weights'))

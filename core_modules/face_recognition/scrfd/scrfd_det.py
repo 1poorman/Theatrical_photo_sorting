@@ -85,12 +85,7 @@ class SCRFDDetector:
 
         # TensorRT 加速：device='tensorrt' 或 'tensorrt:N' 时走 trt_utils 统一封装
         if isinstance(device, str) and device.startswith('tensorrt'):
-            try:
-                from trt_utils import create_ort_session
-            except ImportError:
-                import sys
-                sys.path.append(osp.dirname(osp.dirname(osp.abspath(__file__))))
-                from trt_utils import create_ort_session
+            from core_modules.face_recognition.trt_utils import create_ort_session
             self.session = create_ort_session(model_path, device=device)
         else:
             providers = self._select_providers(device)

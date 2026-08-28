@@ -1,9 +1,7 @@
 import cv2, time
 import numpy as np
 from ultralytics import YOLO
-import os, sys
-sys.path.append(os.getcwd())
-os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+import os
 
 
 class ShotTypeClassifier:

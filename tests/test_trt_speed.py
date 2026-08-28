@@ -9,7 +9,6 @@ TensorRT 加速基准测试
 """
 import os, sys, time
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'face_recognition'))
 
 import cv2
 import numpy as np
@@ -21,7 +20,7 @@ REPEAT = 20
 
 
 def bench_detector(device, img):
-    from scrfd.scrfd_det import SCRFDDetector
+    from core_modules.face_recognition.scrfd.scrfd_det import SCRFDDetector
     det = SCRFDDetector(SCRFD_MODEL, device=device, det_thresh=0.3)
     for _ in range(WARMUP):
         boxes, kpss = det.detect(img)
@@ -34,7 +33,7 @@ def bench_detector(device, img):
 
 
 def bench_extractor(device, face):
-    from arcface.arcface_onnx import ArcFaceFeatureExtractor
+    from core_modules.face_recognition.arcface.arcface_onnx import ArcFaceFeatureExtractor
     ext = ArcFaceFeatureExtractor(ARCFACE_MODEL, device=device)
     for _ in range(WARMUP):
         feat = ext.extract_features([face])
@@ -79,7 +78,7 @@ if __name__ == '__main__':
         try:
             boxes, kpss = results[device]['det']
             if boxes.shape[0] > 0:
-                from arcface.arcface_onnx import norm_crop
+                from core_modules.face_recognition.arcface.arcface_onnx import norm_crop
                 lmk = kpss[0]
                 face = norm_crop(img, lmk, 112)
                 results[device]['feat'] = bench_extractor(device, face)

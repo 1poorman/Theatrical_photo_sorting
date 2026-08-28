@@ -3,12 +3,11 @@
 import os, sys, time
 BASE = os.path.realpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 sys.path.append(BASE)
-sys.path.append(os.path.join(BASE, 'face_recognition'))
 
 import importlib.util
 import numpy as np
 
-spec = importlib.util.spec_from_file_location('frs', os.path.join(BASE, 'face_recognition/face_recognition.py'))
+spec = importlib.util.spec_from_file_location('frs', os.path.join(BASE, 'core_modules/face_recognition/face_recognition.py'))
 mod = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(mod)
 FaceRecognitionSystem = mod.FaceRecognitionSystem

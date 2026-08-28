@@ -3,13 +3,12 @@
 import os, sys, time
 BASE = os.path.realpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 sys.path.append(BASE)
-sys.path.append(os.path.join(BASE, 'face_recognition'))
 
 import cv2
 import numpy as np
-from scrfd.scrfd_det import SCRFDDetector
-from arcface.arcface_onnx import ArcFaceFeatureExtractor
-from utils.assess import assess_face_quality_simple
+from core_modules.face_recognition.scrfd.scrfd_det import SCRFDDetector
+from core_modules.face_recognition.arcface.arcface_onnx import ArcFaceFeatureExtractor
+from core_modules.face_recognition.utils.assess import assess_face_quality_simple
 
 ROOT = BASE
 IMG = os.path.join(ROOT, 'data/sample_images/4.jpg')

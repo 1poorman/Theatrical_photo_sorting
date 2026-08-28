@@ -12,8 +12,8 @@ from tqdm import tqdm
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, PROJECT_ROOT)
-from face_recognition.scrfd.scrfd_det import SCRFDDetector
-from face_recognition.arcface.arcface_onnx import ArcFaceFeatureExtractor
+from core_modules.face_recognition.scrfd.scrfd_det import SCRFDDetector
+from core_modules.face_recognition.arcface.arcface_onnx import ArcFaceFeatureExtractor
 
 SCRFD_PATH = os.path.join(PROJECT_ROOT, 'weights/scrfd/scrfd_10g_bnkps.onnx')
 ARCFACE_PATH = os.path.join(PROJECT_ROOT, 'weights/arcface/Glint100.onnx')

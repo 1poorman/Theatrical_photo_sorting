@@ -21,23 +21,23 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, PROJECT_ROOT)
 os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 
-from tools.logger import setup_logging, get_app_logger, log_key_action
+from core_modules.tools.logger import setup_logging, get_app_logger, log_key_action
 
 logger = get_app_logger()
 
-from detection.PersonMaskCreator import PersonMaskCreator
-from inpaint.inpaint_lama import ImageInpainter
-from seg_clothes.yolo_seg import PersonesSegmenter
-from shot.views_classify import ShotTypeClassifier
-from face_recognition.face_recognition import FaceRecognitionSystem
+from core_modules.detection.PersonMaskCreator import PersonMaskCreator
+from core_modules.inpaint.inpaint_lama import ImageInpainter
+from core_modules.seg_clothes.yolo_seg import PersonesSegmenter
+from core_modules.shot.views_classify import ShotTypeClassifier
+from core_modules.face_recognition.face_recognition import FaceRecognitionSystem
 
 # ---------- 全局配置 ----------
 
 # 设备
 device = "cuda:1" if torch.cuda.is_available() else "cpu"
 
-# 默认路径（统一参数中心 face_recognition/config/base.py）
-from face_recognition.config.base import (
+# 默认路径（统一参数中心 config/base.py）
+from config.base import (
     DETECTION_MODEL_PATH as DEFAULT_DETECTION_MODEL_PATH,
     SEGPERSON_MODEL_PATH as DEFAULT_SEGPERSONES_MODEL_PATH,
     INPAINTER_MODEL_PATH as DEFAULT_INPAINTER_MODEL_PATH,
