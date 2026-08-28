@@ -216,6 +216,7 @@ async def recognize_faces(image: UploadFile = File(...)):
             "data": {"recognized_faces": recognized_faces, "annotated_image_path": annotated_result_path}
         })
     except Exception as e:
+        srv.logger.exception(f"Error in face recognition: {e}")
         return JSONResponse(status_code=500, content=srv.get_error(message=f"Error in face recognition: {str(e)}"))
     finally:
         if temp_dir and os.path.exists(temp_dir):

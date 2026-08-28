@@ -5,6 +5,9 @@ import numpy as np
 from datetime import datetime
 import json
 from config.base import ELASTIC_URL, ELASTIC_USER, ELASTIC_PASSWORD, ELASTIC_FACE_INDEX
+from core_modules.tools.logger import get_app_logger
+
+logger = get_app_logger()
 
 class FaceDatabase:
     def __init__(self, host=ELASTIC_URL,
@@ -179,7 +182,7 @@ class FaceDatabase:
             score = hit['_score'] 
             
             # Debug output
-            print(f"DEBUG: Face match score: {score}, threshold: {threshold}")
+            logger.debug(f"Face match score: {score}, threshold: {threshold}")
             
             if score >= threshold:
                 person_name = hit['_source']['person_name']
