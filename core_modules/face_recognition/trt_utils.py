@@ -57,10 +57,16 @@ def preload_trt_libs():
     return False
 
 
-def get_trt_provider_options(cache_prefix):
-    """构造 TensorrtExecutionProvider 的 session options 参数"""
+def get_trt_provider_options(cache_prefix, input_name=None, input_shape=None):
+    """构造 TensorrtExecutionProvider 的 session options 参数
+
+    Args:
+        input_shape: 模型输入 shape（如 ArcFace 为 (1,3,112,112)）。
+            提供时显式设置 profile 覆盖 batch 1..32，一个引擎服务所有 batch，
+            避免运行中遇到新 batch 尺寸触发数十秒的引擎重建（多脸图片耗时暴增的根因）。
+    """
     os.makedirs(TRT_CACHE_DIR, exist_ok=True)
-    return {
+    opts = {
         'device_id': 0,
         'trt_max_workspace_size': 4 << 30,          # 4GB
         'trt_fp16_enable': DEFAULT_FP16,
@@ -71,6 +77,13 @@ def get_trt_provider_options(cache_prefix):
         'trt_engine_cache_prefix': cache_prefix,
         'trt_force_sequential_engine_build': False,
     }
+    if input_name and input_shape:
+        def _dims(s):
+            return 'x'.join(str(d if d > 0 else 1) for d in s)
+        min_b, max_b = 1, 32
+        opts['trt_profile_min_shapes'] = f"{input_name}:{min_b}x{_dims(input_shape[1:])}"
+        opts['trt_profile_max_shapes'] = f"{input_name}:{max_b}x{_dims(input_shape[1:])}"
+    return opts
 
 
 def create_ort_session(model_path, device='cpu', fp16=None, log_severity=3):
@@ -96,8 +109,16 @@ def create_ort_session(model_path, device='cpu', fp16=None, log_severity=3):
                 device_id = int(device.split(':', 1)[1])
             except ValueError:
                 pass
-        po = get_trt_provider_options(
-            cache_prefix=os.path.splitext(os.path.basename(model_path))[0])
+        prefix = os.path.splitext(os.path.basename(model_path))[0]
+        po = get_trt_provider_options(cache_prefix=prefix)
+        # 预读模型输入（静态 shape）设置 batch 1..32 的 profile，一个引擎覆盖所有 batch
+        try:
+            _probe = ort.InferenceSession(model_path, so, providers=['CPUExecutionProvider'])
+            _inp = _probe.get_inputs()[0]
+            po = get_trt_provider_options(
+                cache_prefix=prefix, input_name=_inp.name, input_shape=tuple(_inp.shape))
+        except Exception:
+            pass
         po['device_id'] = device_id
         if fp16 is not None:
             po['trt_fp16_enable'] = fp16

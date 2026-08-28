@@ -3,7 +3,6 @@ from tqdm import tqdm
 from core_modules.face_recognition.scrfd.scrfd_det import SCRFDDetector
 from core_modules.face_recognition.database import FaceDatabase
 from core_modules.face_recognition.arcface.arcface_onnx import ArcFaceFeatureExtractor
-from core_modules.tools.face_quality import assess_face_quality_simple
 from core_modules.tools.visualization import VisualizationUtils
 from core_modules.tools.image_io import imread_reduced, list_images
 from core_modules.tools.logger import get_app_logger
@@ -244,9 +243,6 @@ class FaceRecognitionSystem:
                         print(f"  Face {i+1}: Empty image after cropping")
                     continue
                 
-                # 计算人脸质量分数（仅作为结果元数据保留，不参与分数调整）
-                face_quality = assess_face_quality_simple(face_image)
-                
                 # 人脸对齐（SCRFD 提供 5 关键点，ArcFace 标准对齐）
                 aligned_face = None
                 if hasattr(face_obj, 'landmark') and face_obj.landmark is not None:
@@ -268,7 +264,7 @@ class FaceRecognitionSystem:
                     elif face_resized.shape[2] == 4:
                         face_resized = face_resized[:, :, :3]
                 
-                face_items.append((i, face_obj, face_quality, face_resized, [x1, y1, x2, y2]))
+                face_items.append((i, face_obj, face_resized, [x1, y1, x2, y2]))
             except Exception as e:
                 if debug:
                     print(f"Error preparing face {i+1}: {e}")
@@ -276,48 +272,64 @@ class FaceRecognitionSystem:
                     traceback.print_exc()
                 continue
 
-        # 步骤2b: 批量提取特征（单次前向处理全部人脸，减少 GPU 调用与预处理开销）
+        # 步骤2b: 批量提取特征（分块前向，避免超出现有 TRT 引擎的 batch 上限触发重建）
         _t_prepare = time.time() - _t
         raw_results = []
         embeddings_all = None
         if face_items:
             _t = time.time()
-            try:
-                embeddings_all = self.extractor.extract_features([it[3] for it in face_items])
-                if embeddings_all.shape[0] != len(face_items):
-                    embeddings_all = None
-            except Exception as e:
-                if debug:
-                    print(f"Batch feature extraction error: {e}")
-                embeddings_all = None
+            all_emb = []
+            chunk = 16  # 与 TRT 引擎 profile（max batch 32）匹配的块大小
+            ok = True
+            for s in range(0, len(face_items), chunk):
+                batch = [it[2] for it in face_items[s:s + chunk]]
+                try:
+                    emb = self.extractor.extract_features(batch)
+                    if emb.shape[0] != len(batch):
+                        ok = False
+                        break
+                    all_emb.append(emb)
+                except Exception as e:
+                    if debug:
+                        print(f"Batch feature extraction error: {e}")
+                    ok = False
+                    break
+            if ok and all_emb:
+                embeddings_all = np.vstack(all_emb) if len(all_emb) > 1 else all_emb[0]
             _t_feature = time.time() - _t
         else:
             _t_feature = 0.0
 
-        # 步骤2c: 逐脸匹配与结果构建
-        for k, (i, face_obj, face_quality, face_resized, bbox) in enumerate(face_items):
+        # 步骤2c: 批量 ES 检索（一次 msearch 完成全部人脸查询）+ 结果构建
+        _t_es = 0.0
+        matches_all = None
+        if embeddings_all is not None:
+            _t = time.time()
+            emb_norm = self.extractor.l2_normalize([e for e in embeddings_all])
+            matches_all = self.database.search_faces_batch(
+                emb_norm, top_k=SEARCH_TOP_K, threshold=SEARCH_THRESHOLD)
+            _t_es = time.time() - _t
+        _t = time.time()
+        for k, (i, face_obj, face_resized, bbox) in enumerate(face_items):
             try:
                 if embeddings_all is not None:
                     embedding = embeddings_all[k]
+                    matches = matches_all[k] if matches_all else []
                 else:
-                    # 回退：逐张提取，保证鲁棒性
+                    # 回退：逐张提取+检索，保证鲁棒性
                     try:
                         emb = self.extractor.extract_features([face_resized])
                         if emb.shape[0] == 0:
                             if debug:
                                 print(f"  Face {i+1}: No embeddings extracted")
                             continue
-                        embedding = emb[0]
+                        embedding = self.extractor.l2_normalize([emb[0]])[0]
                     except Exception as e:
                         if debug:
                             print(f"  Face {i+1}: Feature extraction error: {e}")
                         continue
-
-                # L2归一化
-                embedding = self.extractor.l2_normalize([embedding])[0]
-                
-                # 搜索匹配（ES ((cos+1)/2)^2 变换，SEARCH_THRESHOLD 对应较低余弦，保证召回）
-                matches = self.database.search_face(embedding, top_k=SEARCH_TOP_K, threshold=SEARCH_THRESHOLD)
+                    matches = self.database.search_face(
+                        embedding, top_k=SEARCH_TOP_K, threshold=SEARCH_THRESHOLD)
 
                 # Group matches by person name and keep the best score for each person
                 person_matches = {}
@@ -355,7 +367,6 @@ class FaceRecognitionSystem:
                     "bbox": bbox,
                     "confidence": face_obj.score,
                     "area": face_obj.width * face_obj.height,
-                    "quality": face_quality,
                     "matches": calibrated_matches,
                     "embedding": embedding,
                     "face_image": face_resized
@@ -467,45 +478,22 @@ class FaceRecognitionSystem:
         known_n = sum(1 for r in final_results if r['is_known'])
         logger.info(
             "Face pipeline done: faces=%d known=%d | decode=%.0fms resize=%.0fms detect=%.0fms "
-            "prepare=%.0fms feature=%.0fms match=%.0fms nms=%.0fms draw=%.0fms total=%.0fms | %s",
+            "prepare=%.0fms feature=%.0fms es=%.0fms match=%.0fms nms=%.0fms draw=%.0fms total=%.0fms | %s",
             len(final_results), known_n,
             _t_decode * 1000, _t_resize * 1000, _t_detect * 1000, _t_prepare * 1000,
-            _t_feature * 1000, _t_match * 1000,
+            _t_feature * 1000, _t_es * 1000, _t_match * 1000,
             _t_nms * 1000, _t_draw * 1000, (time.time() - _t_all) * 1000, image_path)
-        # 输出统计信息
-        print(f"\n=== 识别结果 ===")
-        print(f"检测到人脸: {len(final_results)}")
-        
-        identified = [r for r in final_results if r['is_known']]
-        unknown = [r for r in final_results if not r['is_known']]
-        
-        print(f"已知人脸: {len(identified)}, 未知人脸: {len(unknown)}")
-        
-        for i, result in enumerate(final_results):
-            status_icon = "✓" if result['is_known'] else "?"
-            status_text = "已知" if result['is_known'] else "未知"
-            
-            if result['is_known']:
-                print(f"{status_icon} 人脸 {result['final_ranking']}: "
-                    f"{result['identified_as']} (置信度: {result['identification_confidence']:.3f}, "
-                    f"质量: {result['quality']:.2f}, 面积: {result['area']:.0f})")
-                
-                # 显示前3个匹配（如果存在）
-                if result['matches']:
-                    for j, match in enumerate(result['matches'][:3]):
-                        match_type = "最佳" if j == 0 else f"备选{j}"
-                        print(f"    {match_type}: {match['person_name']} "
-                            f"(分数: {match['score']:.3f}, 原始: {match.get('raw_score', 0):.3f})")
-            else:
-                if result['matches']:
-                    best_match = result['matches'][0]
-                    print(f"{status_icon} 人脸 {result['final_ranking']}: {status_text} "
-                        f"(最佳匹配: {best_match['person_name']}, 分数: {best_match['score']:.3f}, "
-                        f"质量: {result['quality']:.2f}, 面积: {result['area']:.0f})")
-                else:
-                    print(f"{status_icon} 人脸 {result['final_ranking']}: {status_text} "
-                        f"(质量: {result['quality']:.2f}, 面积: {result['area']:.0f})")
-        
+
+        # 逐脸明细（debug 级别，默认不输出；控制台仅保留汇总）
+        if debug:
+            for result in final_results:
+                status_icon = "✓" if result['is_known'] else "?"
+                best = result['matches'][0] if result['matches'] else None
+                detail = (f"{best['person_name']} score={best['score']:.3f}" if best else "no match")
+                logger.debug("%s face#%d %s conf=%.3f area=%.0f | %s",
+                             status_icon, result['final_ranking'], result['identified_as'],
+                             result['identification_confidence'], result['area'], detail)
+
         return final_results, annotated_image
 
     def _apply_nms(self, results, iou_threshold):
