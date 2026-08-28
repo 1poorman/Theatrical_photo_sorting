@@ -1,47 +1,31 @@
-# 忽略dinov2目录
-third_party/
-
-# Python缓存
+# Python 缓存
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
-.Python
 
 # 虚拟环境
 venv/
 env/
-ENV/
 
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
+# 模型权重（通过 volume 只读挂载）
+weights/
 
-# 输出和日志
-outputs/
-*.log
-
-# 测试图片（可选，如果需要测试可以注释掉）
-# test_images/
-
-# 模型权重（建议通过volume挂载）
-weights/*.pt
-weights/*.pth
-
-# 数据目录（通过volume挂载）
+# 数据与运行产物（通过 volume 挂载）
 data/
+outputs/
+logs/
+core_modules/face_recognition/trt_cache/
 
 # Git
 .git/
 .gitignore
 
-# Docker文件本身
+# Docker 文件本身
 Dockerfile
 docker-compose.yml
 .dockerignore
 
-# 其他
+# 文档（保留 README）
 *.md
 !README.md

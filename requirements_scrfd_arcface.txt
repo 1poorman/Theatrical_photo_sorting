@@ -1,35 +1,51 @@
-# SCRFD + ArcFace 人脸识别运行依赖
+# Theatrical Photo Sorting 运行依赖
 # 环境：conda create -n face_scrfd_arcface python=3.10
-# CUDA 13.0 -> torch 2.9.0+cu130
+# 说明：torch 需从 PyTorch 官方索引安装 CUDA 版本（见文件末尾命令）
+#
+#   pip install torch==2.9.0 torchvision==0.24.0 --index-url https://download.pytorch.org/whl/cu130
+#   pip install -r requirements_scrfd_arcface.txt
+
+# ---------- 推理后端 ----------
+# PyTorch（CUDA 13.0 构建，需用上方 index-url 单独安装）
 torch==2.9.0
-torchvision
+torchvision==0.24.0
+# ONNX Runtime GPU（TRT EP 需搭配 tensorrt-cu12 10.x，链接 libnvinfer.so.10）
 onnxruntime-gpu==1.23.2
+tensorrt-cu12==10.16.1.11
+onnx==1.22.0
+
+# ---------- 图像与数值 ----------
 opencv-python==4.13.0.92
 numpy==2.2.6
-onnx==1.22.0
-tqdm==4.70.0
-pillow==12.3.0
 scipy==1.15.3
+pillow==12.3.0
+kornia==0.8.2
+
+# ---------- 人脸识别 ----------
 elasticsearch>=8.12,<9
-# FastAPI 服务
-fastapi
-uvicorn
-python-multipart
-werkzeug
-# 其他模型依赖
-ultralytics
-modelscope
-faiss-cpu
-scikit-learn
-matplotlib
-simplejson
-sortedcontainers
-kornia
-pandas
-pyarrow
-huggingface_hub
-safetensors
-# 多模态嵌入（SigLIP 2 / Nomic / BLIP2）
-transformers>=4.50
-sentencepiece
-protobuf
+
+# ---------- 服务 ----------
+fastapi==0.141.1
+uvicorn==0.52.3
+python-multipart==0.0.32
+werkzeug==3.1.8
+
+# ---------- 其他模型 ----------
+ultralytics==8.4.120
+modelscope==1.39.1
+faiss-cpu==1.15.0
+scikit-learn==1.7.2
+timm==1.0.26
+einops==0.8.2
+matplotlib==3.10.9
+pandas==2.3.3
+pyarrow==25.0.1
+simplejson==4.1.1
+sortedcontainers==2.4.0
+huggingface_hub==1.27.0
+safetensors==0.8.0
+
+# ---------- 多模态嵌入（SigLIP2 / DINOv2） ----------
+transformers==5.15.0
+sentencepiece==0.2.2
+protobuf==7.35.1

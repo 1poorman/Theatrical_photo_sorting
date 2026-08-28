@@ -1,82 +1,38 @@
-# 基于NVIDIA CUDA镜像
-FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04
+# Theatrical Photo Sorting 服务镜像
+# 基础镜像用 python:3.10-slim：CUDA 运行时由 pip 轮子（torch cu130 / onnxruntime / tensorrt）自带，
+# GPU 依赖宿主机 NVIDIA 驱动 + nvidia-container-toolkit（见 docker-compose.yml）
+FROM python:3.10-slim
 
-# 设置环境变量
-ENV DEBIAN_FRONTEND=noninteractive
-ENV PYTHONUNBUFFERED=1
-ENV CUDA_VISIBLE_DEVICES=0
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
 
-# 安装系统依赖
-RUN apt-get update && apt-get install -y \
-    wget \
-    git \
+# 系统依赖（OpenCV 运行库 + 健康检查 curl）
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    libgl1 \
     libglib2.0-0 \
-    libsm6 \
-    libxext6 \
-    libxrender-dev \
     libgomp1 \
-    libglib2.0-0 \
-    libgl1-mesa-glx \
-    libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
-# 安装Miniconda
-RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /tmp/miniconda.sh && \
-    bash /tmp/miniconda.sh -b -p /opt/conda && \
-    rm /tmp/miniconda.sh
-
-# 设置conda环境变量
-ENV PATH=/opt/conda/bin:$PATH
-
-# 创建conda环境 inpaint
-RUN conda create -n inpaint python=3.9 -y
-
-# 激活环境并安装依赖
-SHELL ["conda", "run", "-n", "inpaint", "/bin/bash", "-c"]
-
-# 安装PyTorch CUDA版本
-RUN pip install torch==2.1.2 torchvision==0.16.2 --index-url https://download.pytorch.org/whl/cu118
-
-# 安装xformers（本地whl文件）
-RUN pip install /app/weights/xformers-0.0.23+cu118-cp39-cp39-manylinux2014_x86_64.whl
-
-# 安装其他核心依赖
-RUN pip install \
-    opencv-python==4.10.0.82 \
-    numpy==1.26.4 \
-    transformers==4.30.0 \
-    modelscope==1.10.0 \
-    ultralytics \
-    faiss-gpu \
-    flask \
-    scikit-learn \
-    Pillow \
-    tqdm \
-    matplotlib \
-    scikit-image \
-    timm \
-    einops \
-    scipy \
-    pyyaml \
-    werkzeug
-
-# 创建工作目录
 WORKDIR /app
 
-# 复制项目代码（排除dinov2目录通过.dockerignore）
-COPY . /app/
+# 先装 PyTorch（cu130 索引，层缓存友好），再装其余依赖
+COPY requirements_scrfd_arcface.txt .
+RUN pip install torch==2.9.0 torchvision==0.24.0 \
+    --index-url https://download.pytorch.org/whl/cu130 \
+    && pip install -r requirements_scrfd_arcface.txt
 
-# 创建必要的目录
-RUN mkdir -p /app/outputs /app/weights /app/data/embedding_index /app/data/face_database /app/data/sample_images /app/data/ncpa_test
+# 复制项目代码（weights/ data/ 等通过 .dockerignore 排除，运行时挂载）
+COPY app/ ./app/
+COPY config/ ./config/
+COPY core_modules/ ./core_modules/
+COPY tests/ ./tests/
 
-# 设置权限
-RUN chmod -R 755 /app
+# 运行产物目录
+RUN mkdir -p /app/outputs /app/logs /app/weights
 
-# 暴露端口
-EXPOSE 8089
+EXPOSE 8198 8199
 
-# 设置入口点 - 使用conda环境运行
-ENTRYPOINT ["conda", "run", "--no-capture-output", "-n", "inpaint", "python"]
-
-# 默认启动server.py（main.py 定义 API，server.py 实现启动）
-CMD ["app/server.py"]
+# 默认启动纯 API 服务（可视化界面：python app/server_ui.py）
+CMD ["python", "app/server.py"]

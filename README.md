@@ -133,8 +133,12 @@ python tests/test_server_load.py    # 服务端模型加载链
 ## Docker
 
 ```bash
-docker-compose up -d    # 端口 8089，weights/ 只读挂载
+docker compose up -d --build   # API 端口 8198，需宿主机 NVIDIA 驱动 + nvidia-container-toolkit
 ```
+
+- 权重只读挂载，`data/outputs/logs` 与 TRT 引擎缓存均为 volume 持久化
+- ES 地址等参数通过 `TRANS_*` 环境变量在 compose 中覆盖（见 `docker-compose.yml`）
+- 如需可视化界面：映射 `8199:8199` 并将 command 改为 `python app/server_ui.py`
 
 ## 注意事项
 

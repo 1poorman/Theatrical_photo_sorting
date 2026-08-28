@@ -1,5 +1,6 @@
-version: '3.8'
-
+# Theatrical Photo Sorting 服务编排
+# 前提：宿主机已装 NVIDIA 驱动与 nvidia-container-toolkit
+# 启动：docker compose up -d --build
 services:
   theatrical-photo-sorting:
     build:
@@ -7,8 +8,8 @@ services:
       dockerfile: Dockerfile
     image: theatrical-photo-sorting:latest
     container_name: theatrical-photo-sorting
-    
-    # GPU支持
+
+    # GPU 支持
     deploy:
       resources:
         reservations:
@@ -16,44 +17,44 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
-    
-    # 端口映射
+
+    # 端口映射（API 8198；如需可视化界面改为 command: ["python", "app/server_ui.py"] 并映射 8199）
     ports:
-      - "8089:8089"
-    
+      - "8198:8198"
+      # - "8199:8199"
+
     # 卷挂载
     volumes:
-      # 模型权重目录（需要在宿主机准备）
+      # 模型权重（宿主机准备）
       - ./weights:/app/weights:ro
-      
-      # 数据输入目录
+      # 数据（人脸库、embedding 索引等）
       - ./data:/app/data
-      
-      # 输出目录
+      # 输出与日志
       - ./outputs:/app/outputs
-      
-      # 嵌入索引目录（持久化）
-      - ./data/embedding_index:/app/data/embedding_index
-    
-    # 环境变量
+      - ./logs:/app/logs
+      # TRT 引擎缓存（避免容器重建后重新构建引擎）
+      - trt_cache:/app/core_modules/face_recognition/trt_cache
+
+    # 环境变量（config/base.py 支持 TRANS_<参数名> 覆盖）
     environment:
       - CUDA_VISIBLE_DEVICES=0
       - PYTHONUNBUFFERED=1
-      - FLASK_ENV=production
-    
-    # 工作目录
+      - TRANS_FACE_DEVICE=tensorrt
+      - TRANS_ELASTIC_URL=http://172.25.75.23:9200
+      - TRANS_ELASTIC_USER=elastic
+      - TRANS_ELASTIC_PASSWORD=elastic
+
     working_dir: /app
-    
-    # 重启策略
+
     restart: unless-stopped
-    
-    # 健康检查
+
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8089/api/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8198/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
-    
-    # 命令（可选，覆盖Dockerfile中的CMD）
-    # command: ["Server.py"]
+      # 首次启动需加载模型 + 构建 TRT 引擎
+      start_period: 300s
+
+volumes:
+  trt_cache:
