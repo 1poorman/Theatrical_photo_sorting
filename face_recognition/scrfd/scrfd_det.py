@@ -308,33 +308,6 @@ class SCRFDDetector:
             objs.append(FaceBBox(x1, y1, x2, y2, score=float(score), landmark=landmark))
         return objs
 
-    def detect_image(self, image, pixel_threshold=0):
-        """兼容接口：返回 (face_rects, processed_image, ratio)"""
-        image_h, image_w = image.shape[0:2]
-        ratio = 1
-        TARGET_SIZE = 1920
-        if max(image_h, image_w) > TARGET_SIZE:
-            old_size = image.shape[0:2]
-            ratio = min(float(TARGET_SIZE) / old_size[i] for i in range(len(old_size)))
-            new_size = tuple([int(i * ratio) for i in old_size])
-            image = cv2.resize(image, (new_size[1], new_size[0]))
-
-        objs = self._detect_single(image)
-        face_rects = []
-        for obj in objs:
-            if obj.width * obj.height > pixel_threshold:
-                face_rects.append((obj.x, obj.y, obj.width, obj.height))
-        return face_rects, image, ratio
-
-
-def get_scrfd(name, download=False, root='~/.insightface/models', **kwargs):
-    if not download:
-        assert os.path.exists(name)
-        return SCRFDDetector(model_file=name, **kwargs)
-    from .model_store import get_model_file
-    _file = get_model_file("scrfd_%s" % name, root=root)
-    return SCRFDDetector(model_file=_file, **kwargs)
-
 
 if __name__ == '__main__':
     det = SCRFDDetector(

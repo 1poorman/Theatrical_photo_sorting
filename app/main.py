@@ -29,7 +29,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 import server as srv
 
-from logger import get_app_logger, StepTimer, log_key_action
+from tools.logger import get_app_logger, StepTimer, log_key_action
 from embedding.image_search_system_module import (
     build_index, search_image, find_similar_image_groups_from_folder
 )

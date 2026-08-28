@@ -21,13 +21,12 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, PROJECT_ROOT)
 os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 
-from logger import setup_logging, get_app_logger, log_key_action
+from tools.logger import setup_logging, get_app_logger, log_key_action
 
 logger = get_app_logger()
 
 from detection.PersonMaskCreator import PersonMaskCreator
-from inpaint.inpaint_lama_ds import ImageInpainter
-# from seg_clothes.ClothesSegment import ClothesSegmenter
+from inpaint.inpaint_lama import ImageInpainter
 from seg_clothes.yolo_seg import PersonesSegmenter
 from shot.views_classify import ShotTypeClassifier
 from face_recognition.face_recognition import FaceRecognitionSystem

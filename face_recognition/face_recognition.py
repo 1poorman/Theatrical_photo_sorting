@@ -7,34 +7,10 @@ from core.database import FaceDatabase
 from arcface.arcface_onnx import ArcFaceFeatureExtractor
 from utils.assess import assess_face_quality_simple
 from utils.visualization import VisualizationUtils
+from tools.image_io import imread_reduced, list_images
 import cv2
 
 class FaceRecognitionSystem:
-    @staticmethod
-    def _imread_reduced(path, target_max=1920):
-        """降采样解码加速。
-
-        JPEG 全分辨率解码是端到端最大瓶颈（大图约 300~600ms）。
-        借助图像头信息选择 OpenCV 降采样解码倍率，保证解码后最长边仍 >= target_max，
-        因此与后续 resize 到 target_max 的流程完全等价，识别精度不受影响。
-        """
-        reduced = {2: cv2.IMREAD_REDUCED_COLOR_2, 4: cv2.IMREAD_REDUCED_COLOR_4,
-                   8: cv2.IMREAD_REDUCED_COLOR_8}
-        factor = 1
-        try:
-            from PIL import Image
-            with Image.open(path) as im:
-                w, h = im.size
-            for f in (8, 4, 2):
-                if max(w, h) // f >= target_max:
-                    factor = f
-                    break
-        except Exception:
-            factor = 1
-        if factor == 1:
-            return cv2.imread(path)
-        return cv2.imread(path, reduced[factor])
-
     def __init__(self, detect_path=None, extractor_path=None, device=None):
         # 如果没有指定设备，则使用默认设置（onnxruntime）
         # 可选值: 'cpu' / 'cuda' / 'tensorrt'（TensorRT 加速，FP16）
@@ -181,7 +157,7 @@ class FaceRecognitionSystem:
         """
         # 加载图像（降采样解码加速；支持外部传入已解码图像，配合批量预解码流水线）
         if image is None:
-            image = self._imread_reduced(image_path, target_max=image_size)
+            image = imread_reduced(image_path, target_max=image_size)
         if image is None:
             raise ValueError(f"Could not read image: {image_path}")
         
@@ -601,9 +577,7 @@ class FaceRecognitionSystem:
         os.makedirs(output_folder, exist_ok=True)
         
         # 获取所有图片文件
-        image_extensions = ('.jpg', '.jpeg', '.png', '.bmp', '.tiff')
-        all_images = [f for f in os.listdir(input_folder) 
-                     if f.lower().endswith(image_extensions)]
+        all_images = list_images(input_folder)
         
         if not all_images:
             logger.warning("警告: 输入文件夹中没有找到图片文件")
