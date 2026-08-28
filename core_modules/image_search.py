@@ -28,19 +28,18 @@ except ImportError:
     NOMIC_AVAILABLE = False
     print("Nomic model components not available.")
 
-# SigLIP 2 本地权重根目录（可通过环境变量 SIGLIP_WEIGHTS_ROOT 覆盖）
-SIGLIP_WEIGHTS_ROOT = os.environ.get(
-    "SIGLIP_WEIGHTS_ROOT", "/home/huachenghao/codes/SigLip2/weights")
+# SigLIP 2 本地权重根目录（config/base.py 统一管理，可用环境变量 TRANS_SIGLIP_WEIGHTS_ROOT 覆盖）
+from config.base import SIGLIP_WEIGHTS_ROOT
 
 # SigLIP 2 模型映射: 名称 -> (本地权重路径, 在线 model_id, 特征维度)
 SIGLIP_MODEL_MAP = {
     "siglip2_base": {
-        "local": os.path.join(SIGLIP_WEIGHTS_ROOT, "siglip2-base-patch16-512"),
+        "local": os.path.join(SIGLIP_WEIGHTS_ROOT, "siglip2-base-patch16-384"),
         "online": "google/siglip2-base-patch16-384",
         "dim": 768,
     },
     "siglip2_so400m": {
-        "local": os.path.join(SIGLIP_WEIGHTS_ROOT, "siglip2-so400m-patch16-512"),
+        "local": os.path.join(SIGLIP_WEIGHTS_ROOT, "siglip2-so400m-patch14-384"),
         "online": "google/siglip2-so400m-patch14-384",
         "dim": 1152,
     },
@@ -161,17 +160,24 @@ class ImageEmbedder:
                 cfg = SIGLIP_MODEL_MAP["siglip2_base"]
             feature_dim = cfg["dim"]
 
-            # 优先使用本地权重
+            # 1) 本地权重目录
             local_path = cfg.get("local")
             if local_path and os.path.isdir(local_path):
-                model_id = local_path
-                print(f"Loading from local weights: {model_id}")
+                print(f"Loading from local weights: {local_path}")
+                processor = AutoProcessor.from_pretrained(local_path)
+                model = AutoModel.from_pretrained(local_path)
             else:
-                model_id = cfg["online"]
-                print(f"Local weights not found, loading from HuggingFace: {model_id}")
-
-            processor = AutoProcessor.from_pretrained(model_id)
-            model = AutoModel.from_pretrained(model_id)
+                online_id = cfg["online"]
+                # 2) HuggingFace 缓存命中则离线加载（不访问网络）
+                try:
+                    processor = AutoProcessor.from_pretrained(online_id, local_files_only=True)
+                    model = AutoModel.from_pretrained(online_id, local_files_only=True)
+                    print(f"Loaded from HuggingFace cache (offline): {online_id}")
+                except OSError:
+                    # 3) 在线下载
+                    print(f"Local weights and cache not found, downloading: {online_id}")
+                    processor = AutoProcessor.from_pretrained(online_id)
+                    model = AutoModel.from_pretrained(online_id)
 
             model.eval()
             model.to(self.device)

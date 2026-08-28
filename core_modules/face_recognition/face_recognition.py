@@ -1,4 +1,4 @@
-import os, sys, random
+import os, sys, random, time
 from tqdm import tqdm
 from core_modules.face_recognition.scrfd.scrfd_det import SCRFDDetector
 from core_modules.face_recognition.database import FaceDatabase
@@ -6,12 +6,15 @@ from core_modules.face_recognition.arcface.arcface_onnx import ArcFaceFeatureExt
 from core_modules.tools.face_quality import assess_face_quality_simple
 from core_modules.tools.visualization import VisualizationUtils
 from core_modules.tools.image_io import imread_reduced, list_images
+from core_modules.tools.logger import get_app_logger
 from config.base import (
     FACE_IMAGE_MAX_SIDE, KNOWN_FACE_THRESHOLD, SEARCH_THRESHOLD, SEARCH_TOP_K,
     FACE_DETECT_MIN_SCORE, FACE_MIN_SIZE, FACE_ASPECT_RATIO_RANGE, FACE_NMS_IOU,
     FACE_AMBIGUOUS_MARGIN, FACE_DB_STANDARD_SIZE, FACE_DB_MIN_AREA,
 )
 import cv2
+
+logger = get_app_logger()
 
 class FaceRecognitionSystem:
     def __init__(self, detect_path=None, extractor_path=None, device=None):
@@ -161,11 +164,15 @@ class FaceRecognitionSystem:
             (list of recognition results, annotated_image)
         """
         # 加载图像（降采样解码加速；支持外部传入已解码图像，配合批量预解码流水线）
+        _t_all = time.time()
+        _t = time.time()
         if image is None:
             image = imread_reduced(image_path, target_max=image_size)
         if image is None:
             raise ValueError(f"Could not read image: {image_path}")
-        
+        _t_decode = time.time() - _t
+
+        _t = time.time()
         h, w = image.shape[:2]
         max_dimension = max(h, w)
         if max_dimension > image_size:
@@ -174,16 +181,17 @@ class FaceRecognitionSystem:
             new_height = int(h * scale_factor)
             image = cv2.resize(image, (new_width, new_height), interpolation=cv2.INTER_LINEAR)
             h, w = new_height, new_width
+        _t_resize = time.time() - _t
 
-        print(f"Processing image: {image_path} ({w}x{h})")
-        
         # 步骤1: 检测人脸并进行质量过滤
+        _t = time.time()
         try:
             face_objects = self.detector._detect_single(image)
         except Exception as e:
             if debug:
                 print(f"Error detecting faces: {e}")
             face_objects = []
+        _t_detect = time.time() - _t
         
         # 初始过滤
         filtered_faces = []
@@ -212,6 +220,7 @@ class FaceRecognitionSystem:
         print(f"Detected {len(face_objects)} faces, after filtering: {len(filtered_faces)}")
         
         # 步骤2: 预处理所有过滤后的人脸（裁剪/质量/对齐）
+        _t = time.time()
         face_items = []
         for i, face_obj in enumerate(filtered_faces):
             try:
@@ -268,9 +277,11 @@ class FaceRecognitionSystem:
                 continue
 
         # 步骤2b: 批量提取特征（单次前向处理全部人脸，减少 GPU 调用与预处理开销）
+        _t_prepare = time.time() - _t
         raw_results = []
         embeddings_all = None
         if face_items:
+            _t = time.time()
             try:
                 embeddings_all = self.extractor.extract_features([it[3] for it in face_items])
                 if embeddings_all.shape[0] != len(face_items):
@@ -279,6 +290,9 @@ class FaceRecognitionSystem:
                 if debug:
                     print(f"Batch feature extraction error: {e}")
                 embeddings_all = None
+            _t_feature = time.time() - _t
+        else:
+            _t_feature = 0.0
 
         # 步骤2c: 逐脸匹配与结果构建
         for k, (i, face_obj, face_quality, face_resized, bbox) in enumerate(face_items):
@@ -365,14 +379,20 @@ class FaceRecognitionSystem:
                 continue
         
         if not raw_results:
-            print("No valid faces found after processing")
+            logger.info(
+                "Face pipeline done: faces=0 | decode=%.0fms resize=%.0fms detect=%.0fms prepare=%.0fms total=%.0fms | %s",
+                _t_decode * 1000, _t_resize * 1000, _t_detect * 1000, _t_prepare * 1000,
+                (time.time() - _t_all) * 1000, image_path)
             # 返回值与正常路径一致：(results, annotated_image)，避免调用方解包失败
             return [], self.visualizer.draw_faces_on_image(image, [])
-        
+
         # 步骤3: 使用NMS去除重复检测
+        _t = time.time()
         unique_results = self._apply_nms(raw_results, iou_threshold)
-        
+        _t_nms = time.time() - _t
+
         # 步骤4: 确定最终识别结果
+        _t = time.time()
         final_results = []
         for i, result in enumerate(unique_results):
             if result['matches']:
@@ -436,9 +456,22 @@ class FaceRecognitionSystem:
             final_results.append(result)
         
         # 按识别置信度排序
+        _t_match = time.time() - _t
         final_results.sort(key=lambda x: x['identification_confidence'], reverse=True)
         # 在原图上绘制人脸框和标签
+        _t = time.time()
         annotated_image = self.visualizer.draw_faces_on_image(image, final_results)
+        _t_draw = time.time() - _t
+
+        # 分环节耗时统计（落盘 logs/server.log）
+        known_n = sum(1 for r in final_results if r['is_known'])
+        logger.info(
+            "Face pipeline done: faces=%d known=%d | decode=%.0fms resize=%.0fms detect=%.0fms "
+            "prepare=%.0fms feature=%.0fms match=%.0fms nms=%.0fms draw=%.0fms total=%.0fms | %s",
+            len(final_results), known_n,
+            _t_decode * 1000, _t_resize * 1000, _t_detect * 1000, _t_prepare * 1000,
+            _t_feature * 1000, _t_match * 1000,
+            _t_nms * 1000, _t_draw * 1000, (time.time() - _t_all) * 1000, image_path)
         # 输出统计信息
         print(f"\n=== 识别结果 ===")
         print(f"检测到人脸: {len(final_results)}")

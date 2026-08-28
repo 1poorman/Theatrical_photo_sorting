@@ -31,6 +31,8 @@ DETECTION_MODEL_PATH = os.path.join(WEIGHTS_DIR, 'rtdetr-x.pt')
 SEGPERSON_MODEL_PATH = os.path.join(WEIGHTS_DIR, 'yolo11x-seg.pt')
 POSE_MODEL_PATH = os.path.join(WEIGHTS_DIR, 'yolo11l-pose.pt')
 INPAINTER_MODEL_PATH = os.path.join(WEIGHTS_DIR, 'cv_fft_inpainting_lama')
+# SigLIP2 本地权重根目录（子目录名需与 image_search.SIGLIP_MODEL_MAP 一致）
+SIGLIP_WEIGHTS_ROOT = os.environ.get('TRANS_SIGLIP_WEIGHTS_ROOT', os.path.join(WEIGHTS_DIR, 'siglip2'))
 
 # ---------- 推理设备 ----------
 # 'tensorrt' / 'tensorrt:N' / 'cuda' / 'cuda:N' / 'cpu'

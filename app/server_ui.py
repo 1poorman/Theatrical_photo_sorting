@@ -543,9 +543,15 @@ async def index_redirect():
 if __name__ == "__main__":
     import uvicorn
 
+    # 统一日志：业务日志 + uvicorn 日志 + print 全部落盘 logs/server.log
+    from core_modules.tools.logger import setup_logging
+    _logger, _log_file = setup_logging()
+    _logger.info("Starting UI server on http://0.0.0.0:8199 (ui: http://0.0.0.0:8199/ui)")
+
     print("=" * 60)
     print("可视化界面服务启动")
     print("  界面地址: http://localhost:8199/ui")
     print("  API 文档: http://localhost:8199/docs")
     print("=" * 60)
-    uvicorn.run(app, host="0.0.0.0", port=8199)
+    # log_config=None：交给我们自己的日志配置，uvicorn 日志统一落盘
+    uvicorn.run(app, host="0.0.0.0", port=8199, log_config=None, log_level="info")
