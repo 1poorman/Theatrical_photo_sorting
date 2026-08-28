@@ -80,8 +80,18 @@ class ArcFaceFeatureExtractor:
         if model_path is None or not osp.exists(model_path):
             raise FileNotFoundError(f"ArcFace model not found: {model_path}")
 
-        providers = self._select_providers(device)
-        self.session = onnxruntime.InferenceSession(model_path, providers=providers)
+        # TensorRT 加速：device='tensorrt' 或 'tensorrt:N' 时走 trt_utils 统一封装
+        if isinstance(device, str) and device.startswith('tensorrt'):
+            try:
+                from trt_utils import create_ort_session
+            except ImportError:
+                import sys
+                sys.path.append(osp.dirname(osp.dirname(osp.abspath(__file__))))
+                from trt_utils import create_ort_session
+            self.session = create_ort_session(model_path, device=device)
+        else:
+            providers = self._select_providers(device)
+            self.session = onnxruntime.InferenceSession(model_path, providers=providers)
 
         # 判断预处理参数（官方逻辑：mxnet 模型带 Sub/Mul 节点）
         find_sub = False
@@ -111,7 +121,8 @@ class ArcFaceFeatureExtractor:
         self.output_shape = outputs[0].shape
         assert len(self.output_names) == 1, "ArcFace model should have single output"
         print(f"ArcFace loaded from {model_path} (input_size={self.input_size}, "
-              f"mean={self.input_mean}, std={self.input_std}, providers={providers})")
+              f"mean={self.input_mean}, std={self.input_std}, "
+              f"providers={self.session.get_providers()})")
 
     def _select_providers(self, device):
         available = onnxruntime.get_available_providers()

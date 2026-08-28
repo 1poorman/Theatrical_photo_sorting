@@ -13,8 +13,34 @@ import cv2
 import numpy as np
 
 class FaceRecognitionSystem:
+    @staticmethod
+    def _imread_reduced(path, target_max=1920):
+        """降采样解码加速。
+
+        JPEG 全分辨率解码是端到端最大瓶颈（大图约 300~600ms）。
+        借助图像头信息选择 OpenCV 降采样解码倍率，保证解码后最长边仍 >= target_max，
+        因此与后续 resize 到 target_max 的流程完全等价，识别精度不受影响。
+        """
+        reduced = {2: cv2.IMREAD_REDUCED_COLOR_2, 4: cv2.IMREAD_REDUCED_COLOR_4,
+                   8: cv2.IMREAD_REDUCED_COLOR_8}
+        factor = 1
+        try:
+            from PIL import Image
+            with Image.open(path) as im:
+                w, h = im.size
+            for f in (8, 4, 2):
+                if max(w, h) // f >= target_max:
+                    factor = f
+                    break
+        except Exception:
+            factor = 1
+        if factor == 1:
+            return cv2.imread(path)
+        return cv2.imread(path, reduced[factor])
+
     def __init__(self, detect_path=None, extractor_path=None, device=None):
         # 如果没有指定设备，则使用默认设置（onnxruntime）
+        # 可选值: 'cpu' / 'cuda' / 'tensorrt'（TensorRT 加速，FP16）
         if device is None:
             device = 'cpu'
             try:
@@ -207,7 +233,7 @@ class FaceRecognitionSystem:
             print(f"{'#'*60}\n")
     
     def recognize_face(self, image_path, image_size=1920, known_threshold=0.55, unknown_threshold=0.4, 
-                   iou_threshold=0.4, min_face_size=20, debug=False):
+                   iou_threshold=0.4, min_face_size=20, debug=False, image=None):
         """
         人脸识别函数
         Args:
@@ -220,8 +246,9 @@ class FaceRecognitionSystem:
         Returns:
             list of recognition results
         """
-        # 加载图像
-        image = cv2.imread(image_path)
+        # 加载图像（降采样解码加速；支持外部传入已解码图像，配合批量预解码流水线）
+        if image is None:
+            image = self._imread_reduced(image_path, target_max=image_size)
         if image is None:
             raise ValueError(f"Could not read image: {image_path}")
         
@@ -273,8 +300,8 @@ class FaceRecognitionSystem:
         
         print(f"Detected {len(face_objects)} faces, after filtering: {len(filtered_faces)}")
         
-        # 步骤2: 处理每个人脸
-        raw_results = []
+        # 步骤2: 预处理所有过滤后的人脸（裁剪/质量/对齐）
+        face_items = []
         for i, face_obj in enumerate(filtered_faces):
             try:
                 # 获取边界框坐标并确保在图像范围内
@@ -321,19 +348,46 @@ class FaceRecognitionSystem:
                     elif face_resized.shape[2] == 4:
                         face_resized = face_resized[:, :, :3]
                 
-                # 提取特征
-                try:
-                    embeddings = self.extractor.extract_features([face_resized])
-                    if embeddings.shape[0] == 0:
+                face_items.append((i, face_obj, face_quality, face_resized, [x1, y1, x2, y2]))
+            except Exception as e:
+                if debug:
+                    print(f"Error preparing face {i+1}: {e}")
+                    import traceback
+                    traceback.print_exc()
+                continue
+
+        # 步骤2b: 批量提取特征（单次前向处理全部人脸，减少 GPU 调用与预处理开销）
+        raw_results = []
+        embeddings_all = None
+        if face_items:
+            try:
+                embeddings_all = self.extractor.extract_features([it[3] for it in face_items])
+                if embeddings_all.shape[0] != len(face_items):
+                    embeddings_all = None
+            except Exception as e:
+                if debug:
+                    print(f"Batch feature extraction error: {e}")
+                embeddings_all = None
+
+        # 步骤2c: 逐脸匹配与结果构建
+        for k, (i, face_obj, face_quality, face_resized, bbox) in enumerate(face_items):
+            try:
+                if embeddings_all is not None:
+                    embedding = embeddings_all[k]
+                else:
+                    # 回退：逐张提取，保证鲁棒性
+                    try:
+                        emb = self.extractor.extract_features([face_resized])
+                        if emb.shape[0] == 0:
+                            if debug:
+                                print(f"  Face {i+1}: No embeddings extracted")
+                            continue
+                        embedding = emb[0]
+                    except Exception as e:
                         if debug:
-                            print(f"  Face {i+1}: No embeddings extracted")
+                            print(f"  Face {i+1}: Feature extraction error: {e}")
                         continue
-                    embedding = embeddings[0]
-                except Exception as e:
-                    if debug:
-                        print(f"  Face {i+1}: Feature extraction error: {e}")
-                    continue
-                
+
                 # L2归一化
                 embedding = self.extractor.l2_normalize([embedding])[0]
                 
@@ -400,7 +454,7 @@ class FaceRecognitionSystem:
                 # 构建结果
                 result = {
                     "id": i,
-                    "bbox": [x1, y1, x2, y2],
+                    "bbox": bbox,
                     "confidence": face_obj.score,
                     "area": face_obj.width * face_obj.height,
                     "quality": face_quality,
@@ -663,17 +717,36 @@ class FaceRecognitionSystem:
         total_faces_detected = 0
         identity_counts = {}  # 记录每个身份被识别的次数
         
-        # 处理每张抽样的图片
+        # 处理每张抽样的图片（多线程预解码：cv2 解码释放 GIL，可与 GPU 推理重叠执行）
+        from collections import deque
+        from concurrent.futures import ThreadPoolExecutor
+        from itertools import islice
+
+        def _decode(fname):
+            return cv2.imread(os.path.join(input_folder, fname))
+
+        prefetch_n = min(4, len(sampled_images))
+        file_iter = iter(sampled_images)
+        pool = ThreadPoolExecutor(max_workers=prefetch_n)
+        # 预填充解码队列（保持处理顺序，内存最多多缓存 prefetch_n 张图）
+        pending = deque(pool.submit(_decode, f) for f in islice(file_iter, prefetch_n))
+
         for img_file in tqdm(sampled_images, desc="处理图片"):
             img_path = os.path.join(input_folder, img_file)
             total_processed += 1
-            
+
+            # 取出预解码完成的图像，并补充解码下一张
+            image = pending.popleft().result()
+            for nf in islice(file_iter, 1):
+                pending.append(pool.submit(_decode, nf))
+
             try:
-                # 进行人脸识别
+                # 进行人脸识别（复用预解码图像，跳过重复读取）
                 results, annotated_image = self.recognize_face(
-                    img_path, 
+                    img_path,
                     known_threshold=known_threshold,
-                    unknown_threshold=0.35
+                    unknown_threshold=0.35,
+                    image=image
                 )
                 
                 # 统计检测到的人脸数量
@@ -714,7 +787,9 @@ class FaceRecognitionSystem:
                 logger.error(f"处理图片 {img_file} 时出错: {str(e)}")
                 failed_recognitions += 1
                 continue
-        
+
+        pool.shutdown()
+
         # 计算统计信息
         success_rate = successful_recognitions / max(total_faces_detected, 1)
         
@@ -751,8 +826,11 @@ if __name__ == '__main__':
     scrfd_model_dir = './weights/scrfd/scrfd_10g_bnkps.onnx'
     arcface_model_dir = './weights/arcface/Glint100.onnx'
     image_path = 'data/sample_images/4.jpg'
-    
-    recognizer = FaceRecognitionSystem(scrfd_model_dir, arcface_model_dir)
+
+    # 运行设备：'tensorrt'（加速，FP16）/ 'cuda' / 'cpu'，可用环境变量 FACE_DEVICE 覆盖
+    device = os.environ.get('FACE_DEVICE', 'tensorrt')
+    print(f"Using device: {device}")
+    recognizer = FaceRecognitionSystem(scrfd_model_dir, arcface_model_dir, device=device)
     # 建立人脸索引（第一次），批量添加人脸
     # recognizer.build_face_database('data/face_database', first_run=True)
 

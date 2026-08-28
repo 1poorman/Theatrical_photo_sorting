@@ -83,10 +83,20 @@ class SCRFDDetector:
         if model_path is None or not osp.exists(model_path):
             raise FileNotFoundError(f"SCRFD model not found: {model_path}")
 
-        providers = self._select_providers(device)
-        self.session = onnxruntime.InferenceSession(model_path, providers=providers)
+        # TensorRT 加速：device='tensorrt' 或 'tensorrt:N' 时走 trt_utils 统一封装
+        if isinstance(device, str) and device.startswith('tensorrt'):
+            try:
+                from trt_utils import create_ort_session
+            except ImportError:
+                import sys
+                sys.path.append(osp.dirname(osp.dirname(osp.abspath(__file__))))
+                from trt_utils import create_ort_session
+            self.session = create_ort_session(model_path, device=device)
+        else:
+            providers = self._select_providers(device)
+            self.session = onnxruntime.InferenceSession(model_path, providers=providers)
         self._init_vars()
-        print(f"SCRFD loaded from {model_path} (providers={providers})")
+        print(f"SCRFD loaded from {model_path} (providers={self.session.get_providers()})")
 
     def _select_providers(self, device):
         available = onnxruntime.get_available_providers()
@@ -172,15 +182,21 @@ class SCRFDDetector:
                     self.center_cache[key] = anchor_centers
 
             pos_inds = np.where(scores >= threshold)[0]
-            bboxes = distance2bbox(anchor_centers, bbox_preds)
+            if pos_inds.size == 0:
+                # 无正样本 anchor，直接返回空结果
+                scores_list.append(np.zeros((0, 1), dtype=np.float32))
+                bboxes_list.append(np.zeros((0, 4), dtype=np.float32))
+                if self.use_kps:
+                    kpss_list.append(np.zeros((0, 5, 2), dtype=np.float32))
+                continue
+            # 优化：先按分数过滤，只解码正样本 anchor（全量解码约 8400 个，正样本通常 <100）
             pos_scores = scores[pos_inds]
-            pos_bboxes = bboxes[pos_inds]
+            pos_bboxes = distance2bbox(anchor_centers[pos_inds], bbox_preds[pos_inds])
             scores_list.append(pos_scores)
             bboxes_list.append(pos_bboxes)
             if self.use_kps:
-                kpss = distance2kps(anchor_centers, kps_preds)
-                kpss = kpss.reshape((kpss.shape[0], -1, 2))
-                pos_kpss = kpss[pos_inds]
+                pos_kpss = distance2kps(anchor_centers[pos_inds], kps_preds[pos_inds])
+                pos_kpss = pos_kpss.reshape((pos_kpss.shape[0], -1, 2))
                 kpss_list.append(pos_kpss)
         return scores_list, bboxes_list, kpss_list
 

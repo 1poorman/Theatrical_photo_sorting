@@ -21,6 +21,8 @@
 ├── app/server_ui.py               # 可视化界面服务（复用 main.app，端口 8199）
 ├── face_recognition/
 │   ├── face_recognition.py    # 人脸识别系统（SCRFD + ArcFace）
+│   ├── trt_utils.py           # TensorRT 加速支持（库预加载/provider 配置/引擎缓存）
+│   ├── trt_cache/             # TRT 引擎缓存（自动生成，不入库）
 │   ├── scrfd/                 # SCRFD ONNX 检测器
 │   ├── arcface/               # ArcFace ONNX 特征提取器
 │   ├── core/                  # 人脸库/向量库（Elasticsearch）封装
@@ -40,6 +42,11 @@
 ├── data/face_database/            # 人脸库（按人物命名的子目录，160x160）
 ├── tests/test_scrfd_arcface.py      # SCRFD+ArcFace 相似度与识别测试
 ├── tests/test_real_images.py        # 真实剧照端到端测试
+├── tests/test_trt_speed.py          # TensorRT vs CUDA vs CPU 基准与一致性测试
+├── tests/test_batch_optim.py        # ArcFace 批量推理优化验证
+├── tests/profile_pipeline.py        # 端到端分环节耗时剖析
+├── tests/test_server_load.py        # 服务端模型加载模式验证
+├── docs/optimization_report.md      # 本轮推理优化测试报告
 ├── requirements_scrfd_arcface.txt
 └── environment_scrfd_arcface.yml
 ```
@@ -63,7 +70,7 @@ pip install torch torchvision --index-url https://download.pytorch.org/whl/cu130
 
 ### 依赖清单（requirements_scrfd_arcface.txt）
 
-- **推理框架**：`torch` (2.9.0+cu130)、`torchvision`、`onnxruntime-gpu`
+- **推理框架**：`torch` (2.9.0+cu130)、`torchvision`、`onnxruntime-gpu`、`tensorrt-cu12==10.16.1.11`（TensorRT 加速，需匹配 onnxruntime 1.23.x）
 - **图像处理**：`opencv-python`、`numpy`、`pillow`、`scipy`
 - **模型依赖**：`ultralytics`、`modelscope`、`faiss-cpu`、`scikit-learn`、`kornia`、`matplotlib`
 - **服务**：`fastapi`、`uvicorn`、`python-multipart`、`werkzeug`
@@ -160,12 +167,31 @@ curl -X POST http://localhost:8198/api/embedding/search \
 
 ## 人脸识别
 
-基于 **SCRFD + ArcFace**（ONNX 推理）替换了旧版 DBFace + FaceNet：
+基于 **SCRFD + ArcFace**（ONNX 推理，支持 TensorRT 加速）替换了旧版 DBFace + FaceNet：
 
 - **SCRFD** (`face_recognition/scrfd/scrfd_det.py`)：`weights/scrfd/scrfd_10g_bnkps.onnx`，9 输出（3 cls + 3 bbox + 3 kps），带 5 关键点
 - **ArcFace** (`face_recognition/arcface/arcface_onnx.py`)：`weights/arcface/Glint100.onnx`，输入 112x112 RGB，输出 512 维特征
 - **5 点对齐**：基于 SCRFD 关键点按 ArcFace 标准（`norm_crop`）对齐，无需额外依赖
 - **阈值**：已知人脸 `known_threshold=0.55`、未知人脸 `unknown_threshold=0.4`（余弦相似度）
+
+### TensorRT 加速推理
+
+通过 onnxruntime 的 **TensorrtExecutionProvider** 启用 TensorRT FP16 加速（`face_recognition/trt_utils.py`）：
+
+- **环境依赖**：`pip install tensorrt-cu12==10.16.1.11`（需与 onnxruntime 版本匹配，1.23.2 对应 TRT 10.x）
+- **设备选择**：`device='tensorrt'`（或 `'tensorrt:N'` 指定 GPU 编号），可选 `'cuda'` / `'cpu'`
+- **引擎缓存**：首次启动自动构建 TRT 引擎（约十几秒），缓存于 `face_recognition/trt_cache/`，之后秒级加载
+- **端到端优化**：大图降采样解码（JPEG DCT 域缩放）、SCRFD 正样本先行过滤解码、ArcFace 批量特征提取、批量识别多线程预解码流水线
+- **实测性能**（RTX 3090，FP16）：单图端到端 **410ms → 184ms**（2.2 倍），详见 `docs/optimization_report.md`
+
+```python
+# 代码中使用
+recognizer = FaceRecognitionSystem(scrfd_path, arcface_path, device='tensorrt')
+
+# 批量识别（环境变量选择设备）
+FACE_DEVICE=tensorrt python face_recognition.py
+```
+
 
 ### 人脸库存储
 
@@ -195,6 +221,7 @@ docker-compose up -d
 ## 注意事项
 
 - 需 **GPU**（CUDA 13.0，如 RTX 3090）以获得最佳性能；无 GPU 时自动回退 CPU（onnxruntime CPU provider）
-- 服务默认使用 `cuda:1`（`app/server.py` 中 `CUDA_VISIBLE_DEVICES=1`，可按需修改）
+- 人脸识别支持 **TensorRT FP16 加速**（默认启用，TRT 不可用时自动回退 CUDA/CPU，详见"人脸识别"章节）
+- 服务默认使用 `cuda:1`（`app/server.py` 中 `CUDA_VISIBLE_DEVICES=1`，可按需修改；人脸识别模块自动跟随可见设备走 TensorRT）
 - 人脸库构建使用 `first_run=True` 时会重建 `face_database_512` 索引（其他 ES 索引不受影响）
 - 临时文件存放于 `outputs/temp/`，超过 1 小时自动清理

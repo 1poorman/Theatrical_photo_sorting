@@ -186,33 +186,46 @@ def initialize_models(detection_model_path=DEFAULT_DETECTION_MODEL_PATH,
             logger.warning("CUDA is not available. Using CPU.")
 
         if os.path.exists(scrfd_model_path) and os.path.exists(arcface_model_path):
-            _load("face_recognition", lambda: setattr(
-                globals(), "face_recognition_model",
-                FaceRecognitionSystem(scrfd_model_path, arcface_model_path, device=device)))
+            def _load_face_recognition():
+                global face_recognition_model
+                # TensorRT 加速推理。注意：本进程通过 CUDA_VISIBLE_DEVICES=1 限定可见 GPU，
+                # 可见设备内编号固定为 0，故直接用 'tensorrt'（实际用哪块卡由环境变量决定）
+                fr_device = "tensorrt" if device.startswith("cuda") else device
+                face_recognition_model = FaceRecognitionSystem(
+                    scrfd_model_path, arcface_model_path, device=fr_device)
+            _load("face_recognition", _load_face_recognition)
         else:
             logger.warning("Face recognition models not found at %s or %s", scrfd_model_path, arcface_model_path)
 
         if detection_model_path and os.path.exists(detection_model_path):
-            _load("detection", lambda: setattr(
-                globals(), "detection_model", PersonMaskCreator(detection_model_path)))
+            def _load_detection():
+                global detection_model
+                detection_model = PersonMaskCreator(detection_model_path)
+            _load("detection", _load_detection)
         else:
             logger.warning("Detection model not found at %s", detection_model_path)
 
         if segpersones_model_path and os.path.exists(segpersones_model_path):
-            _load("segmentation", lambda: setattr(
-                globals(), "segpersones_model", PersonesSegmenter(segpersones_model_path)))
+            def _load_segmentation():
+                global segpersones_model
+                segpersones_model = PersonesSegmenter(segpersones_model_path)
+            _load("segmentation", _load_segmentation)
         else:
             logger.warning("Segmentation model not found at %s", segpersones_model_path)
 
         if inpainter_model_path and os.path.exists(inpainter_model_path):
-            _load("inpainting", lambda: setattr(
-                globals(), "inpainter_model", ImageInpainter(inpainter_model_path, max_size=1024)))
+            def _load_inpainting():
+                global inpainter_model
+                inpainter_model = ImageInpainter(inpainter_model_path, max_size=1024)
+            _load("inpainting", _load_inpainting)
         else:
             logger.warning("Inpainting model not found at %s", inpainter_model_path)
 
         if pose_model_path and os.path.exists(pose_model_path):
-            _load("pose", lambda: setattr(
-                globals(), "pose_model", ShotTypeClassifier(pose_model_path)))
+            def _load_pose():
+                global pose_model
+                pose_model = ShotTypeClassifier(pose_model_path)
+            _load("pose", _load_pose)
         else:
             logger.warning("Pose model not found at %s", pose_model_path)
 

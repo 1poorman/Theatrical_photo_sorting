@@ -14,3 +14,6 @@ data/ncpa_test/
 face_recognition/out/*
 
 .vscode/
+
+# TensorRT 引擎缓存（自动生成，不入库）
+face_recognition/trt_cache/
