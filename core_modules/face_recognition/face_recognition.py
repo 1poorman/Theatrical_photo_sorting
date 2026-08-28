@@ -1,4 +1,5 @@
 import os, sys, random, time
+import numpy as np
 from tqdm import tqdm
 from core_modules.face_recognition.scrfd.scrfd_det import SCRFDDetector
 from core_modules.face_recognition.database import FaceDatabase
