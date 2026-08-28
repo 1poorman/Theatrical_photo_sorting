@@ -184,9 +184,9 @@ async def recognize_faces(image: UploadFile = File(...)):
             print("ERROR: Failed to load image with cv2.imread")
             return JSONResponse(status_code=500, content=srv.get_error(message="Failed to load image"))
 
-        # 识别人脸（ArcFace 余弦相似度阈值）
+        # 识别人脸（阈值统一取自 config/base.py）
         results, annotated_image = srv.face_recognition_model.recognize_face(
-            image_path, known_threshold=0.55, unknown_threshold=0.4)
+            image_path, known_threshold=srv.KNOWN_FACE_THRESHOLD)
         print(f"Recognition complete. Found {len(results)} faces.")
 
         # 保存人脸图片与标注图

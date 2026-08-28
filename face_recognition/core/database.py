@@ -4,11 +4,11 @@ from elasticsearch.helpers import bulk
 import numpy as np
 from datetime import datetime
 import json
-from config.base import ELASTIC_URL, ELASTIC_USER, ELASTIC_PASSWORD 
+from config.base import ELASTIC_URL, ELASTIC_USER, ELASTIC_PASSWORD, ELASTIC_FACE_INDEX
 
 class FaceDatabase:
     def __init__(self, host=ELASTIC_URL,
-     user = ELASTIC_USER, password = ELASTIC_PASSWORD, index_name='face_database_512'):
+     user = ELASTIC_USER, password = ELASTIC_PASSWORD, index_name=ELASTIC_FACE_INDEX):
         # Handle authentication if credentials are provided
         if user and password:
             self.es = Elasticsearch(hosts=host, basic_auth=(user, password))

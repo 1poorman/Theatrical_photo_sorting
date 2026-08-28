@@ -36,16 +36,16 @@ from face_recognition.face_recognition import FaceRecognitionSystem
 # 设备
 device = "cuda:1" if torch.cuda.is_available() else "cpu"
 
-# 默认路径
-DEFAULT_DETECTION_MODEL_PATH = "./weights/rtdetr-x.pt"
-# DEFAULT_SEGCLOTHES_MODEL_PATH = "./weights/segformer_b2_clothes"
-DEFAULT_SEGPERSONES_MODEL_PATH = "./weights/yolo11x-seg.pt"
-DEFAULT_INPAINTER_MODEL_PATH = "./weights/cv_fft_inpainting_lama"
-DEFAULT_POSE_MODEL_PATH = "./weights/yolo11l-pose.pt"
-DEFAULT_OUTPUT_DIR = "./outputs"
-DEFAULT_SCRFD_MODEL_PATH = "./weights/scrfd/scrfd_10g_bnkps.onnx"
-DEFAULT_ARCFACE_MODEL_PATH = "./weights/arcface/Glint100.onnx"
-DEFAULT_FACE_DATABASE_PATH = "./outputs/face_index"
+# 默认路径（统一参数中心 face_recognition/config/base.py）
+from face_recognition.config.base import (
+    DETECTION_MODEL_PATH as DEFAULT_DETECTION_MODEL_PATH,
+    SEGPERSON_MODEL_PATH as DEFAULT_SEGPERSONES_MODEL_PATH,
+    INPAINTER_MODEL_PATH as DEFAULT_INPAINTER_MODEL_PATH,
+    POSE_MODEL_PATH as DEFAULT_POSE_MODEL_PATH,
+    SCRFD_MODEL_PATH as DEFAULT_SCRFD_MODEL_PATH,
+    ARCFACE_MODEL_PATH as DEFAULT_ARCFACE_MODEL_PATH,
+    KNOWN_FACE_THRESHOLD,
+)
 
 # 创建目录
 os.makedirs(DEFAULT_OUTPUT_DIR, exist_ok=True)

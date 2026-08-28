@@ -8,6 +8,11 @@ from arcface.arcface_onnx import ArcFaceFeatureExtractor
 from utils.assess import assess_face_quality_simple
 from utils.visualization import VisualizationUtils
 from tools.image_io import imread_reduced, list_images
+from config.base import (
+    FACE_IMAGE_MAX_SIDE, KNOWN_FACE_THRESHOLD, SEARCH_THRESHOLD, SEARCH_TOP_K,
+    FACE_DETECT_MIN_SCORE, FACE_MIN_SIZE, FACE_ASPECT_RATIO_RANGE, FACE_NMS_IOU,
+    FACE_DB_STANDARD_SIZE, FACE_DB_MIN_AREA,
+)
 import cv2
 
 class FaceRecognitionSystem:
@@ -77,15 +82,15 @@ class FaceRecognitionSystem:
                         print(f"  Warning: Could not read image {img_path}")
                         continue
 
-                    # 已是 160x160 标准人脸图：直接居中裁剪到 112x112，无需检测
+                    # 已是标准尺寸人脸图（见 FACE_DB_STANDARD_SIZE）：直接对齐入库，无需检测
                     h, w = image.shape[:2]
-                    if h == 160 and w == 160:
+                    if h == FACE_DB_STANDARD_SIZE and w == FACE_DB_STANDARD_SIZE:
                         aligned_face = self.extractor.align_face(image, None)
                     else:
                         # 非标准尺寸：检测并取最大人脸（单次检测，基于关键点对齐）
                         faces = self.detector._detect_single(image)
                         # 过滤面积过小的人脸
-                        filtered = [f for f in faces if f.width * f.height > 300]
+                        filtered = [f for f in faces if f.width * f.height > FACE_DB_MIN_AREA]
                         if not filtered:
                             print(f"  ✗ No faces detected in {img_path}")
                             continue
@@ -140,13 +145,15 @@ class FaceRecognitionSystem:
         print(f"Overall success rate: {successful_persons/total_persons*100:.1f}%")
         print(f"{'#'*60}\n")
     
-    def recognize_face(self, image_path, image_size=1920, known_threshold=0.55, unknown_threshold=0.4, 
-                   iou_threshold=0.4, min_face_size=20, debug=False, image=None):
+    def recognize_face(self, image_path=None, image_size=FACE_IMAGE_MAX_SIDE, known_threshold=KNOWN_FACE_THRESHOLD,
+                   unknown_threshold=None, iou_threshold=FACE_NMS_IOU, min_face_size=FACE_MIN_SIZE,
+                   debug=False, image=None):
         """
-        人脸识别函数
+        人脸识别函数（默认参数统一取自 config/base.py）
         Args:
             image_path: 输入图片路径
-            known_threshold: 已知人脸的匹配阈值（ArcFace 余弦相似度，建议 0.5~0.6）
+            image_size: 图像最长边限制
+            known_threshold: 已知人脸匹配阈值（ArcFace 余弦相似度）
             unknown_threshold: 保留参数（历史兼容，当前逻辑未使用）
             iou_threshold: 重复人脸检测的IOU阈值
             min_face_size: 最小人脸尺寸
@@ -190,14 +197,14 @@ class FaceRecognitionSystem:
                 continue
                 
             # 过滤低置信度人脸
-            if face_obj.score < 0.3:
+            if face_obj.score < FACE_DETECT_MIN_SCORE:
                 if debug:
                     print(f"  Skip: Low confidence {face_obj.score}")
                 continue
 
             # 宽高比限制（过滤异常误检）
             aspect_ratio = face_obj.width / face_obj.height
-            if aspect_ratio < 0.2 or aspect_ratio > 5.0:
+            if not (FACE_ASPECT_RATIO_RANGE[0] <= aspect_ratio <= FACE_ASPECT_RATIO_RANGE[1]):
                 if debug:
                     print(f"  Skip: Bad aspect ratio {aspect_ratio}")
                 continue
@@ -297,8 +304,8 @@ class FaceRecognitionSystem:
                 # L2归一化
                 embedding = self.extractor.l2_normalize([embedding])[0]
                 
-                # 搜索匹配（ArcFace 余弦经 ES ((cos+1)/2)^2 变换，0.4 对应余弦≈0.26，保证召回）
-                matches = self.database.search_face(embedding, top_k=10, threshold=0.4)
+                # 搜索匹配（ES ((cos+1)/2)^2 变换，SEARCH_THRESHOLD 对应较低余弦，保证召回）
+                matches = self.database.search_face(embedding, top_k=SEARCH_TOP_K, threshold=SEARCH_THRESHOLD)
 
                 # Group matches by person name and keep the best score for each person
                 person_matches = {}
@@ -381,8 +388,8 @@ class FaceRecognitionSystem:
                 is_unique_match = True
                 if len(result['matches']) > 1:
                     second_best = result['matches'][1]
-                    # If the difference between best and second best is small, it might be ambiguous
-                    if (best_match['score'] - second_best['score']) < 0.05 and best_match['score'] < 0.9:  # Less than 5% difference
+                    # 最佳与次佳分差过小视为歧义（高置信度除外）
+                    if (best_match['score'] - second_best['score']) < FACE_AMBIGUOUS_MARGIN and best_match['score'] < 0.9:
                         is_unique_match = False
                 
                 if best_match['score'] >= dynamic_threshold and is_unique_match:
@@ -703,19 +710,16 @@ class FaceRecognitionSystem:
         }
 
 if __name__ == '__main__':
-    scrfd_model_dir = './weights/scrfd/scrfd_10g_bnkps.onnx'
-    arcface_model_dir = './weights/arcface/Glint100.onnx'
+    from config.base import SCRFD_MODEL_PATH, ARCFACE_MODEL_PATH, FACE_DEVICE
     image_path = 'data/sample_images/4.jpg'
 
-    # 运行设备：'tensorrt'（加速，FP16）/ 'cuda' / 'cpu'，可用环境变量 FACE_DEVICE 覆盖
-    device = os.environ.get('FACE_DEVICE', 'tensorrt')
-    print(f"Using device: {device}")
-    recognizer = FaceRecognitionSystem(scrfd_model_dir, arcface_model_dir, device=device)
+    print(f"Using device: {FACE_DEVICE}")
+    recognizer = FaceRecognitionSystem(SCRFD_MODEL_PATH, ARCFACE_MODEL_PATH, device=FACE_DEVICE)
     # 建立人脸索引（第一次），批量添加人脸
     # recognizer.build_face_database('data/face_database', first_run=True)
 
     # recognizer.build_face_database('data/face_database')
-    
+
     # 测试embedding和人像检索准确率
     # test_results = recognizer.test_embedding_accuracy('data/face_database')
 
@@ -724,7 +728,7 @@ if __name__ == '__main__':
         input_folder='data/ncpa_test/话剧《样式雷》/【原始】20160609戏剧场-话剧《样式雷》-摄影凌风',
         output_folder='./out/test-7/',
         fraction=1,
-        known_threshold=0.55
+        known_threshold=KNOWN_FACE_THRESHOLD
     )
     # results, annotated_image = recognizer.recognize_face(image_path, known_threshold=0.8, unknown_threshold=0.3)
     # print(f"Found {len(results)} faces:")
