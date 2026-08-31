@@ -497,6 +497,140 @@ async def group_similar_images(image_folder: str = Form(...),
         return JSONResponse(status_code=500, content=srv.get_error(message=f"Error grouping similar images: {str(e)}"))
 
 
+# ---------- 智能整理（Smart Organizer） ----------
+
+def _get_organize_models(classify_role: bool):
+    """按需加载 SigLIP2 embedder 与行当分类器（缓存挂在 srv.organize_models）。"""
+    if 'embedder' not in srv.organize_models:
+        from core_modules.image_search import ImageEmbedder
+        srv.organize_models['embedder'] = ImageEmbedder(model_name='siglip2_base')
+    role_clf = None
+    if classify_role:
+        if 'role_clf' not in srv.organize_models:
+            from core_modules.organize.role_classifier import RoleClassifier
+            srv.organize_models['role_clf'] = RoleClassifier(srv.organize_models['embedder'])
+        role_clf = srv.organize_models['role_clf']
+    return srv.organize_models['embedder'], role_clf
+
+
+@app.post("/api/organize/build_face_database")
+async def organize_build_face_database(organized_dirs: str = Form(...),
+                                       db_root: str = Form(srv.FACE_DATABASE_ROOT),
+                                       max_anchors: int = Form(8),
+                                       dry_run: bool = Form(False)):
+    """从整理完成/原始目录半自动构建人脸库
+    Form 参数:
+    - organized_dirs: 逗号分隔的目录列表（整理完成命名或原始命名均可）
+    - db_root: 人脸库根目录（默认 data/face_database）
+    - max_anchors: 每演员最多锚定张数（默认 8）
+    - dry_run: 仅统计不写入（默认 false）
+    """
+    try:
+        if srv.face_recognition_model is None:
+            return JSONResponse(status_code=500, content=srv.get_error(message="Face recognition model not initialized"))
+        dirs = [d.strip() for d in organized_dirs.split(',') if d.strip()]
+        for d in dirs:
+            if not os.path.exists(d):
+                return JSONResponse(status_code=400, content=srv.get_error(message=f"Directory does not exist: {d}"))
+
+        from core_modules.organize.face_db_builder import FaceDBBuilder
+        builder = FaceDBBuilder(srv.face_recognition_model, db_root,
+                                max_anchors_per_person=max_anchors)
+        stats = builder.build_from_organized(dirs, dry_run=dry_run)
+        return JSONResponse({
+            "code": 200,
+            "message": "Face database built successfully",
+            "data": stats,
+        })
+    except Exception as e:
+        return JSONResponse(status_code=500, content=srv.get_error(message=f"Error building face database: {str(e)}"))
+
+
+@app.post("/api/organize/actor_view")
+async def organize_actor_view(input_dir: str = Form(...),
+                              output_dir: str = Form(...),
+                              db_root: str = Form(srv.FACE_DATABASE_ROOT),
+                              threshold: float = Form(0.55),
+                              copy_images: bool = Form(True)):
+    """按演员生成整理视图
+    Form 参数:
+    - input_dir: 目标照片目录
+    - output_dir: 输出目录（actor_views/ + actor_view_report.json）
+    - db_root: 人脸锚定库根目录
+    - threshold: 命中阈值（默认 0.55）
+    """
+    try:
+        if srv.face_recognition_model is None:
+            return JSONResponse(status_code=500, content=srv.get_error(message="Face recognition model not initialized"))
+        if not os.path.exists(input_dir):
+            return JSONResponse(status_code=400, content=srv.get_error(message=f"Input directory does not exist: {input_dir}"))
+
+        from core_modules.organize.actor_view import ActorViewGenerator
+        gen = ActorViewGenerator(srv.face_recognition_model, db_root)
+        report = gen.generate(input_dir, output_dir, threshold=threshold,
+                              copy_images=copy_images)
+        return JSONResponse({
+            "code": 200,
+            "message": "Actor view generated successfully",
+            "data": {
+                "input_dir": report.get('input_dir'),
+                "threshold": report.get('threshold'),
+                "total_images": report.get('total_images'),
+                "persons": {p: v['count'] for p, v in report.get('persons', {}).items()},
+            },
+        })
+    except Exception as e:
+        return JSONResponse(status_code=500, content=srv.get_error(message=f"Error generating actor view: {str(e)}"))
+
+
+@app.post("/api/organize/run")
+async def organize_run(input_dir: str = Form(...),
+                       output_dir: str = Form(...),
+                       keep_per_bucket: int = Form(2),
+                       gap_seconds: int = Form(300),
+                       classify_role: bool = Form(True),
+                       scene_labels_file: str = Form('')):
+    """智能整理流水线（连拍去重 → 人脸识别 → 行当分类 → 场景划分 → 规范命名）
+    Form 参数:
+    - input_dir: 原始照片目录
+    - output_dir: 输出目录（organized/ best/ organize_report.json）
+    - keep_per_bucket: 每景别桶保留张数（默认 2）
+    - gap_seconds: 场景时间间隔阈值（默认 300 秒）
+    - classify_role: 是否行当分类（默认 true，实验性）
+    - scene_labels_file: 场景人工标注映射文件（可选）
+    """
+    try:
+        if srv.face_recognition_model is None:
+            return JSONResponse(status_code=500, content=srv.get_error(message="Face recognition model not initialized"))
+        if not os.path.exists(input_dir):
+            return JSONResponse(status_code=400, content=srv.get_error(message=f"Input directory does not exist: {input_dir}"))
+
+        embedder, role_clf = _get_organize_models(classify_role)
+        from core_modules.organize.smart_organizer import SmartOrganizer
+        organizer = SmartOrganizer(srv.face_recognition_model,
+                                   srv.FACE_DATABASE_ROOT,
+                                   shot_classifier=srv.pose_model,
+                                   embedder=embedder, role_classifier=role_clf)
+        report = organizer.organize(input_dir, output_dir,
+                                    keep_per_bucket=keep_per_bucket,
+                                    gap_seconds=gap_seconds,
+                                    classify_role=classify_role,
+                                    scene_labels=scene_labels_file or None)
+        return JSONResponse({
+            "code": 200,
+            "message": "Organize pipeline completed successfully",
+            "data": {
+                "total_input": report['total_input'],
+                "kept": report['kept'],
+                "discarded": report['discarded'],
+                "n_scenes": report['n_scenes'],
+                "report_path": os.path.join(output_dir, 'organize_report.json'),
+            },
+        })
+    except Exception as e:
+        return JSONResponse(status_code=500, content=srv.get_error(message=f"Error running organize pipeline: {str(e)}"))
+
+
 # ---------- 启动事件 ----------
 
 @app.on_event("startup")

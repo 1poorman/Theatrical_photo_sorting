@@ -17,3 +17,6 @@ face_recognition/out/*
 
 # TensorRT 引擎缓存（自动生成，不入库）
 core_modules/face_recognition/trt_cache/
+
+# 测试工作区
+tests/*

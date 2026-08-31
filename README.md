@@ -10,6 +10,7 @@
 | 镜头分类 | 景别分类（特写/近景/中景/全景） | YOLO11l-pose |
 | 背景修复 | 人物去除后背景修复 | LAMA (ModelScope) |
 | 图像检索 | embedding 索引、相似检索、聚类分组 | ResNet50/101、DINOv2、SigLIP2 (faiss) |
+| 智能整理 | 连拍去重选优、半自动人脸库、按演员视图、场景划分、行当分类、规范命名流水线 | SCRFD+ArcFace、YOLO11l-pose、SigLIP2 zero-shot（详见 `docs/smart_organize_blueprint.md`） |
 
 ## 目录结构
 
@@ -32,6 +33,14 @@
 │   ├── shot_classify.py            #   镜头景别分类（YOLO11l-pose）
 │   ├── inpaint_lama.py             #   背景修复（LAMA，ImageInpainter）
 │   ├── image_search.py             #   图像检索（faiss 索引/检索/聚类）
+│   ├── organize/                   #   智能整理（Smart Organizer 子包）
+│   │   ├── filename_parser.py      #     文件名/目录名解析（日期/剧场/剧目/人物/摄影师/连拍号）
+│   │   ├── burst_dedup.py          #     连拍分组去重 + 全图质量评分 + 景别感知选优
+│   │   ├── face_db_builder.py      #     半自动人脸库（单人归属 + 多人锚定传播两轮构建）
+│   │   ├── actor_view.py           #     按演员整理视图生成
+│   │   ├── scene_split.py          #     场景划分（EXIF 时间分段为主 + embedding 聚类为辅）
+│   │   ├── role_classifier.py      #     戏曲行当 zero-shot 分类（生旦净丑，实验性）
+│   │   └── smart_organizer.py      #     整理流水线编排入口
 │   └── tools/                      #   跨模块共享工具
 │       ├── logger.py               #     集中日志（北京时区、按天滚动、StepTimer 计时）
 │       ├── image_io.py             #     降采样解码、最长边缩放、图片枚举
@@ -94,6 +103,9 @@ python app/server.py       # 纯 API，端口 8198
 | POST | `/api/embedding/build_index` | 构建图像索引 |
 | POST | `/api/embedding/search` | 相似图片检索 |
 | POST | `/api/embedding/group_similar` | 相似图片聚类分组 |
+| POST | `/api/organize/build_face_database` | 半自动人脸库构建（整理完成/原始目录 → 锚定库） |
+| POST | `/api/organize/actor_view` | 按演员生成整理视图 |
+| POST | `/api/organize/run` | 智能整理流水线（去重→识别→行当→场景→规范命名） |
 
 ```bash
 curl -X POST http://localhost:8198/api/face/recognize -F "image=@data/sample_images/4.jpg"
@@ -128,6 +140,15 @@ python tests/test_real_images.py    # 真实剧照端到端
 python tests/test_seg_clothes_v2.py # 人像分割
 python tests/test_siglip2.py        # SigLIP2 embedding
 python tests/test_server_load.py    # 服务端模型加载链
+
+# 智能整理（Smart Organizer，见 docs/smart_organize_blueprint.md）
+python tests/test_filename_parser.py  # 文件名解析全量回归（无模型依赖）
+python tests/test_burst_dedup.py      # 连拍去重选优（含景别分类）
+python tests/test_face_db_build.py    # 人脸库两轮构建（需 GPU，产出 outputs/tmp_face_db）
+python tests/test_actor_view.py       # 按演员视图（依赖 tmp_face_db）
+python tests/test_scene_role.py       # 场景划分 + 行当 zero-shot（依赖 tmp_face_db）
+python tests/test_smart_organize.py   # 端到端流水线（单剧目）
+python tests/acceptance_m7.py         # 四剧目全量验收（报告 outputs/acceptance/）
 ```
 
 ## Docker

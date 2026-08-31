@@ -20,7 +20,345 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 
 from main import app  # 复用 main.py 中定义的全部 API 路由与模型
 
-# ---------- 可视化界面 HTML ----------
+ORGANIZE_HTML = """<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能整理 - 戏剧照片整理系统</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+               background: #f0f2f5; color: #333; min-height: 100vh; }
+        .topbar { background: linear-gradient(135deg, #14532d 0%, #16a34a 100%);
+                  color: #fff; padding: 18px 40px; display: flex;
+                  align-items: center; justify-content: space-between;
+                  box-shadow: 0 2px 12px rgba(0,0,0,0.15); position: sticky; top: 0; z-index: 100; }
+        .topbar h1 { font-size: 20px; font-weight: 600; }
+        .topbar .sub { font-size: 12px; opacity: 0.85; margin-top: 2px; }
+        .nav { display: flex; gap: 10px; }
+        .nav a { color: #fff; text-decoration: none; font-size: 13px; padding: 8px 16px;
+                 border-radius: 8px; background: rgba(255,255,255,0.12);
+                 border: 1px solid rgba(255,255,255,0.25); transition: background 0.2s; }
+        .nav a:hover { background: rgba(255,255,255,0.25); }
+        .nav a.active { background: rgba(255,255,255,0.32); font-weight: 600; }
+        .container { max-width: 1280px; margin: 24px auto; padding: 0 20px;
+                     display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 20px; }
+        .card { background: #fff; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); padding: 22px; }
+        .card:hover { box-shadow: 0 4px 18px rgba(0,0,0,0.1); }
+        .card h2 { font-size: 16px; font-weight: 600; margin-bottom: 16px;
+                   padding-bottom: 10px; border-bottom: 2px solid #eef2f7; color: #14532d; }
+        .card .desc { font-size: 12px; color: #64748b; margin-bottom: 14px; line-height: 1.6; }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 12px; color: #666; margin-bottom: 5px; font-weight: 500; }
+        .form-group .hint { font-size: 11px; color: #94a3b8; margin-top: 3px; }
+        input[type="text"], input[type="number"], select { width: 100%; padding: 8px 12px;
+                     border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; }
+        input:focus, select:focus { outline: none; border-color: #16a34a;
+                     box-shadow: 0 0 0 3px rgba(22,163,74,0.1); }
+        .row { display: flex; gap: 10px; }
+        .row .form-group { flex: 1; }
+        .btn { display: inline-block; width: 100%; padding: 10px; border: none; border-radius: 6px;
+               background: #16a34a; color: #fff; font-size: 14px; font-weight: 500;
+               cursor: pointer; transition: background 0.2s, transform 0.1s; }
+        .btn:hover { background: #15803d; }
+        .btn:active { transform: scale(0.98); }
+        .btn.btn-blue { background: #2563eb; }
+        .btn.btn-blue:hover { background: #1d4ed8; }
+        .result { margin-top: 14px; padding: 12px; border-radius: 8px; font-size: 13px;
+                  display: none; background: #f8fafc; border: 1px solid #e2e8f0; }
+        .result.success { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
+        .result.error { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+        .result.loading { background: #f0fdf4; border-color: #bbf7d0; color: #14532d;
+                  text-align: center; padding: 16px; }
+        .spinner { display: inline-block; width: 18px; height: 18px; border: 3px solid #bbf7d0;
+                   border-top-color: #16a34a; border-radius: 50%;
+                   animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 8px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .result pre { background: #fff; padding: 8px; border-radius: 4px; font-size: 11px;
+                      overflow-x: auto; margin-top: 8px; max-height: 260px; overflow-y: auto; }
+        .stat-row { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+        .stat { flex: 1; min-width: 90px; background: #f0fdf4; border: 1px solid #bbf7d0;
+                border-radius: 8px; padding: 10px; text-align: center; }
+        .stat .num { font-size: 20px; font-weight: 700; color: #14532d; }
+        .stat .lbl { font-size: 11px; color: #64748b; margin-top: 2px; }
+        .file-list { margin-top: 10px; max-height: 300px; overflow-y: auto;
+                     border: 1px solid #e2e8f0; border-radius: 6px; background: #fff; }
+        .file-list .item { padding: 7px 10px; font-size: 12px;
+                     border-bottom: 1px solid #f1f5f9; }
+        .file-list .item:hover { background: #f8fafc; }
+        .file-list .name { word-break: break-all; color: #334155; }
+        .actor-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                      gap: 10px; margin-top: 10px; }
+        .actor-item { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px;
+                      padding: 10px; text-align: center; }
+        .actor-item .name { font-size: 12px; font-weight: 600; color: #14532d; margin-top: 2px; }
+        .actor-item .cnt { font-size: 11px; color: #64748b; }
+        .actor-item .bar { height: 5px; background: #e2e8f0; border-radius: 3px;
+                      margin-top: 6px; overflow: hidden; }
+        .actor-item .bar i { display: block; height: 100%; border-radius: 3px;
+                      background: linear-gradient(90deg, #16a34a, #4ade80); }
+        .steps { display: flex; gap: 4px; margin-top: 10px; }
+        .step { flex: 1; text-align: center; font-size: 10px; color: #94a3b8;
+                padding: 6px 2px; border-radius: 4px; background: #f8fafc; }
+        .step.done { background: #dcfce7; color: #166534; font-weight: 600; }
+        .step.active { background: #fef9c3; color: #854d0e; font-weight: 600; }
+        .nav { display: flex; gap: 10px; }
+        .nav a {
+            color: #fff; text-decoration: none; font-size: 13px;
+            padding: 8px 16px; border-radius: 8px;
+            background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25);
+            transition: background 0.2s; white-space: nowrap;
+        }
+        .nav a:hover { background: rgba(255,255,255,0.25); }
+        .nav a.active { background: rgba(255,255,255,0.32); font-weight: 600; }
+        @media (max-width: 768px) {
+            .container { grid-template-columns: 1fr; }
+            .topbar { padding: 14px 20px; flex-direction: column; gap: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <div>
+            <h1>📦 智能整理（Smart Organizer）</h1>
+            <div class="sub">连拍去重 → 人脸识别 → 行当分类 → 场景划分 → 规范命名</div>
+        </div>
+        <div class="nav">
+            <a href="/ui">🎭 照片处理</a>
+            <a href="/organize" class="active">📦 智能整理</a>
+            <a href="/docs" target="_blank">API 文档</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- ① 半自动人脸库构建 -->
+        <div class="card">
+            <h2>① 半自动人脸库构建</h2>
+            <div class="desc">
+                从「整理完成」或「原始」目录构建演员锚定库。<br>
+                · 单人照片直接归属（文件名仅一位「X饰Y」演员）<br>
+                · 多人同框照片用已建库演员匹配消去后传播归属<br>
+                · 谢幕/合影/归属歧义自动跳过，同人一致性校验拦截异人
+            </div>
+            <form id="build-db-form">
+                <div class="form-group">
+                    <label>源目录列表（逗号分隔多个目录）</label>
+                    <input type="text" id="db-dirs" name="organized_dirs"
+                           placeholder="/path/【整理完成】剧目彩排,/path/【原始】...-摄影XX" required>
+                    <div class="hint">目录名需含日期+剧目，文件名含「演员饰角色」标注</div>
+                </div>
+                <div class="row">
+                    <div class="form-group">
+                        <label>人脸库根目录（留空默认 data/face_database）</label>
+                        <input type="text" id="db-root" name="db_root">
+                    </div>
+                    <div class="form-group">
+                        <label>每人最多锚定张数</label>
+                        <input type="number" id="db-max-anchors" name="max_anchors" value="8" min="1" max="50">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+                        <input type="checkbox" id="db-dry-run" name="dry_run" value="true" style="width:auto">
+                        试运行（仅统计，不写入）
+                    </label>
+                </div>
+                <button type="submit" class="btn">开始建库</button>
+            </form>
+            <div id="build-db-result" class="result"></div>
+        </div>
+
+        <!-- ② 按演员整理视图 -->
+        <div class="card">
+            <h2>② 按演员整理视图</h2>
+            <div class="desc">
+                对目标目录逐图识别库内演员，按演员生成照片专辑
+                （actor_views/演员名/ + actor_view_report.json）。
+            </div>
+            <form id="actor-view-form">
+                <div class="form-group">
+                    <label>目标照片目录</label>
+                    <input type="text" id="av-input" name="input_dir" placeholder="/path/to/photos" required>
+                </div>
+                <div class="form-group">
+                    <label>输出目录</label>
+                    <input type="text" id="av-output" name="output_dir" placeholder="/path/to/output" required>
+                </div>
+                <div class="row">
+                    <div class="form-group">
+                        <label>人脸库根目录（留空默认）</label>
+                        <input type="text" id="av-db-root" name="db_root">
+                    </div>
+                    <div class="form-group">
+                        <label>命中阈值（余弦）</label>
+                        <input type="number" id="av-threshold" name="threshold" value="0.55" step="0.05" min="0.3" max="0.9">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-blue">生成演员视图</button>
+            </form>
+            <div id="actor-view-result" class="result"></div>
+        </div>
+
+        <!-- ③ 智能整理流水线 -->
+        <div class="card" style="grid-column: 1 / -1;">
+            <h2>③ 智能整理流水线（完整流程）</h2>
+            <div class="desc">
+                输入原始摄影目录，自动完成：连拍去重选优（景别感知，每景别保留 top-K）→
+                人脸识别生成人物列表 → 戏曲行当分类（可选）→ EXIF 时间场景划分 →
+                规范命名输出（organized/）。完整报告见输出目录 organize_report.json。
+            </div>
+            <div class="steps" id="pipeline-steps">
+                <div class="step" data-step="1">1 解析</div>
+                <div class="step" data-step="2">2 连拍去重</div>
+                <div class="step" data-step="3">3 人脸识别</div>
+                <div class="step" data-step="4">4 行当分类</div>
+                <div class="step" data-step="5">5 场景划分</div>
+                <div class="step" data-step="6">6 规范命名</div>
+            </div>
+            <form id="organize-form" style="margin-top: 12px;">
+                <div class="row">
+                    <div class="form-group">
+                        <label>原始照片目录</label>
+                        <input type="text" id="org-input" name="input_dir"
+                               placeholder="/path/【原始N】...-摄影XX" required>
+                    </div>
+                    <div class="form-group">
+                        <label>输出目录</label>
+                        <input type="text" id="org-output" name="output_dir" placeholder="/path/to/output" required>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="form-group">
+                        <label>每景别桶保留张数</label>
+                        <input type="number" id="org-keep" name="keep_per_bucket" value="2" min="1" max="10">
+                    </div>
+                    <div class="form-group">
+                        <label>场景时间间隔阈值（秒）</label>
+                        <input type="number" id="org-gap" name="gap_seconds" value="300" min="30" max="3600" step="30">
+                    </div>
+                    <div class="form-group">
+                        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;margin-top:22px">
+                            <input type="checkbox" id="org-role" name="classify_role" value="true" checked style="width:auto">
+                            启用行当分类（戏曲类）
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>场景人工标注映射文件（可选，JSON：{"scene-01": "第1幕克段", ...}）</label>
+                    <input type="text" id="org-labels" name="scene_labels_file" placeholder="/path/to/scene_labels.json">
+                </div>
+                <button type="submit" class="btn" id="org-submit">执行智能整理</button>
+            </form>
+            <div id="organize-result" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        function showLoading(el, msg) {
+            el.className = 'result loading'; el.style.display = 'block';
+            el.innerHTML = '<div class="spinner"></div>' + msg;
+        }
+        function showError(el, data) {
+            el.className = 'result error'; el.style.display = 'block';
+            el.innerHTML = '<strong>❌ 错误：</strong>' + ((data && data.message) || data);
+        }
+        function esc(s) {
+            return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
+        function submitForm(formId, url, resultId, loadingMsg, onDone) {
+            const form = document.getElementById(formId);
+            const el = document.getElementById(resultId);
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                showLoading(el, loadingMsg);
+                const fd = new FormData(this);
+                if (!fd.get('db_root')) fd.delete('db_root');   // 空则用服务端默认
+                fetch(url, { method: 'POST', body: fd })
+                    .then(r => r.json())
+                    .then(d => {
+                        if (d.code !== 200) { showError(el, d); return; }
+                        el.className = 'result success'; el.style.display = 'block';
+                        el.innerHTML = onDone(d.data);
+                    })
+                    .catch(err => showError(el, { message: err.message }));
+            });
+        }
+
+        // ① 建库
+        submitForm('build-db-form', '/api/organize/build_face_database', 'build-db-result',
+            '正在构建人脸库（单人归属 → 多人锚定传播）...', function(d) {
+                let html = '<strong>✅ 建库完成</strong><div class="stat-row">';
+                html += stat(d.scanned, '扫描') + stat(d.added, '新增锚定')
+                      + stat((d.added_persons || []).length, '新增人物')
+                      + stat(d.skipped_inconsistent || 0, '一致性拦截') + '</div>';
+                if ((d.added_persons || []).length) {
+                    html += '<div class="file-list">';
+                    d.added_persons.forEach(p => {
+                        html += '<div class="item"><span class="name">' + esc(p) + '</span></div>';
+                    });
+                    html += '</div>';
+                }
+                return html + '<pre>' + JSON.stringify(d, null, 2) + '</pre>';
+            });
+
+        function stat(num, lbl) {
+            return '<div class="stat"><div class="num">' + num + '</div><div class="lbl">' + lbl + '</div></div>';
+        }
+
+        // ② 演员视图
+        submitForm('actor-view-form', '/api/organize/actor_view', 'actor-view-result',
+            '正在逐图识别人脸并生成演员专辑...', function(d) {
+                let html = '<strong>✅ 视图生成完成</strong><div class="stat-row">';
+                const persons = Object.entries(d.persons || {}).sort((a, b) => b[1] - a[1]);
+                html += stat(d.total_images, '总图片') + stat(persons.length, '命中演员') + '</div>';
+                if (persons.length) {
+                    const maxCnt = Math.max.apply(null, persons.map(x => x[1]).concat([1]));
+                    html += '<div class="actor-grid">';
+                    persons.forEach(x => {
+                        html += '<div class="actor-item"><div class="name">' + esc(x[0])
+                              + '</div><div class="cnt">' + x[1] + ' 张</div>'
+                              + '<div class="bar"><i style="width:' + Math.round(x[1] / maxCnt * 100) + '%"></i></div></div>';
+                    });
+                    html += '</div>';
+                }
+                return html;
+            });
+
+        // ③ 流水线（步骤动画）
+        function setStep(n, done) {
+            document.querySelectorAll('#pipeline-steps .step').forEach(s => {
+                s.classList.remove('active', 'done');
+                const i = parseInt(s.dataset.step);
+                if (i < n || (i === n && done)) s.classList.add('done');
+                else if (i === n) s.classList.add('active');
+            });
+        }
+        submitForm('organize-form', '/api/organize/run', 'organize-result',
+            '正在执行智能整理流水线（耗时与图片数量正相关）...', function(d) {
+                setStep(6, true);
+                let html = '<strong>✅ 整理完成</strong><div class="stat-row">';
+                html += stat(d.total_input, '输入') + stat(d.kept, '保留')
+                      + stat(d.discarded, '剪除') + stat(d.n_scenes, '场景') + '</div>';
+                html += '<p style="margin-top:8px;font-size:12px">报告：<code>'
+                      + esc(d.report_path) + '</code></p>';
+                return html;
+            });
+        document.getElementById('organize-form').addEventListener('submit', function() {
+            let step = 1; setStep(1);
+            const timer = setInterval(() => {
+                step += 1;
+                if (step > 5) { clearInterval(timer); return; }
+                setStep(step);
+            }, 4000);
+        });
+    </script>
+</body>
+</html>
+"""
+
+
+# ---------- 原有可视化界面 HTML（照片处理） ----------
 
 UI_HTML = """<!DOCTYPE html>
 <html lang="zh-CN">
@@ -216,8 +554,14 @@ UI_HTML = """<!DOCTYPE html>
             <h1>🎭 戏剧照片处理工具</h1>
             <div class="sub">人脸识别 / 人像检测分割 / 背景修复 / 图像检索</div>
         </div>
-        <div class="status-pill" onclick="checkHealth()" title="点击检测服务状态">
-            <span class="dot"></span><span id="status-text">检测服务状态</span>
+        <div style="display:flex;align-items:center;gap:14px;">
+            <div class="status-pill" onclick="checkHealth()" title="点击检测服务状态">
+                <span class="dot"></span><span id="status-text">检测服务状态</span>
+            </div>
+            <nav class="nav">
+                <a href="/ui" class="active">🎭 照片处理</a>
+                <a href="/organize">📦 智能整理</a>
+            </nav>
         </div>
     </div>
 
@@ -523,6 +867,12 @@ UI_HTML = """<!DOCTYPE html>
 async def ui_page():
     """可视化操作界面"""
     return HTMLResponse(content=UI_HTML)
+
+
+@app.get("/organize", response_class=HTMLResponse, include_in_schema=False)
+async def organize_page():
+    """智能整理可视化界面"""
+    return HTMLResponse(content=ORGANIZE_HTML)
 
 
 # 移除 main.py 中根路径指向 /docs 的路由，改为指向可视化界面 /ui

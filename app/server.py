@@ -49,15 +49,24 @@ from config.base import (
     TEMP_DIR,
 )
 
+# 智能整理（Smart Organizer）默认路径
+FACE_DATABASE_ROOT = os.path.join(PROJECT_ROOT, 'data', 'face_database')   # 人脸锚定库
+ORGANIZE_OUTPUT_ROOT = os.path.join(DEFAULT_OUTPUT_DIR, 'organize')        # 整理输出根目录
+
 # 创建目录
 os.makedirs(DEFAULT_OUTPUT_DIR, exist_ok=True)
 os.makedirs(TEMP_DIR, exist_ok=True)
+os.makedirs(FACE_DATABASE_ROOT, exist_ok=True)
+os.makedirs(ORGANIZE_OUTPUT_ROOT, exist_ok=True)
 
 # 任务进度追踪
 progress_tracker = {}
 
 # 最近一次构建的 embedding 索引路径
 last_index_path = None
+
+# 智能整理辅助模型（懒加载缓存，进程内复用；键：embedder / role_clf）
+organize_models = {}
 
 # ---------- 全局模型实例（由 initialize_models 赋值） ----------
 
