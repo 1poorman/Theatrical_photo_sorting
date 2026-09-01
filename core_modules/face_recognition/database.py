@@ -94,77 +94,26 @@ class FaceDatabase:
         success, _ = bulk(self.es, actions)
         return success
     
-    # def search_face(self, query_embedding, top_k=5, threshold=0.7):
-    #     """
-    #     搜索最相似的人脸
-    #     """
-    #     script_query = {
-    #         "script_score": {
-    #             "query": {"match_all": {}},
-    #             "script": {
-    #                 "source": """
-    #                 double cosine = cosineSimilarity(params.query_vector, 'face_embedding');
-    #                 // Apply transformation to increase discrimination
-    #                 // Using power function to widen the gap between high and low similarities
-    #                 return Math.pow((cosine + 1.0) / 2.0, 2);  // Square the normalized cosine similarity
-    #                 """,
-    #                 "params": {"query_vector": query_embedding.tolist()}
-    #             }
-    #         }
-    #     }
-        
-    #     response = self.es.search(
-    #         index=self.index_name,
-    #         body={
-    #             "size": top_k,
-    #             "query": script_query,
-    #             "_source": ["person_id", "person_name", "image_path"]
-    #         }
-    #     )
-        
-    #     results = []
-    #     for hit in response['hits']['hits']:
-    #         # Elasticsearch cosineSimilarity返回值范围是[-1, 1]，经过+1后是[0, 2]
-    #         # 所以需要除以2转换到[0, 1]范围
-    #         score = hit['_score'] 
-            
-    #         # 调试输出
-    #         print(f"DEBUG: Face match score: {score}, threshold: {threshold}")
-            
-    #         if score >= threshold:
-    #             result = {
-    #                 "person_id": hit['_source']['person_id'],
-    #                 "person_name": hit['_source']['person_name'],
-    #                 "score": score,
-    #                 "image_path": hit['_source'].get('image_path')
-    #             }
-    #             results.append(result)
-        
-    #     # 按分数降序排列
-    #     results.sort(key=lambda x: x['score'], reverse=True)
-    #     return results
     
-    # In database.py, replace the existing search_face method with this enhanced version:
 
     def search_face(self, query_embedding, top_k=5, threshold=0.7):
         """
         搜索最相似的人脸，并自动去重，为每个人只返回最佳匹配
+
+        分数语义：直接返回余弦相似度。ES script_score 要求分数非负，
+        故负余弦（不相似）截断为 0——正区间（人脸匹配的实际范围）保持原始余弦。
+        
         """
         script_query = {
             "script_score": {
                 "query": {"match_all": {}},
                 "script": {
-                    "source": """
-                    double cosine = cosineSimilarity(params.query_vector, 'face_embedding');
-                    // Apply transformation to increase discrimination
-                    // Using power function to widen the gap between high and low similarities
-                    return Math.pow((cosine + 1.0) / 2.0, 2);  // Square the normalized cosine similarity
-                    """,
+                    "source": "return Math.max(0.0, cosineSimilarity(params.query_vector, 'face_embedding'));",
                     "params": {"query_vector": query_embedding.tolist()}
                 }
             }
         }
-        
+
         response = self.es.search(
             index=self.index_name,
             body={
@@ -173,38 +122,8 @@ class FaceDatabase:
                 "_source": ["person_id", "person_name", "image_path"]
             }
         )
-        
-        # Group results by person name and keep only the best score for each person
-        person_matches = {}
-        
-        for hit in response['hits']['hits']:
-            # Elasticsearch cosineSimilarity返回值范围是[-1, 1]，经过处理后是[0, 1]
-            score = hit['_score'] 
-            
-            # Debug output
-            logger.debug(f"Face match score: {score}, threshold: {threshold}")
-            
-            if score >= threshold:
-                person_name = hit['_source']['person_name']
-                
-                # Create result object
-                result = {
-                    "person_id": hit['_source']['person_id'],
-                    "person_name": person_name,
-                    "score": score,
-                    "image_path": hit['_source'].get('image_path')
-                }
-                
-                # Keep only the best match for each person
-                if person_name not in person_matches or score > person_matches[person_name]['score']:
-                    person_matches[person_name] = result
-        
-        # Convert to list and sort by score
-        results = sorted(person_matches.values(), key=lambda x: x['score'], reverse=True)
-        
-        # Limit to top_k unique persons
-        results = results[:top_k]
-        return results
+
+        return self._dedupe_hits(response, top_k, threshold)
 
     def search_faces_batch(self, query_embeddings, top_k=5, threshold=0.7):
         """批量人脸检索：一次 msearch 完成多张脸查询（多脸图片省 N-1 次网络往返）。
@@ -224,10 +143,7 @@ class FaceDatabase:
                     "script_score": {
                         "query": {"match_all": {}},
                         "script": {
-                            "source": (
-                                "double cosine = cosineSimilarity(params.query_vector, 'face_embedding');"
-                                "return Math.pow((cosine + 1.0) / 2.0, 2);"
-                            ),
+                            "source": "return Math.max(0.0, cosineSimilarity(params.query_vector, 'face_embedding'));",
                             "params": {"query_vector": np.asarray(vec).tolist()}
                         }
                     }
@@ -261,7 +177,7 @@ class FaceDatabase:
         person_matches = {}
 
         for hit in response['hits']['hits']:
-            # Elasticsearch cosineSimilarity返回值范围是[-1, 1]，经过处理后是[0, 1]
+            # 分数即原始余弦相似度（[-1,1]），与 config 阈值语义一致
             score = hit['_score']
 
             logger.debug(f"Face match score: {score:.4f}, threshold: {threshold}")
