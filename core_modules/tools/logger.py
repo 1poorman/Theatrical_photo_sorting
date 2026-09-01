@@ -12,6 +12,7 @@ logger.py - 集中式运行日志
 import functools
 import logging
 import os
+import re
 import sys
 import time
 from contextlib import contextmanager
@@ -53,6 +54,26 @@ class _SafeTimedRotatingFileHandler(TimedRotatingFileHandler):
         self._day_prefix = datetime.now(_BEIJING_TZ).strftime("%Y-%m-%d")
         # 覆盖父类按系统时区计算的滚动时间点
         self.rolloverAt = _next_beijing_midnight_epoch()
+        # 启动时补滚动：文件末行不是今天的日志则先切档，避免跨重启混日期
+        self._rotate_if_stale()
+
+    def _last_line_date(self):
+        """读取日志文件末行行首的 YYYY-MM-DD（北京时间时间戳），失败返回 None"""
+        try:
+            path = self.baseFilename
+            size = os.path.getsize(path)
+            if size == 0:
+                return None
+            with open(path, 'rb') as f:
+                f.seek(-min(1024, size), 2)
+                tail = f.read().decode('utf-8', errors='ignore')
+            lines = [l for l in tail.strip().splitlines() if l.strip()]
+            if not lines:
+                return None
+            m = re.match(r'^(\d{4}-\d{2}-\d{2})', lines[-1].strip())
+            return m.group(1) if m else None
+        except Exception:
+            return None
 
     def _should_rotate_by_size(self):
         if self._max_bytes <= 0 or self.stream is None:
@@ -71,10 +92,46 @@ class _SafeTimedRotatingFileHandler(TimedRotatingFileHandler):
         return False
 
     def doRollover(self):
-        super().doRollover()
-        # 覆盖父类 rolloverAt += interval 的逻辑（大小触发滚动时会导致跨天点漂移），
-        # 始终重置为北京时间次日 0 点
+        """完全接管滚动：备份文件名 = 被切档内容末行的日期（北京时间）。
+
+        不用父类实现的原因：父类用系统时区解释 rolloverAt 生成文件名，
+        服务器时区非北京时间时备份名会偏差一天。
+        """
+        if self.stream:
+            self.stream.close()
+            self.stream = None
+        suffix = self._last_line_date() or datetime.now(_BEIJING_TZ).strftime("%Y-%m-%d")
+        dfn = self.baseFilename + "." + suffix
+        if os.path.exists(dfn):
+            try:
+                os.remove(dfn)
+            except OSError:
+                pass
+        try:
+            os.rename(self.baseFilename, dfn)
+        except OSError:
+            pass
+        if self.backupCount > 0:
+            for f in self.getFilesToDelete():
+                try:
+                    os.remove(f)
+                except OSError:
+                    pass
+        if not self.delay:
+            self.stream = open(self.baseFilename, self.mode, encoding=self.encoding)
         self.rolloverAt = _next_beijing_midnight_epoch()
+
+    def _rotate_if_stale(self):
+        """启动时检查：日志文件末行日期不是今天则立即滚动。
+
+        解决跨重启混日期问题：TimedRotatingFileHandler 只在运行中有写入时才滚动，
+        若服务在午夜前后启停，不同日期的内容会混进同一个文件。
+        """
+        try:
+            if self._last_line_date() and self._last_line_date() != self._day_prefix:
+                self.doRollover()
+        except Exception:
+            pass  # 任何异常都不阻塞日志初始化
 
 
 class _StdoutTee:
