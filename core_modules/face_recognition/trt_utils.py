@@ -78,11 +78,17 @@ def get_trt_provider_options(cache_prefix, input_name=None, input_shape=None):
         'trt_force_sequential_engine_build': False,
     }
     if input_name and input_shape:
+        # 仅当输入 shape 全为静态整数时设置显式 profile（min/opt/max 三者必须齐全，
+        # 缺 opt 会被 ORT 整体作废并回退隐式 profile，导致运行中引擎重建）
         def _dims(s):
             return 'x'.join(str(d if d > 0 else 1) for d in s)
-        min_b, max_b = 1, 32
-        opts['trt_profile_min_shapes'] = f"{input_name}:{min_b}x{_dims(input_shape[1:])}"
-        opts['trt_profile_max_shapes'] = f"{input_name}:{max_b}x{_dims(input_shape[1:])}"
+        dims = input_shape[1:]
+        if all(isinstance(d, int) and d > 0 for d in dims):
+            min_b, opt_b, max_b = 1, 8, 32
+            shape_suffix = _dims(dims)
+            opts['trt_profile_min_shapes'] = f"{input_name}:{min_b}x{shape_suffix}"
+            opts['trt_profile_opt_shapes'] = f"{input_name}:{opt_b}x{shape_suffix}"
+            opts['trt_profile_max_shapes'] = f"{input_name}:{max_b}x{shape_suffix}"
     return opts
 
 
