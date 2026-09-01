@@ -277,3 +277,53 @@ class FaceDBBuilder:
                     f"(合影){stats['skipped_group']} (歧义){stats['skipped_ambiguous']} "
                     f"(无脸){stats['skipped_no_face']} (满额){stats['skipped_max']}")
         return stats
+
+
+# ---------- 锚定特征缓存（跨请求复用，按库目录文件签名自动失效） ----------
+
+_ANCHOR_CACHE = {}   # db_root 绝对路径 -> {'signature', 'matrix', 'persons'}
+
+
+def _db_signature(db_root):
+    """库目录签名：全部锚定文件的（相对路径, mtime_ns, size）。增删/修改任一文件即失效。"""
+    sig = []
+    for root, dirs, files in os.walk(db_root):
+        for f in sorted(files):
+            if f.lower().endswith(('.jpg', '.jpeg', '.png')):
+                fp = os.path.join(root, f)
+                st = os.stat(fp)
+                sig.append((os.path.relpath(fp, db_root), st.st_mtime_ns, st.st_size))
+    sig.sort()
+    return hash(tuple(sig))
+
+
+def get_cached_library_matrix(system, db_root):
+    """带缓存的库特征矩阵（供智能整理流水线等高频调用方使用）。
+
+    缓存按库目录签名失效：assign 命名入库/人工增删锚定图后自动重建。
+    线程安全：GIL 下 dict 赋值原子；并发重建最坏情况是重复提取一次。
+
+    Args:
+        system: 人脸识别模块实例
+        db_root: 库根目录
+
+    Returns:
+        (matrix (N,512), persons list[str], from_cache bool)
+    """
+    db_root = os.path.abspath(db_root)
+    sig = _db_signature(db_root)
+    cached = _ANCHOR_CACHE.get(db_root)
+    if cached and cached['signature'] == sig:
+        return cached['matrix'], cached['persons'], True
+
+    builder = FaceDBBuilder(system, db_root)
+    library = builder._library_features()
+    feats, persons = [], []
+    for pdir, fl in library.items():
+        for f, _ in fl:
+            feats.append(f)
+            persons.append(pdir)
+    matrix = np.array(feats) if feats else np.zeros((0, 512))
+    _ANCHOR_CACHE[db_root] = {'signature': sig, 'matrix': matrix, 'persons': persons}
+    logger.info(f"锚定库特征矩阵重建: {len(persons)} 张 / {len(library)} 人")
+    return matrix, persons, False

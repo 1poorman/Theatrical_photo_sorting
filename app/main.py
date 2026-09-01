@@ -551,13 +551,16 @@ async def organize_actor_view(input_dir: str = Form(...),
                               output_dir: str = Form(...),
                               db_root: str = Form(srv.FACE_DATABASE_ROOT),
                               threshold: float = Form(0.55),
-                              copy_images: bool = Form(True)):
+                              copy_images: bool = Form(True),
+                              person: str = Form('')):
     """按演员生成整理视图
     Form 参数:
     - input_dir: 目标照片目录
     - output_dir: 输出目录（actor_views/ + actor_view_report.json）
     - db_root: 人脸锚定库根目录
     - threshold: 命中阈值（默认 0.55）
+    - person: 限定演员（可选）。人名模糊匹配 / 库目录名 / 库子目录路径，
+              多人用逗号分隔（如 '陈少云,史依弘'）；留空为库内全部演员
     """
     try:
         if srv.face_recognition_model is None:
@@ -568,13 +571,20 @@ async def organize_actor_view(input_dir: str = Form(...),
         from core_modules.organize.actor_view import ActorViewGenerator
         gen = ActorViewGenerator(srv.face_recognition_model, db_root)
         report = gen.generate(input_dir, output_dir, threshold=threshold,
-                              copy_images=copy_images)
+                              copy_images=copy_images, person_filter=person or None)
+        if report.get('error') == 'person not found':
+            return JSONResponse(status_code=400, content={
+                "code": -1,
+                "message": "Person not found in face database",
+                "available": report.get('available', []),
+            })
         return JSONResponse({
             "code": 200,
             "message": "Actor view generated successfully",
             "data": {
                 "input_dir": report.get('input_dir'),
                 "threshold": report.get('threshold'),
+                "person_filter": report.get('person_filter'),
                 "total_images": report.get('total_images'),
                 "persons": {p: v['count'] for p, v in report.get('persons', {}).items()},
             },
@@ -583,13 +593,165 @@ async def organize_actor_view(input_dir: str = Form(...),
         return JSONResponse(status_code=500, content=srv.get_error(message=f"Error generating actor view: {str(e)}"))
 
 
+# ---------- 人脸聚类建库（F4，无标注目录自举） ----------
+
+def _run_face_cluster_scan(task_id, input_dir, output_dir,
+                           dist_threshold, min_face_area):
+    """后台线程：人脸聚类扫描，进度写入 progress_tracker。"""
+    def cb(done, total, message):
+        srv.update_progress(task_id, round(done / max(total, 1) * 100),
+                            message)
+    try:
+        from core_modules.organize.face_cluster import FaceClusterBuilder
+        builder = FaceClusterBuilder(srv.face_recognition_model)
+        state = builder.scan(input_dir, output_dir,
+                             dist_threshold=dist_threshold,
+                             min_face_area=min_face_area,
+                             progress_cb=cb)
+        srv.progress_tracker[task_id]["result"] = {
+            "state_path": os.path.join(output_dir, "cluster_state.json"),
+            "n_images": state["n_images"],
+            "n_faces": state["n_faces"],
+            "n_clusters": len(state["clusters"]),
+            "n_suggest_manual": sum(1 for c in state["clusters"] if c["suggest_manual"]),
+        }
+        srv.update_progress(task_id, 100, "聚类完成")
+    except Exception as e:
+        import traceback
+        logger.error("face cluster scan failed: %s", e, exc_info=True)
+        srv.progress_tracker[task_id]["error"] = str(e)
+
+
+@app.post("/api/organize/face_cluster/scan")
+async def face_cluster_scan(input_dir: str = Form(...),
+                            output_dir: str = Form(...),
+                            dist_threshold: float = Form(0.5),
+                            min_face_area: int = Form(1600)):
+    """无标注目录人脸聚类扫描（后台任务，轮询 /api/progress/{task_id}）
+    Form 参数:
+    - input_dir: 照片目录（可无任何人物标注）
+    - output_dir: 结果目录（cluster_state.json + previews/）
+    - dist_threshold: 余弦距离阈值（默认 0.5，越大簇越少）
+    - min_face_area: 参与聚类的最小人脸面积 px²（默认 1600，过滤远景龙套）
+    """
+    import threading
+    import uuid
+    try:
+        if srv.face_recognition_model is None:
+            return JSONResponse(status_code=500, content=srv.get_error(message="Face recognition model not initialized"))
+        if not os.path.exists(input_dir):
+            return JSONResponse(status_code=400, content=srv.get_error(message=f"Input directory does not exist: {input_dir}"))
+        os.makedirs(output_dir, exist_ok=True)
+
+        task_id = f"face_cluster_{uuid.uuid4().hex[:8]}"
+        srv.progress_tracker[task_id] = {"progress": 0, "message": "排队中",
+                                         "status": "running", "type": "face_cluster_scan"}
+        t = threading.Thread(
+            target=_run_face_cluster_scan,
+            args=(task_id, input_dir, output_dir, dist_threshold, min_face_area),
+            daemon=True)
+        t.start()
+        return JSONResponse({"code": 200, "message": "Scan started",
+                             "data": {"task_id": task_id}})
+    except Exception as e:
+        return JSONResponse(status_code=500, content=srv.get_error(message=f"Error starting face cluster scan: {str(e)}"))
+
+
+@app.get("/api/organize/face_cluster/result")
+async def face_cluster_result(task_id: str):
+    """聚类结果（扫描完成后调用；按簇大小降序，含预览路径与分诊标记）"""
+    try:
+        task = srv.progress_tracker.get(task_id)
+        if task is None:
+            return JSONResponse(status_code=404, content=srv.get_error(message="Task not found"))
+        if task.get("progress", 0) < 100:
+            return JSONResponse({"code": 200, "message": "Scan in progress",
+                                 "data": {"progress": task.get("progress"),
+                                          "message": task.get("message")}})
+        if task.get("error"):
+            return JSONResponse(status_code=500, content=srv.get_error(message=task["error"]))
+
+        from core_modules.organize.face_cluster import FaceClusterBuilder
+        state = FaceClusterBuilder.load_state(task["result"]["state_path"])
+        clusters = [{
+            "id": c["id"], "size": c["size"], "cohesion": c["cohesion"],
+            "suggest_manual": c["suggest_manual"], "status": c["status"],
+            "assigned_to": c["assigned_to"], "preview": c["preview"],
+            "sample_images": c["sample_images"],
+        } for c in state["clusters"]]
+        return JSONResponse({
+            "code": 200,
+            "message": "Cluster result",
+            "data": {
+                "task_id": task_id, "input_dir": state["input_dir"],
+                "state_path": task["result"]["state_path"],
+                "n_images": state["n_images"], "n_faces": state["n_faces"],
+                "n_suggest_manual": sum(1 for c in clusters if c["suggest_manual"]),
+                "clusters": clusters,
+            },
+        })
+    except Exception as e:
+        return JSONResponse(status_code=500, content=srv.get_error(message=f"Error fetching cluster result: {str(e)}"))
+
+
+@app.post("/api/organize/face_cluster/assign")
+async def face_cluster_assign(task_id: str = Form(...),
+                              cluster_id: str = Form(...),
+                              person: str = Form(...),
+                              db_root: str = Form(srv.FACE_DATABASE_ROOT)):
+    """命名簇并写入人脸库（路径3 确认动作）
+    Form 参数:
+    - task_id: 扫描任务 ID
+    - cluster_id: 簇 ID
+    - person: 人名（建议「演员（饰角色）」格式，也可纯人名）
+    - db_root: 人脸库根目录（默认 data/face_database）
+    """
+    try:
+        task = srv.progress_tracker.get(task_id)
+        if task is None or "result" not in task:
+            return JSONResponse(status_code=404, content=srv.get_error(message="Scan task not found or not finished"))
+        person = person.strip()
+        if not person:
+            return JSONResponse(status_code=400, content=srv.get_error(message="person is required"))
+
+        from core_modules.organize.face_cluster import FaceClusterBuilder
+        builder = FaceClusterBuilder(srv.face_recognition_model)
+        r = builder.assign(task["result"]["state_path"], cluster_id, person, db_root)
+        return JSONResponse({"code": 200, "message": "Cluster assigned",
+                             "data": r})
+    except ValueError as e:
+        return JSONResponse(status_code=404, content=srv.get_error(message=str(e)))
+    except Exception as e:
+        return JSONResponse(status_code=500, content=srv.get_error(message=f"Error assigning cluster: {str(e)}"))
+
+
+@app.post("/api/organize/face_cluster/ignore")
+async def face_cluster_ignore(task_id: str = Form(...),
+                              cluster_id: str = Form(...),
+                              ignored: bool = Form(True)):
+    """忽略/恢复簇（误聚类或龙套簇可忽略，不参与建库）"""
+    try:
+        task = srv.progress_tracker.get(task_id)
+        if task is None or "result" not in task:
+            return JSONResponse(status_code=404, content=srv.get_error(message="Scan task not found or not finished"))
+        from core_modules.organize.face_cluster import FaceClusterBuilder
+        builder = FaceClusterBuilder(srv.face_recognition_model)
+        r = builder.ignore(task["result"]["state_path"], cluster_id, ignored)
+        return JSONResponse({"code": 200, "message": "Cluster updated", "data": r})
+    except ValueError as e:
+        return JSONResponse(status_code=404, content=srv.get_error(message=str(e)))
+    except Exception as e:
+        return JSONResponse(status_code=500, content=srv.get_error(message=f"Error ignoring cluster: {str(e)}"))
+
+
 @app.post("/api/organize/run")
 async def organize_run(input_dir: str = Form(...),
                        output_dir: str = Form(...),
                        keep_per_bucket: int = Form(2),
                        gap_seconds: int = Form(300),
                        classify_role: bool = Form(True),
-                       scene_labels_file: str = Form('')):
+                       scene_labels_file: str = Form(''),
+                       db_root: str = Form(srv.FACE_DATABASE_ROOT)):
     """智能整理流水线（连拍去重 → 人脸识别 → 行当分类 → 场景划分 → 规范命名）
     Form 参数:
     - input_dir: 原始照片目录
@@ -604,11 +766,13 @@ async def organize_run(input_dir: str = Form(...),
             return JSONResponse(status_code=500, content=srv.get_error(message="Face recognition model not initialized"))
         if not os.path.exists(input_dir):
             return JSONResponse(status_code=400, content=srv.get_error(message=f"Input directory does not exist: {input_dir}"))
+        if not os.path.exists(db_root):
+            return JSONResponse(status_code=400, content=srv.get_error(message=f"Face database root does not exist: {db_root}"))
 
         embedder, role_clf = _get_organize_models(classify_role)
         from core_modules.organize.smart_organizer import SmartOrganizer
         organizer = SmartOrganizer(srv.face_recognition_model,
-                                   srv.FACE_DATABASE_ROOT,
+                                   db_root,
                                    shot_classifier=srv.pose_model,
                                    embedder=embedder, role_classifier=role_clf)
         report = organizer.organize(input_dir, output_dir,
@@ -624,6 +788,7 @@ async def organize_run(input_dir: str = Form(...),
                 "kept": report['kept'],
                 "discarded": report['discarded'],
                 "n_scenes": report['n_scenes'],
+                "db_root": report['db_root'],
                 "report_path": os.path.join(output_dir, 'organize_report.json'),
             },
         })

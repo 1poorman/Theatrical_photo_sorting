@@ -9,6 +9,7 @@
   actor_view_report.json         每图命中人物与相似度
 """
 import os
+import re
 import json
 import shutil
 import cv2
@@ -31,7 +32,8 @@ class ActorViewGenerator:
     def _library_features(self):
         return self._fdb._library_features()
 
-    def generate(self, input_dir, output_dir, threshold=None, copy_images=True):
+    def generate(self, input_dir, output_dir, threshold=None, copy_images=True,
+                 person_filter=None):
         """生成按演员整理视图。
 
         Args:
@@ -39,6 +41,12 @@ class ActorViewGenerator:
             output_dir: 输出根目录（actor_views/ 与 report 写入此处）
             threshold: 命中阈值（默认 KNOWN_FACE_THRESHOLD=0.55）
             copy_images: 是否复制命中图
+            person_filter: 限定演员（可选）。支持：
+                - 人名模糊匹配：'陈少云'
+                - 完整库目录名：'陈少云（饰颍考叔）'
+                - 库子目录路径：'data/face_database/陈少云（饰颍考叔）'（取目录名）
+                - 多人用逗号/顿号分隔：'陈少云,史依弘'
+                仅对匹配到的演员建专辑；未匹配时返回 error + 可用人物列表。
         Returns:
             report dict
         """
@@ -47,6 +55,18 @@ class ActorViewGenerator:
         if not library:
             logger.error(f"人脸库为空: {self.db_root}")
             return {'error': 'empty library'}
+
+        # 演员过滤（模糊匹配人名/目录名，支持多人）
+        if person_filter and person_filter.strip():
+            tokens = [t.strip() for t in re.split(r'[,，、]', person_filter) if t.strip()]
+            # 传入库子目录路径时取目录名
+            tokens = [os.path.basename(t.rstrip('/\\')) if ('/' in t or '\\' in t) else t
+                      for t in tokens]
+            matched = {p: feats for p, feats in library.items()
+                       if any(t in p for t in tokens)}
+            if not matched:
+                return {'error': 'person not found', 'available': sorted(library)}
+            library = matched
 
         names = list_images(input_dir)
         views_dir = os.path.join(output_dir, 'actor_views')
@@ -100,6 +120,8 @@ class ActorViewGenerator:
 
         report = {
             'input_dir': input_dir, 'db_root': self.db_root, 'threshold': threshold,
+            'person_filter': person_filter,
+            'library_persons': len(self._library_features()) if person_filter else len(library),
             'total_images': len(names),
             'persons': {p: {'count': len(v), 'images': v}
                         for p, v in sorted(per_person.items())},

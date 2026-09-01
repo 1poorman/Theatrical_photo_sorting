@@ -98,6 +98,29 @@ ORGANIZE_HTML = """<!DOCTYPE html>
                       margin-top: 6px; overflow: hidden; }
         .actor-item .bar i { display: block; height: 100%; border-radius: 3px;
                       background: linear-gradient(90deg, #16a34a, #4ade80); }
+        .cluster-card { position: relative; }
+        .cluster-card.assigned { border-color: #86efac; background: #f0fdf4; }
+        .cluster-card.ignored { opacity: 0.45; }
+        .cluster-card .badge {
+            position: absolute; top: 8px; right: 8px; font-size: 10px;
+            padding: 2px 8px; border-radius: 10px; font-weight: 600;
+        }
+        .badge.ok { background: #dcfce7; color: #166534; }
+        .badge.warn { background: #fef9c3; color: #854d0e; }
+        .cluster-card img { width: 100%; height: auto; border-radius: 6px;
+            border: 1px solid #e2e8f0; background: #f1f5f9; }
+        .cluster-card input[type="text"] { margin-top: 6px; }
+        .cluster-card .btn-row { display: flex; gap: 6px; margin-top: 6px; }
+        .cluster-card .btn-row button { flex: 1; padding: 6px; border: none;
+            border-radius: 6px; font-size: 12px; cursor: pointer; font-weight: 500; }
+        .btn-confirm { background: #16a34a; color: #fff; }
+        .btn-confirm:hover { background: #15803d; }
+        .btn-ignore { background: #f1f5f9; color: #334155; }
+        .btn-ignore:hover { background: #e2e8f0; }
+        .progressbar { height: 8px; background: #e2e8f0; border-radius: 4px;
+            overflow: hidden; margin-top: 8px; }
+        .progressbar i { display: block; height: 100%; width: 0;
+            background: linear-gradient(90deg, #16a34a, #4ade80); transition: width 0.5s; }
         .steps { display: flex; gap: 4px; margin-top: 10px; }
         .step { flex: 1; text-align: center; font-size: 10px; color: #94a3b8;
                 padding: 6px 2px; border-radius: 4px; background: #f8fafc; }
@@ -185,6 +208,12 @@ ORGANIZE_HTML = """<!DOCTYPE html>
                     <label>输出目录</label>
                     <input type="text" id="av-output" name="output_dir" placeholder="/path/to/output" required>
                 </div>
+                <div class="form-group">
+                    <label>限定演员（可选，留空为库内全部演员）</label>
+                    <input type="text" id="av-person" name="person"
+                           placeholder="如：陈少云 或 陈少云（饰颍考叔），多人用逗号分隔：陈少云,史依弘">
+                    <div class="hint">支持人名模糊匹配；也可直接粘贴库内子目录路径（自动取目录名）</div>
+                </div>
                 <div class="row">
                     <div class="form-group">
                         <label>人脸库根目录（留空默认）</label>
@@ -248,9 +277,56 @@ ORGANIZE_HTML = """<!DOCTYPE html>
                     <label>场景人工标注映射文件（可选，JSON：{"scene-01": "第1幕克段", ...}）</label>
                     <input type="text" id="org-labels" name="scene_labels_file" placeholder="/path/to/scene_labels.json">
                 </div>
+                <div class="form-group">
+                    <label>本地人脸库目录（留空默认 data/face_database）</label>
+                    <input type="text" id="org-db-root" name="db_root"
+                           placeholder="data/face_database">
+                    <div class="hint">识别只用该目录下的锚定子目录（不查 ES）；新演员请先经卡片①/④建库</div>
+                </div>
                 <button type="submit" class="btn" id="org-submit">执行智能整理</button>
             </form>
             <div id="organize-result" class="result"></div>
+        </div>
+
+        <!-- ④ 人脸聚类建库（无标注目录自举） -->
+        <div class="card" style="grid-column: 1 / -1;">
+            <h2>④ 人脸聚类建库（无标注目录自举）</h2>
+            <div class="desc">
+                文件名没有「演员饰角色」标注时用本功能：扫描目录检出全部人脸并按身份聚类，
+                每簇生成拼图预览，人工给簇命名后即写入人脸库。<br>
+                · 内聚度高、人脸数足的簇为<b>高置信</b>，命名即可入库；<br>
+                · 内聚度低或人脸过少的簇标记<b>建议人工补图</b>——请为该演员手动收集 3~5 张
+                人脸图放入人脸库子目录（路径2兜底），或忽略。<br>
+                · 扫描为后台任务，完成后可逐簇命名入库。
+            </div>
+            <form id="cluster-scan-form">
+                <div class="row">
+                    <div class="form-group">
+                        <label>照片目录（可无任何人物标注）</label>
+                        <input type="text" id="cl-input" name="input_dir" placeholder="/path/to/photos" required>
+                    </div>
+                    <div class="form-group">
+                        <label>结果目录（cluster_state.json + 预览拼图）</label>
+                        <input type="text" id="cl-output" name="output_dir" placeholder="/path/to/output" required>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="form-group">
+                        <label>聚类距离阈值（余弦，越大簇越少）</label>
+                        <input type="number" id="cl-dist" name="dist_threshold" value="0.5" step="0.05" min="0.3" max="0.8">
+                    </div>
+                    <div class="form-group">
+                        <label>最小人脸面积 px²（过滤远景龙套）</label>
+                        <input type="number" id="cl-minface" name="min_face_area" value="1600" step="400" min="400">
+                    </div>
+                </div>
+                <button type="submit" class="btn">开始扫描聚类</button>
+            </form>
+            <div id="cluster-scan-result" class="result"></div>
+            <div id="cluster-list" style="display:none; margin-top:14px;">
+                <div class="stat-row" id="cluster-stats"></div>
+                <div id="cluster-grid" class="actor-grid"></div>
+            </div>
         </div>
     </div>
 
@@ -274,10 +350,22 @@ ORGANIZE_HTML = """<!DOCTYPE html>
                 showLoading(el, loadingMsg);
                 const fd = new FormData(this);
                 if (!fd.get('db_root')) fd.delete('db_root');   // 空则用服务端默认
+                if (!fd.get('person')) fd.delete('person');     // 空则为全部演员
                 fetch(url, { method: 'POST', body: fd })
                     .then(r => r.json())
                     .then(d => {
-                        if (d.code !== 200) { showError(el, d); return; }
+                        if (d.code !== 200) {
+                            // 人名未命中：附可用人物列表
+                            if (d.available || (d.data && d.data.available)) {
+                                const avail = d.available || d.data.available;
+                                el.className = 'result error'; el.style.display = 'block';
+                                el.innerHTML = '<strong>❌ 人名未命中人脸库</strong><div class="file-list">'
+                                    + avail.map(p => '<div class="item"><span class="name">' + esc(p) + '</span></div>').join('')
+                                    + '</div><p style="font-size:11px;color:#64748b;margin-top:6px">可点击上方人名关键词重试，或复制完整目录名</p>';
+                                return;
+                            }
+                            showError(el, d); return;
+                        }
                         el.className = 'result success'; el.style.display = 'block';
                         el.innerHTML = onDone(d.data);
                     })
@@ -309,7 +397,9 @@ ORGANIZE_HTML = """<!DOCTYPE html>
         // ② 演员视图
         submitForm('actor-view-form', '/api/organize/actor_view', 'actor-view-result',
             '正在逐图识别人脸并生成演员专辑...', function(d) {
-                let html = '<strong>✅ 视图生成完成</strong><div class="stat-row">';
+                let html = '<strong>✅ 视图生成完成</strong>';
+                if (d.person_filter) html += '<p style="font-size:12px">限定演员：' + esc(d.person_filter) + '</p>';
+                html += '<div class="stat-row">';
                 const persons = Object.entries(d.persons || {}).sort((a, b) => b[1] - a[1]);
                 html += stat(d.total_images, '总图片') + stat(persons.length, '命中演员') + '</div>';
                 if (persons.length) {
@@ -352,6 +442,150 @@ ORGANIZE_HTML = """<!DOCTYPE html>
                 setStep(step);
             }, 4000);
         });
+
+        // ---------- ④ 人脸聚类建库 ----------
+        let clusterTaskId = null;
+        let clusterTimer = null;
+
+        document.getElementById('cluster-scan-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const el = document.getElementById('cluster-scan-result');
+            showLoading(el, '正在扫描聚类（后台任务，自动轮询进度）...');
+            const fd = new FormData(this);
+            fetch('/api/organize/face_cluster/scan', { method: 'POST', body: fd })
+                .then(r => r.json())
+                .then(d => {
+                    if (d.code !== 200) { showError(el, d); return; }
+                    clusterTaskId = d.data.task_id;
+                    el.innerHTML = '<div class="progressbar"><i id="cl-bar"></i></div>'
+                                 + '<p id="cl-msg" style="font-size:12px;margin-top:6px">排队中...</p>';
+                    el.className = 'result loading'; el.style.display = 'block';
+                    clusterTimer = setInterval(pollCluster, 3000);
+                })
+                .catch(err => showError(el, { message: err.message }));
+        });
+
+        function pollCluster() {
+            fetch('/api/organize/face_cluster/result?task_id=' + clusterTaskId)
+                .then(r => r.json())
+                .then(d => {
+                    const data = d.data || {};
+                    if (d.code !== 200 && data.error) {
+                        clearInterval(clusterTimer);
+                        showError(document.getElementById('cluster-scan-result'), d);
+                        return;
+                    }
+                    if (data.progress !== undefined && data.progress < 100) {
+                        const bar = document.getElementById('cl-bar');
+                        const msg = document.getElementById('cl-msg');
+                        if (bar) bar.style.width = data.progress + '%';
+                        if (msg) msg.textContent = data.message || ('进度 ' + data.progress + '%');
+                        return;
+                    }
+                    clearInterval(clusterTimer);
+                    renderClusters(data);
+                })
+                .catch(err => {
+                    clearInterval(clusterTimer);
+                    showError(document.getElementById('cluster-scan-result'), { message: err.message });
+                });
+        }
+
+        function renderClusters(data) {
+            const el = document.getElementById('cluster-scan-result');
+            el.className = 'result success'; el.style.display = 'block';
+            const nOk = data.clusters.filter(c => !c.suggest_manual && c.status === 'pending').length;
+            el.innerHTML = '<strong>✅ 聚类完成</strong><div class="stat-row">'
+                + stat(data.n_images, '图片') + stat(data.n_faces, '人脸')
+                + stat(data.clusters.length, '簇')
+                + stat(data.n_suggest_manual, '建议人工补图')
+                + stat(nOk, '待命名') + '</div>'
+                + '<p style="font-size:12px;margin-top:6px">状态文件: <code>' + esc(data.state_path) + '</code></p>';
+
+            const list = document.getElementById('cluster-list');
+            list.style.display = 'block';
+            const grid = document.getElementById('cluster-grid');
+            grid.innerHTML = '';
+            // 大簇在前，忽略簇垫底
+            const order = { assigned: 0, pending: 1, ignored: 2 };
+            const sorted = data.clusters.slice().sort((a, b) =>
+                (order[a.status] - order[b.status]) || (b.size - a.size));
+            sorted.forEach(c => { grid.appendChild(clusterCard(c)); });
+        }
+
+        function clusterCard(c) {
+            const div = document.createElement('div');
+            div.className = 'actor-item cluster-card' + (c.status === 'assigned' ? ' assigned' : c.status === 'ignored' ? ' ignored' : '');
+            let badge = '';
+            if (c.status === 'assigned') badge = '<span class="badge ok">已入库 ' + esc(c.assigned_to || '') + '</span>';
+            else if (c.suggest_manual) badge = '<span class="badge warn">建议人工补图</span>';
+            else if (c.status === 'pending') badge = '<span class="badge ok">待命名</span>';
+            else badge = '<span class="badge warn">已忽略</span>';
+
+            div.innerHTML = badge
+                + '<img src="/api/file?path=' + encodeURIComponent(c.preview) + '" alt="' + c.id + '">'
+                + '<div class="name">' + c.id + '</div>'
+                + '<div class="cnt">' + c.size + ' 脸 · 内聚度 ' + c.cohesion + '</div>';
+
+            if (c.status === 'assigned') return div;
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.placeholder = '演员（饰角色）';
+            input.value = c.status === 'assigned' ? (c.assigned_to || '') : '';
+            input.className = 'cl-name';
+            div.appendChild(input);
+
+            const row = document.createElement('div');
+            row.className = 'btn-row';
+            const btnOk = document.createElement('button');
+            btnOk.className = 'btn-confirm';
+            btnOk.textContent = '命名入库';
+            btnOk.onclick = () => assignCluster(clusterTaskId, c.id, input.value, div);
+            const btnIg = document.createElement('button');
+            btnIg.className = 'btn-ignore';
+            btnIg.textContent = c.status === 'ignored' ? '恢复' : '忽略';
+            btnIg.onclick = () => ignoreCluster(clusterTaskId, c.id, c.status !== 'ignored', div);
+            row.appendChild(btnOk); row.appendChild(btnIg);
+            div.appendChild(row);
+            return div;
+        }
+
+        function assignCluster(taskId, clusterId, person, card) {
+            if (!person || !person.trim()) { alert('请输入人名（格式建议：演员（饰角色））'); return; }
+            const fd = new FormData();
+            fd.append('task_id', taskId); fd.append('cluster_id', clusterId);
+            fd.append('person', person.trim());
+            fetch('/api/organize/face_cluster/assign', { method: 'POST', body: fd })
+                .then(r => r.json())
+                .then(d => {
+                    if (d.code !== 200) { alert('入库失败: ' + (d.message || d)); return; }
+                    card.classList.add('assigned');
+                    card.querySelector('.btn-row').remove();
+                    card.querySelector('.cl-name').remove();
+                    card.querySelector('.badge')?.remove();
+                    const b = document.createElement('span');
+                    b.className = 'badge ok';
+                    b.textContent = '已入库 ' + person.trim();
+                    card.appendChild(b);
+                })
+                .catch(err => alert('入库失败: ' + err.message));
+        }
+
+        function ignoreCluster(taskId, clusterId, ignored, card) {
+            const fd = new FormData();
+            fd.append('task_id', taskId); fd.append('cluster_id', clusterId);
+            fd.append('ignored', ignored ? 'true' : 'false');
+            fetch('/api/organize/face_cluster/ignore', { method: 'POST', body: fd })
+                .then(r => r.json())
+                .then(d => {
+                    if (d.code !== 200) { alert('操作失败: ' + (d.message || d)); return; }
+                    card.classList.toggle('ignored', ignored);
+                    const badge = card.querySelector('.badge');
+                    if (badge) badge.textContent = ignored ? '已忽略' : '待命名';
+                })
+                .catch(err => alert('操作失败: ' + err.message));
+        }
     </script>
 </body>
 </html>

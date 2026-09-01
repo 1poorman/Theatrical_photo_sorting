@@ -10,7 +10,7 @@
 | 镜头分类 | 景别分类（特写/近景/中景/全景） | YOLO11l-pose |
 | 背景修复 | 人物去除后背景修复 | LAMA (ModelScope) |
 | 图像检索 | embedding 索引、相似检索、聚类分组 | ResNet50/101、DINOv2、SigLIP2 (faiss) |
-| 智能整理 | 连拍去重选优、半自动人脸库、按演员视图、场景划分、行当分类、规范命名流水线 | SCRFD+ArcFace、YOLO11l-pose、SigLIP2 zero-shot（详见 `docs/smart_organize_blueprint.md`） |
+| 智能整理 | 连拍去重选优、半自动人脸库、人脸聚类建库（无标注自举）、按演员视图、场景划分、行当分类、规范命名流水线 | SCRFD+ArcFace、YOLO11l-pose、SigLIP2 zero-shot（详见 `docs/smart_organize_blueprint.md`） |
 
 ## 目录结构
 
@@ -37,7 +37,8 @@
 │   │   ├── filename_parser.py      #     文件名/目录名解析（日期/剧场/剧目/人物/摄影师/连拍号）
 │   │   ├── burst_dedup.py          #     连拍分组去重 + 全图质量评分 + 景别感知选优
 │   │   ├── face_db_builder.py      #     半自动人脸库（单人归属 + 多人锚定传播两轮构建）
-│   │   ├── actor_view.py           #     按演员整理视图生成
+│   │   ├── actor_view.py           #     按演员整理视图生成（支持限定单人/多人）
+│   │   ├── face_cluster.py         #     人脸聚类建库（无标注目录自举，路径2人工补图兜底）
 │   │   ├── scene_split.py          #     场景划分（EXIF 时间分段为主 + embedding 聚类为辅）
 │   │   ├── role_classifier.py      #     戏曲行当 zero-shot 分类（生旦净丑，实验性）
 │   │   └── smart_organizer.py      #     整理流水线编排入口
@@ -85,7 +86,8 @@ python app/server.py       # 纯 API，端口 8198
 
 | 服务 | 地址 |
 |------|------|
-| 可视化界面 | `http://localhost:8199/ui` |
+| 可视化界面（照片处理） | `http://localhost:8199/ui` |
+| 可视化界面（智能整理） | `http://localhost:8199/organize` |
 | Swagger 文档 | `http://localhost:8199/docs` 或 `:8198/docs` |
 
 启动时自动加载全部模型（需 GPU，约 1 分钟；TensorRT 引擎首次构建约十几秒，之后走缓存秒级加载）。
@@ -106,6 +108,10 @@ python app/server.py       # 纯 API，端口 8198
 | POST | `/api/organize/build_face_database` | 半自动人脸库构建（整理完成/原始目录 → 锚定库） |
 | POST | `/api/organize/actor_view` | 按演员生成整理视图 |
 | POST | `/api/organize/run` | 智能整理流水线（去重→识别→行当→场景→规范命名） |
+| POST | `/api/organize/face_cluster/scan` | 无标注目录人脸聚类扫描（后台任务） |
+| GET | `/api/organize/face_cluster/result` | 聚类结果（簇列表+预览拼图+分诊标记） |
+| POST | `/api/organize/face_cluster/assign` | 命名簇并写入人脸库 |
+| POST | `/api/organize/face_cluster/ignore` | 忽略/恢复簇 |
 
 ```bash
 curl -X POST http://localhost:8198/api/face/recognize -F "image=@data/sample_images/4.jpg"
@@ -128,6 +134,80 @@ results, annotated = system.recognize_face('photo.jpg', known_threshold=0.55)
 
 人脸向量存储于 Elasticsearch 8.x（索引 `face_database_512`），连接配置见 `config/base.py`（支持环境变量覆盖）。
 
+## 智能整理（Smart Organizer）
+
+将原始摄影目录自动整理为规范命名目录（推荐在 `http://localhost:8199/organize` 页面操作，
+四个卡片按序使用；设计细节见 `docs/smart_organize_blueprint.md`）。
+
+### 使用流程
+
+```
+第一步 建人脸库（三选一，见下"人脸库的三种获得方式"）
+        ↓  卡片①（有标注）/ 卡片④（无标注）/ 人工种子库
+第二步 整理流水线（卡片③一键完成）：
+        ├─ 连拍去重选优（景别感知，每组每景别保留 top-K）
+        ├─ 逐图人脸识别 → 人物列表 + 行当分类（可选）
+        ├─ EXIF 时间场景划分
+        └─ 规范命名输出 {序号}-{日期}-{剧场}-{剧目}{事项} {场景}-{人物列表}-{摄影师}.jpg
+        ↓
+第三步 按演员整理视图（卡片②，可选）：生成"某演员的全部照片"专辑
+```
+
+**卡片① 半自动人脸库构建**（依赖文件名含「演员饰角色」标注）：
+
+- 输入：整理完成/原始目录（可逗号分隔多个），文件名需含人物标注
+- 两轮构建：单人归属（文件名仅 1 位演员的照片，最大脸即本人）→
+  多人锚定传播（检出脸数=标注人数的同框照，已识别演员消去后唯一剩余脸归属唯一剩余演员）
+- **注意事项**：谢幕/合影/归属歧义自动跳过；同人一致性强校验（余弦 <0.35 拦截）防异人混入；
+  每人最多 8 张锚定；建议先勾选「试运行」查看统计再实际写入
+
+**卡片② 按演员整理视图**：对目标目录逐图识别库内演员并生成专辑
+（`actor_views/演员名/` + 报告）。`限定演员` 输入框支持人名模糊匹配
+（`陈少云`）、完整库目录名、库子目录路径、多人逗号分隔（`陈少云,史依弘`）；
+留空为库内全部演员。人名未命中时页面会列出库内全部人物名供参考。
+
+**卡片③ 智能整理流水线**：输入原始目录，自动完成去重→识别→行当→场景→规范命名，
+输出 `organized/` 与 `organize_report.json`（每图的来源、保留/丢弃、人物、行当、场景）。
+`本地人脸库目录` 留空默认 `data/face_database`（识别**只查该目录、不查 ES**）；
+锚定特征矩阵按库目录签名跨请求缓存——卡片①/④ 建库或人工增删锚定后自动失效重建，
+无需重启服务。
+
+**卡片④ 人脸聚类建库**（文件名**没有**人物标注时的自举方案）：
+
+1. 输入无标注目录 → 开始扫描（后台任务，页面自动轮询进度）
+2. 完成后按簇查看拼图预览（簇按大小排序），高置信簇（内聚度 ≥0.5 且 ≥3 脸）
+   输入「演员（饰角色）」命名入库
+3. 标记「建议人工补图」的簇（内聚度低或人脸过少）：改为人工收集该演员 3~5 张
+   人脸图放入人脸库子目录，或直接忽略
+4. 库建好后回到卡片③跑流水线
+
+### 人脸库的三种获得方式
+
+| 方式 | 适用场景 | 人工成本 |
+|------|----------|----------|
+| 卡片① 半自动构建 | 文件名含「X饰Y」标注（NCPA 整理规范） | 近零（试运行确认统计） |
+| 卡片④ 聚类建库 | 文件名无标注，但目录内有足够同演员照片 | 每演员命名一次 |
+| 人工种子库 | 上述皆不适用（如单场少量照片） | 每演员收集 3~5 张脸图 |
+
+人工种子库：将 160×160 对齐脸或任意清晰人脸图放入
+`data/face_database/{演员}（饰{角色}）/`，然后调 `POST /api/face/build_database`。
+
+### 注意事项
+
+- **识别精度与图片分辨率**：识别链路固定缩至 1920 后检测，实测与原图精度一致
+  （ArcFace 最终裁 112×112），且大图解码快约 2.2 倍；**勿降到 960**（小脸相似度
+  下降约 0.1，接近阈值）
+- **多锚定策略**：识别按「每人取最高相似度」匹配，多角度/多光照锚定提升召回；
+  低质量锚定会略增误报（可用 `tools/face_quality.py` 做入库门槛过滤，默认未启用）
+- **识别精度边界**：远景龙套小脸（<40px）与净角黑脸谱检测率低——龙套不识别是
+  预期行为；文件名人名用字不一致（如 齐乌利/齐乌力）会导致库中拆为两个目录，需人工合并
+- **场景标签**：默认输出占位名（scene-01…），可准备 JSON 映射
+  `{"scene-01": "第1幕克段", ...}` 传入卡片③的「场景人工标注映射文件」
+- **行当分类**：SigLIP2 zero-shot（不训练），实验性功能，仅京剧等戏曲类启用；
+  置信度 <0.4 标记 uncertain，不写入文件名
+- **样式雷类无括号散件目录**：连拍剪除偏激进（79→30），可在卡片③调高
+  「每景别桶保留张数」
+
 ## 测试
 
 ```bash
@@ -148,6 +228,8 @@ python tests/test_face_db_build.py    # 人脸库两轮构建（需 GPU，产出
 python tests/test_actor_view.py       # 按演员视图（依赖 tmp_face_db）
 python tests/test_scene_role.py       # 场景划分 + 行当 zero-shot（依赖 tmp_face_db）
 python tests/test_smart_organize.py   # 端到端流水线（单剧目）
+python tests/test_face_cluster.py     # 人脸聚类核心 + GT 纯度（F4）
+python tests/test_face_cluster_api.py # 聚类 API 六项断言（F4，会写正式人脸库后清理）
 python tests/acceptance_m7.py         # 四剧目全量验收（报告 outputs/acceptance/）
 ```
 

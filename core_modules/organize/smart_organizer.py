@@ -59,17 +59,13 @@ class SmartOrganizer:
     def _load_library(self):
         if self._lib_matrix is not None:
             return
-        from core_modules.organize.face_db_builder import FaceDBBuilder
-        fdb = FaceDBBuilder(self.system, self.face_db_root)
-        library = fdb._library_features()
-        feats, persons = [], []
-        for pdir, fl in library.items():
-            for f, _ in fl:
-                feats.append(f)
-                persons.append(pdir)
-        self._lib_matrix = np.array(feats) if feats else np.zeros((0, 512))
+        from core_modules.organize.face_db_builder import get_cached_library_matrix
+        matrix, persons, from_cache = get_cached_library_matrix(
+            self.system, self.face_db_root)
+        self._lib_matrix = matrix
         self._lib_persons = persons
-        logger.info(f"锚定库加载: {len(persons)} 张 / {len(library)} 人")
+        logger.info(f"锚定库加载: {len(persons)} 张 / {len(set(persons))} 人"
+                    f"{'（缓存命中）' if from_cache else '（全量提取）'}")
 
     def _recognize_image(self, img, threshold):
         """返回 hits: {person_dir: max_sim}。"""
@@ -206,6 +202,7 @@ class SmartOrganizer:
 
         report = {
             'input_dir': input_dir, 'output_dir': output_dir,
+            'db_root': self.face_db_root,
             'total_input': dedup_report['total'],
             'kept': len(kept_names), 'discarded': dedup_report['discarded'],
             'n_scenes': len(set(scene_assignment.values())),
