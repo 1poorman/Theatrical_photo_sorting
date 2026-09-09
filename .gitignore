@@ -11,6 +11,8 @@ third_party/dinov2/
 data/embedding_models_artifacts/huggingface/
 # 大体积测试原图（仅本地使用，不入库，避免仓库膨胀）
 data/ncpa_test/
+# 人脸库也不入库，避免泄露隐私
+data/face_database/
 face_recognition/out/*
 
 .vscode/
