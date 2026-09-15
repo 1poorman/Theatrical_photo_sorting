@@ -149,7 +149,7 @@ results, annotated = system.recognize_face('photo.jpg', known_threshold=0.55)
 ## 智能整理（Smart Organizer）
 
 将原始摄影目录自动整理为规范命名目录（推荐在 `http://localhost:8199/organize` 页面操作，
-四个卡片按序使用；设计细节见 `docs/smart_organize_blueprint.md`）。
+五个卡片按序使用；设计细节见 `docs/smart_organize_blueprint.md`）。
 
 图文结合、官方剧目信息知识库、本地大模型级联和高级智能体扩展见
 [`docs/multimodal_context_blueprint.md`](docs/multimodal_context_blueprint.md)。
@@ -248,6 +248,8 @@ results, annotated = system.recognize_face('photo.jpg', known_threshold=0.55)
   密钥仅运行时读取、不写入代码/报告/`model_trace`
 - **人工复核 API**：`/api/organize/scene/review`（seed/list/decide/export），
   修订日志 `revisions.jsonl` 不可变、可回放，人工标签不会被重跑覆盖
+- **审核 UI**：`/organize` 页面卡片⑤「场景标签人工复核」——载入证据后逐条接受/修改/拒绝，
+  导出 `scene_labels.json`；卡片③「场景证据文件」引用该导出，未审核/`unknown` 保持占位
 - **受限智能体**：`agent_runtime.py` 提供工具白名单、任务状态机（`queued/running/review/approved/failed`）
   与追加式审计日志，禁止任意 shell/越权 URL
 
@@ -260,7 +262,8 @@ python tests/test_scene_reasoner.py
 python tests/test_scene_evidence_merge.py
 python tests/test_agent_runtime.py
 python tests/test_e2e_scene_pipeline.py
-python tests/acceptance_multimodal_m16.py   # 聚合 8 项离线验收
+python tests/test_scene_review_ui.py       # /organize 卡片⑤ 冒烟（需 fastapi 环境）
+python tests/acceptance_multimodal_m16.py  # 聚合离线验收
 ```
 
 ## 测试

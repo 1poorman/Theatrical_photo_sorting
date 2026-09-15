@@ -278,6 +278,11 @@ ORGANIZE_HTML = """<!DOCTYPE html>
                     <input type="text" id="org-labels" name="scene_labels_file" placeholder="/path/to/scene_labels.json">
                 </div>
                 <div class="form-group">
+                    <label>场景证据文件（可选，卡片⑤导出的已审核标签 json/jsonl）</label>
+                    <input type="text" id="org-evidence" name="scene_evidence_file" placeholder="/path/to/scene_labels.json">
+                    <div class="hint">仅采纳人工已确认且非 unknown 的标签；未审核图片保持 scene-XX 占位</div>
+                </div>
+                <div class="form-group">
                     <label>本地人脸库目录（留空默认 data/face_database）</label>
                     <input type="text" id="org-db-root" name="db_root"
                            placeholder="data/face_database">
@@ -326,6 +331,44 @@ ORGANIZE_HTML = """<!DOCTYPE html>
             <div id="cluster-list" style="display:none; margin-top:14px;">
                 <div class="stat-row" id="cluster-stats"></div>
                 <div id="cluster-grid" class="actor-grid"></div>
+            </div>
+        </div>
+
+        <!-- ⑤ 场景标签人工复核（多模态扩展） -->
+        <div class="card" style="grid-column: 1 / -1;">
+            <h2>⑤ 场景标签人工复核（多模态扩展）</h2>
+            <div class="desc">
+                载入场景判定证据后逐条复核：接受模型标签、修改为正确幕次、或拒绝。<br>
+                · 人工决定写入不可变修订日志，重跑不会被覆盖；<br>
+                · 导出 scene_labels.json 后可在卡片③「场景证据文件」中引用；<br>
+                · 未审核 / unknown 保持 scene-XX 占位，不写入最终文件名。<br>
+                设计见 docs/multimodal_context_blueprint.md。
+            </div>
+            <form id="review-load-form">
+                <div class="row">
+                    <div class="form-group">
+                        <label>复核目录（review_queue.jsonl / revisions.jsonl）</label>
+                        <input type="text" id="rv-dir" name="review_dir" placeholder="/path/to/review_dir" required>
+                    </div>
+                    <div class="form-group">
+                        <label>场景证据 JSONL（可选，留空仅载入已有队列）</label>
+                        <input type="text" id="rv-evidence" name="evidence_file" placeholder="/path/to/scene_evidence.jsonl">
+                        <div class="hint">scene_reasoner / review_queue 产出的候选记录，仅 approved 且非 unknown 生效</div>
+                    </div>
+                </div>
+                <button type="submit" class="btn">载入复核队列</button>
+            </form>
+            <div id="review-result" class="result"></div>
+            <div id="review-list" style="display:none; margin-top:14px;">
+                <div class="stat-row" id="review-stats"></div>
+                <div id="review-rows"></div>
+                <div class="row" style="margin-top:10px; align-items:flex-end;">
+                    <div class="form-group">
+                        <label>导出文件（留空默认 复核目录/scene_labels.json）</label>
+                        <input type="text" id="rv-export" placeholder="/path/to/scene_labels.json">
+                    </div>
+                    <button type="button" class="btn btn-blue" id="rv-export-btn">导出最终标签</button>
+                </div>
             </div>
         </div>
     </div>
@@ -586,6 +629,107 @@ ORGANIZE_HTML = """<!DOCTYPE html>
                 })
                 .catch(err => alert('操作失败: ' + err.message));
         }
+
+        // ---------- ⑤ 场景标签人工复核 ----------
+        let reviewDir = null;
+
+        document.getElementById('review-load-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            reviewDir = document.getElementById('rv-dir').value.trim();
+            const evidence = document.getElementById('rv-evidence').value.trim();
+            const el = document.getElementById('review-result');
+            const base = '/api/organize/scene/review';
+            if (evidence) {
+                showLoading(el, '正在写入证据并载入复核队列...');
+                const fd = new FormData();
+                fd.append('review_dir', reviewDir); fd.append('evidence_file', evidence);
+                fetch(base + '/seed', { method: 'POST', body: fd })
+                    .then(r => r.json())
+                    .then(d => { if (d.code !== 200) { showError(el, d); return; } fetchReviewList(el); })
+                    .catch(err => showError(el, { message: err.message }));
+            } else {
+                showLoading(el, '正在载入复核队列...');
+                fetchReviewList(el);
+            }
+        });
+
+        function fetchReviewList(el) {
+            el = el || document.getElementById('review-result');
+            fetch('/api/organize/scene/review?review_dir=' + encodeURIComponent(reviewDir) + '&limit=200')
+                .then(r => r.json())
+                .then(d => { if (d.code !== 200) { showError(el, d); return; } renderReview(d.data); })
+                .catch(err => showError(el, { message: err.message }));
+        }
+
+        function renderReview(data) {
+            const el = document.getElementById('review-result');
+            const s = data.summary || {};
+            el.className = 'result success'; el.style.display = 'block';
+            el.innerHTML = '<strong>✅ 复核队列已载入</strong><div class="stat-row">'
+                + stat(s.pending || 0, '待审核') + stat(s.approved || 0, '已确认')
+                + stat(s.rejected || 0, '已拒绝') + '</div>';
+            document.getElementById('review-list').style.display = 'block';
+            const rows = document.getElementById('review-rows');
+            rows.innerHTML = '';
+            const records = data.records || [];
+            if (!records.length) rows.innerHTML = '<p style="font-size:12px">暂无记录。</p>';
+            records.forEach(r => rows.appendChild(reviewRow(r)));
+        }
+
+        function reviewRow(r) {
+            const review = r.review || {};
+            const div = document.createElement('div');
+            div.className = 'actor-item';
+            div.style.textAlign = 'left';
+            div.innerHTML = '<div class="name" style="font-size:12px;word-break:break-all">'
+                + esc(String(r.image).split('/').pop()) + '</div>'
+                + '<div class="cnt">当前：' + esc(r.label || 'unknown')
+                + ' · 置信 ' + (r.confidence !== undefined ? r.confidence : '-')
+                + ' · 状态 ' + esc(review.status || 'pending') + '</div>';
+            const input = document.createElement('input');
+            input.type = 'text'; input.value = r.label || '';
+            input.placeholder = '修改为（如 第1幕克段）';
+            const row = document.createElement('div');
+            row.className = 'btn-row';
+            const mk = (text, cls, action) => {
+                const b = document.createElement('button');
+                b.className = cls; b.textContent = text;
+                b.onclick = () => decideReview(r.image, action, input.value);
+                return b;
+            };
+            row.appendChild(mk('接受', 'btn-confirm', 'accept'));
+            row.appendChild(mk('修改', 'btn-blue', 'modify'));
+            row.appendChild(mk('拒绝', 'btn-ignore', 'reject'));
+            div.appendChild(input); div.appendChild(row);
+            return div;
+        }
+
+        function decideReview(image, action, label) {
+            const fd = new FormData();
+            fd.append('review_dir', reviewDir); fd.append('image', image);
+            fd.append('action', action); fd.append('label', label || '');
+            fd.append('reviewer', 'ui');
+            fetch('/api/organize/scene/review', { method: 'POST', body: fd })
+                .then(r => r.json())
+                .then(d => {
+                    if (d.code !== 200) { alert('操作失败: ' + (d.message || d)); return; }
+                    fetchReviewList();
+                })
+                .catch(err => alert('操作失败: ' + err.message));
+        }
+
+        document.getElementById('rv-export-btn').addEventListener('click', function() {
+            const out = document.getElementById('rv-export').value.trim();
+            const fd = new FormData();
+            fd.append('review_dir', reviewDir); fd.append('output_file', out);
+            fetch('/api/organize/scene/review/export', { method: 'POST', body: fd })
+                .then(r => r.json())
+                .then(d => {
+                    if (d.code !== 200) { alert('导出失败: ' + (d.message || d)); return; }
+                    alert('已导出 ' + d.data.n_labels + ' 条标签到\n' + d.data.path);
+                })
+                .catch(err => alert('导出失败: ' + err.message));
+        });
     </script>
 </body>
 </html>
