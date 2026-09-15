@@ -120,6 +120,11 @@ python app/server.py       # 纯 API，端口 8198
 | GET | `/api/organize/face_cluster/result` | 聚类结果（簇列表+预览拼图+分诊标记） |
 | POST | `/api/organize/face_cluster/assign` | 命名簇并写入人脸库 |
 | POST | `/api/organize/face_cluster/ignore` | 忽略/恢复簇 |
+| POST | `/api/organize/play/source` | 注册剧目来源（剧目信息.txt URL，可选抓取快照） |
+| POST | `/api/organize/play/ingest` | 构建剧目知识库（幕次/角色/媒体，离线可跑） |
+| GET | `/api/organize/play/knowledge` | 查询幕次、角色与知识库统计 |
+| POST | `/api/organize/scene/reason` | 生成候选场景与证据报告（可选接入本地模型） |
+| POST | `/api/organize/agent/run` | 执行受限智能体任务（工具白名单 + 审计） |
 | POST | `/api/organize/scene/review/seed` | 将场景判定结果并入人工复核队列 |
 | GET | `/api/organize/scene/review` | 分页查询待审核记录 |
 | POST | `/api/organize/scene/review` | 接受/修改/拒绝场景标签（写修订日志） |
@@ -252,6 +257,8 @@ results, annotated = system.recognize_face('photo.jpg', known_threshold=0.55)
   导出 `scene_labels.json`；卡片③「场景证据文件」引用该导出，未审核/`unknown` 保持占位
 - **受限智能体**：`agent_runtime.py` 提供工具白名单、任务状态机（`queued/running/review/approved/failed`）
   与追加式审计日志，禁止任意 shell/越权 URL
+- **API**：`play/source`、`play/ingest`、`play/knowledge` 建库，`scene/reason` 生成证据，
+  `scene/review`（seed/list/decide/export）复核，`agent/run` 受限执行
 
 ```bash
 # 离线验收（M11–M16，无需网络/GPU；M15 API 需 fastapi 环境）
@@ -262,6 +269,7 @@ python tests/test_scene_reasoner.py
 python tests/test_scene_evidence_merge.py
 python tests/test_agent_runtime.py
 python tests/test_e2e_scene_pipeline.py
+python tests/test_multimodal_api.py        # play/source|ingest|knowledge, scene/reason, agent/run
 python tests/test_scene_review_ui.py       # /organize 卡片⑤ 冒烟（需 fastapi 环境）
 python tests/acceptance_multimodal_m16.py  # 聚合离线验收
 ```

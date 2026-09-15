@@ -27,7 +27,7 @@
 - `core_modules/organize/scene_reasoner.py` — 闭集场景判定与防幻觉校验（M14）
 - `core_modules/organize/review_queue.py` — 复核队列/修订日志/最终标签导出/证据加载（M15、M16）
 - `core_modules/organize/agent_runtime.py` — 受限智能体任务状态机、工具白名单、审计日志（M16）
-- `app/main.py` — `/api/organize/scene/review`（seed/list/decide/export）四个端点，`/api/organize/run` 增加 `scene_evidence_file`（M15、M16）
+- `app/main.py` — `/api/organize/scene/review`（seed/list/decide/export）、`play/source|ingest|knowledge`、`scene/reason`、`agent/run`，`/api/organize/run` 增加 `scene_evidence_file`（M11–M16）
 - `app/server_ui.py` — `/organize` 卡片⑤「场景标签人工复核」与卡片③「场景证据文件」入口（M15）
 - `core_modules/organize/smart_organizer.py` — 增加 `apply_scene_evidence` 与 `organize(scene_evidence_file=...)`（M16）
 
@@ -38,6 +38,7 @@
 - `tests/test_scene_reasoner.py` — M14 离线验收（假 LLM，无网络）
 - `tests/test_scene_review_api.py` — M15 复核 API 验收（TestClient 直调）
 - `tests/test_scene_review_ui.py` — M15 `/organize` 卡片⑤ UI 冒烟（需 fastapi 环境）
+- `tests/test_multimodal_api.py` — M11/M14/M16 多模态 API（play/source|ingest|knowledge、scene/reason、agent/run）
 - `tests/test_scene_evidence_merge.py` — M16 已审核证据合并（纯逻辑，离线）
 - `tests/test_agent_runtime.py` — M16 受限智能体运行时（纯逻辑，离线）
 - `tests/acceptance_multimodal_m16.py` — M16 离线验收聚合脚本
@@ -58,7 +59,7 @@ python tests/test_scene_reasoner.py   # M14 离线验收，不联网（通过）
 # M15 需要 fastapi，使用 face_scrfd_arcface 环境
 /home/huachenghao/.conda/envs/face_scrfd_arcface/bin/python tests/test_scene_review_api.py  # 通过
 # M16 离线验收聚合（跑上面扩展测试 + 列出重型回归）
-/home/huachenghao/.conda/envs/face_scrfd_arcface/bin/python tests/acceptance_multimodal_m16.py  # 9/9 通过
+/home/huachenghao/.conda/envs/face_scrfd_arcface/bin/python tests/acceptance_multimodal_m16.py  # 10/10 通过
 ```
 
 ## 4. 关键决策与约定
@@ -77,6 +78,7 @@ python tests/test_scene_reasoner.py   # M14 离线验收，不联网（通过）
 - [ ] M16（离线已过）：在目标机跑重型回归与模型/ES 全量验收。
 - [x] 端到端串联：`reason → review → export → organize(scene_evidence_file)` 全链路脚本。
 - [x] M15 审核 UI：`/organize` 卡片⑤ 复核 + 卡片③ `scene_evidence_file`。
+- [x] 蓝图 API 全量：`play/source|ingest|knowledge`、`scene/reason`、`agent/run`。
 
 ## 6. 下一步（接续从这里开始）
 
@@ -85,7 +87,7 @@ python tests/test_scene_reasoner.py   # M14 离线验收，不联网（通过）
 3. ✅ M13 图文向量召回/缓存/降级通过（`tests/test_multimodal_evidence.py`）。
 4. ✅ M14 闭集判定与级联通过（`tests/test_scene_reasoner.py`）。
 5. ✅ M15 复核核心/API/UI 通过（`test_scene_review_api.py`、`test_scene_review_ui.py`）。
-6. ✅ M16 离线验收 9/9 通过（`tests/acceptance_multimodal_m16.py`），含端到端串联。
+6. ✅ M16 离线验收 10/10 通过（`tests/acceptance_multimodal_m16.py`），含端到端串联与全量 API。
 7. 下一步：用真实 SigLIP2 `ImageEmbedder` 与 `.env` 本地端点联调；在目标机跑 gated 重型回归并归档 `outputs/acceptance/m16/`。
 
 ## 7. 状态文件维护约定

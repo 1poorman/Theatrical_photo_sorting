@@ -874,6 +874,160 @@ async def scene_review_export(review_dir: str = Form(...), output_file: str = Fo
         return JSONResponse(status_code=500, content=srv.get_error(message=f"Error exporting final labels: {str(e)}"))
 
 
+# ---------- 剧目知识库（多模态扩展） ----------
+
+def _load_knowledge_from_dir(knowledge_dir):
+    entities_path = os.path.join(knowledge_dir, 'entities.json')
+    if not os.path.exists(entities_path):
+        raise FileNotFoundError(f'entities.json not found in: {knowledge_dir}')
+    with open(entities_path, encoding='utf-8') as f:
+        entities = json.load(f)
+    return {'scenes': entities.get('scenes', []),
+            'roles': entities.get('roles', []),
+            'role_aliases': entities.get('role_aliases', {})}
+
+
+@app.post("/api/organize/play/source")
+async def play_source_register(info_path: str = Form(...), output_dir: str = Form(''),
+                               fetch: bool = Form(False), allowed_hosts: str = Form('')):
+    """注册剧目信息来源（剧目信息.txt）：提取并校验 URL，可选抓取快照。"""
+    try:
+        if not os.path.exists(info_path):
+            return JSONResponse(status_code=400, content=srv.get_error(message=f"Info file does not exist: {info_path}"))
+        from core_modules.organize.play_source import (
+            CrawlPolicy, crawl, extract_urls, source_manifest, write_manifest)
+        hosts = {h.strip() for h in allowed_hosts.split(',') if h.strip()} or None
+        urls = extract_urls(info_path)
+        for url in urls:
+            from core_modules.organize.play_source import validate_url
+            validate_url(url, hosts)
+        if fetch and output_dir:
+            manifest = crawl(urls, output_dir,
+                             policy=CrawlPolicy(allowed_hosts=hosts) if hosts else None)
+        else:
+            manifest = source_manifest(info_path, urls, allowed_hosts=hosts)
+            if output_dir:
+                write_manifest(os.path.join(output_dir, 'source_manifest.json'), manifest)
+        return JSONResponse({"code": 200, "message": "Source registered",
+                             "data": {"n_urls": len(urls), "urls": urls,
+                                      "fetched": bool(fetch and output_dir),
+                                      "pages": len(manifest.get('pages', [])),
+                                      "manifest": manifest}})
+    except ValueError as e:
+        return JSONResponse(status_code=400, content=srv.get_error(message=str(e)))
+    except Exception as e:
+        return JSONResponse(status_code=500, content=srv.get_error(message=f"Error registering source: {str(e)}"))
+
+
+@app.post("/api/organize/play/ingest")
+async def play_knowledge_ingest(info_path: str = Form(...), play_root: str = Form(...),
+                                output_dir: str = Form('')):
+    """从剧目信息与本地剧组/剧照构建知识库（离线可跑）。"""
+    try:
+        if not os.path.exists(info_path):
+            return JSONResponse(status_code=400, content=srv.get_error(message=f"Info file does not exist: {info_path}"))
+        if not os.path.isdir(play_root):
+            return JSONResponse(status_code=400, content=srv.get_error(message=f"Play root does not exist: {play_root}"))
+        from core_modules.organize.play_knowledge import build_knowledge
+        knowledge = build_knowledge(info_path, play_root, output_dir or None)
+        return JSONResponse({"code": 200, "message": "Knowledge built",
+                             "data": {"stats": knowledge['stats'],
+                                      "scenes": [s['label'] for s in knowledge['scenes']],
+                                      "n_roles": len(knowledge['roles']),
+                                      "output_dir": output_dir or None}})
+    except Exception as e:
+        return JSONResponse(status_code=500, content=srv.get_error(message=f"Error building knowledge: {str(e)}"))
+
+
+@app.get("/api/organize/play/knowledge")
+async def play_knowledge_query(output_dir: str):
+    """查询已构建的幕次、角色与统计。"""
+    try:
+        report_path = os.path.join(output_dir, 'knowledge_report.json')
+        if not os.path.exists(report_path):
+            return JSONResponse(status_code=404, content=srv.get_error(message=f"Knowledge not found: {output_dir}"))
+        with open(report_path, encoding='utf-8') as f:
+            report = json.load(f)
+        try:
+            entities = _load_knowledge_from_dir(output_dir)
+        except FileNotFoundError:
+            entities = {'scenes': [], 'roles': [], 'role_aliases': {}}
+        return JSONResponse({"code": 200, "message": "OK",
+                             "data": {"report": report,
+                                      "scenes": [s.get('label') for s in entities['scenes']],
+                                      "roles": entities['roles'],
+                                      "role_aliases": entities['role_aliases']}})
+    except Exception as e:
+        return JSONResponse(status_code=500, content=srv.get_error(message=f"Error querying knowledge: {str(e)}"))
+
+
+# ---------- 场景候选推理（多模态扩展） ----------
+
+@app.post("/api/organize/scene/reason")
+async def scene_reason(input_dir: str = Form(...), knowledge_dir: str = Form(...),
+                       output_file: str = Form(''), top_k: int = Form(5),
+                       use_llm: bool = Form(False)):
+    """对目录生成候选场景与证据报告；默认离线规则/检索，启用 use_llm 时接本地端点。"""
+    try:
+        if not os.path.isdir(input_dir):
+            return JSONResponse(status_code=400, content=srv.get_error(message=f"Input directory does not exist: {input_dir}"))
+        if not os.path.isdir(knowledge_dir):
+            return JSONResponse(status_code=400, content=srv.get_error(message=f"Knowledge dir does not exist: {knowledge_dir}"))
+        from core_modules.tools.image_io import list_images
+        from core_modules.organize.scene_reasoner import reason_batch
+        knowledge = _load_knowledge_from_dir(knowledge_dir)
+        images = list_images(input_dir)
+        if not images:
+            return JSONResponse(status_code=400, content=srv.get_error(message=f"No images found in: {input_dir}"))
+        client = None
+        if use_llm:
+            from core_modules.organize.llm_client import client_from_env
+            client = client_from_env()   # 缺配置时为 None，自动退化为规则/检索
+        out = output_file or os.path.join(input_dir, 'scene_evidence.jsonl')
+        rows = reason_batch(images, knowledge, client=client, output_path=out, top_k=top_k)
+        labels = [r['label'] for r in rows]
+        return JSONResponse({"code": 200, "message": "Scene reason completed",
+                             "data": {"n_images": len(rows), "output_file": out,
+                                      "n_unknown": labels.count('unknown'),
+                                      "labels": labels,
+                                      "llm": client is not None}})
+    except Exception as e:
+        return JSONResponse(status_code=500, content=srv.get_error(message=f"Error reasoning scenes: {str(e)}"))
+
+
+# ---------- 受限智能体（多模态扩展） ----------
+
+@app.post("/api/organize/agent/run")
+async def agent_run(tool: str = Form('scene_reason'), params_json: str = Form('{}')):
+    """执行受限智能体任务（工具白名单，返回 task_id 与状态）。"""
+    try:
+        from core_modules.organize.agent_runtime import AgentRuntime, ToolNotAllowed
+        params = json.loads(params_json or '{}')
+        runtime = AgentRuntime(os.path.join(srv.DEFAULT_OUTPUT_DIR, 'agent'))
+        runtime.register_tool('scene_reason', _agent_scene_reason)
+        try:
+            task = runtime.run(tool, params)
+        except ToolNotAllowed as e:
+            return JSONResponse(status_code=403, content=srv.get_error(message=str(e)))
+        return JSONResponse({"code": 200, "message": "Agent task finished",
+                             "data": {"task_id": task['task_id'], "state": task['state'],
+                                      "input_hash": task['input_hash'],
+                                      "result": task.get('result'), "error": task.get('error')}})
+    except Exception as e:
+        return JSONResponse(status_code=500, content=srv.get_error(message=f"Error running agent: {str(e)}"))
+
+
+def _agent_scene_reason(input_dir, knowledge_dir, output_file='', top_k=5):
+    from core_modules.tools.image_io import list_images
+    from core_modules.organize.scene_reasoner import reason_batch
+    knowledge = _load_knowledge_from_dir(knowledge_dir)
+    images = list_images(input_dir)
+    out = output_file or os.path.join(input_dir, 'scene_evidence.jsonl')
+    rows = reason_batch(images, knowledge, output_path=out, top_k=top_k)
+    return {'n_images': len(rows), 'output_file': out,
+            'n_unknown': sum(1 for r in rows if r['label'] == 'unknown')}
+
+
 # ---------- 启动事件 ----------
 
 @app.on_event("startup")
