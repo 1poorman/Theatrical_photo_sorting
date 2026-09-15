@@ -23,6 +23,7 @@
 - `core_modules/organize/play_source.py` — URL 提取、域名校验、robots 合规、限速重试、抓取快照、离线读取
 - `core_modules/organize/play_knowledge.py` — 正文/幕次/角色抽取、别名与人物证据映射、知识库落盘
 - `core_modules/organize/multimodal_evidence.py` — 词法 + 图文向量召回、向量缓存与降级（M13）
+- `core_modules/image_search.py` — `ImageEmbedder.encode_text` 与 `model_signature`（SigLIP 真实文本编码，M13）
 - `core_modules/organize/llm_client.py` — OpenAI 兼容 `.env` 端点与级联客户端（M14）
 - `core_modules/organize/scene_reasoner.py` — 闭集场景判定与防幻觉校验（M14）
 - `core_modules/organize/review_queue.py` — 复核队列/修订日志/最终标签导出/证据加载（M15、M16）
@@ -73,7 +74,7 @@ python tests/test_scene_reasoner.py   # M14 离线验收，不联网（通过）
 ## 5. 已知问题 / 待办
 
 - [ ] M12：`马可·波罗` 正文无「第 N 幕/场」，需支持其它幕次表达或人工映射。
-- [ ] M13：补 OCR/图像描述特征；用真实 SigLIP2 `ImageEmbedder` 校准图文召回阈值。
+- [ ] M13：补 OCR/图像描述特征；真实 SigLIP2 文本编码已接入 `ImageEmbedder.encode_text`，阈值待在目标机校准。
 - [ ] M14：真实本地端点联调（`small_diag` → `big_model_name` 级联）与 `model_trace` 落盘。
 - [ ] M16（离线已过）：在目标机跑重型回归与模型/ES 全量验收。
 - [x] 端到端串联：`reason → review → export → organize(scene_evidence_file)` 全链路脚本。

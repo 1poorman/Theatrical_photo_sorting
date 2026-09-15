@@ -62,7 +62,34 @@ class ImageEmbedder:
         self.model_name = model_name
         self.model, self.feature_dim, self.processor = self._load_model(model_name)
         self.preprocess = self._get_preprocess(model_name)
-        
+
+    @property
+    def model_signature(self):
+        """向量缓存签名（与配置的模型名对应）。"""
+        return self.model_name
+
+    def encode_text(self, text):
+        """SigLIP 文本编码，用于图文检索；非 SigLIP 模型返回 None。
+
+        与 ``extract_features`` 的图像向量位于同一投影空间，可直接算余弦相似度。
+        """
+        if not str(self.model_name).startswith('siglip') or self.processor is None:
+            return None
+        try:
+            inputs = self.processor(text=[text], padding='max_length',
+                                    truncation=True, return_tensors='pt')
+            inputs = {k: v.to(self.device) for k, v in inputs.items()
+                      if hasattr(v, 'to')}
+            with torch.no_grad():
+                txt_emb = self.model.get_text_features(**inputs)
+                if hasattr(txt_emb, 'pooler_output'):
+                    txt_emb = txt_emb.pooler_output
+                txt_emb = F.normalize(txt_emb, p=2, dim=-1)
+            return txt_emb.cpu().numpy().flatten()
+        except Exception as e:
+            print(f"SigLIP text encoding failed: {e}")
+            return None
+
     def _load_model(self, model_name):
         """Load pre-trained model based on model name"""
         if model_name.startswith('resnet'):

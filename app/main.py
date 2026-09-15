@@ -966,7 +966,7 @@ async def play_knowledge_query(output_dir: str):
 @app.post("/api/organize/scene/reason")
 async def scene_reason(input_dir: str = Form(...), knowledge_dir: str = Form(...),
                        output_file: str = Form(''), top_k: int = Form(5),
-                       use_llm: bool = Form(False)):
+                       use_llm: bool = Form(False), use_embedder: bool = Form(False)):
     """对目录生成候选场景与证据报告；默认离线规则/检索，启用 use_llm 时接本地端点。"""
     try:
         if not os.path.isdir(input_dir):
@@ -983,14 +983,24 @@ async def scene_reason(input_dir: str = Form(...), knowledge_dir: str = Form(...
         if use_llm:
             from core_modules.organize.llm_client import client_from_env
             client = client_from_env()   # 缺配置时为 None，自动退化为规则/检索
+        embedder = None
+        if use_embedder:
+            from core_modules.organize.multimodal_evidence import MultimodalRetriever
+            base_embedder, _ = _get_organize_models(False)
+            embedder = MultimodalRetriever(
+                embedder=base_embedder, cache_dir=os.path.join(knowledge_dir, 'embeddings'))
         out = output_file or os.path.join(input_dir, 'scene_evidence.jsonl')
-        rows = reason_batch(images, knowledge, client=client, output_path=out, top_k=top_k)
+        rows = reason_batch(images, knowledge, client=client, output_path=out,
+                            top_k=top_k, embedder=embedder)
+        if embedder is not None and hasattr(embedder, 'save'):
+            embedder.save()
         labels = [r['label'] for r in rows]
         return JSONResponse({"code": 200, "message": "Scene reason completed",
                              "data": {"n_images": len(rows), "output_file": out,
                                       "n_unknown": labels.count('unknown'),
                                       "labels": labels,
-                                      "llm": client is not None}})
+                                      "llm": client is not None,
+                                      "visual": embedder is not None}})
     except Exception as e:
         return JSONResponse(status_code=500, content=srv.get_error(message=f"Error reasoning scenes: {str(e)}"))
 
