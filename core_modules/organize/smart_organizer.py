@@ -35,6 +35,30 @@ logger = get_app_logger()
 MAX_PEOPLE_IN_NAME = 3      # 文件名人物列表上限（按相似度取前 N）
 
 
+def apply_scene_evidence(scene_assignment, evidence):
+    """用已审核证据覆盖场景名；未审核/unknown 保持占位 ``scene-XX``。
+
+    Args:
+        scene_assignment: {image_path: scene_label}
+        evidence: ``review_queue.load_scene_evidence`` 的返回值
+    Returns:
+        (new_assignment, stats)
+    """
+    by_image = evidence.get('by_image') or {}
+    by_scene = evidence.get('by_scene') or {}
+    out, applied = {}, 0
+    for path, scene in scene_assignment.items():
+        label = by_image.get(os.path.basename(path))
+        if label is None:
+            label = by_scene.get(scene)
+        if label:
+            out[path] = label
+            applied += 1
+        else:
+            out[path] = scene
+    return out, {'applied': applied, 'kept_placeholder': len(out) - applied}
+
+
 class SmartOrganizer:
     def __init__(self, recognition_system, face_db_root,
                  shot_classifier=None, embedder=None, role_classifier=None):
@@ -100,7 +124,8 @@ class SmartOrganizer:
 
     def organize(self, input_dir, output_dir, keep_per_bucket=2,
                  gap_seconds=300, scene_labels=None, threshold=None,
-                 classify_role=True, save_discarded=False):
+                 classify_role=True, save_discarded=False,
+                 scene_evidence_file=None):
         """执行完整整理流水线。
 
         Returns:
@@ -138,6 +163,12 @@ class SmartOrganizer:
             gap_seconds=gap_seconds, embeddings=embeddings)
         if scene_labels:
             scene_assignment = apply_labels(scene_assignment, scene_labels)
+        evidence_stats = None
+        if scene_evidence_file:
+            from core_modules.organize.review_queue import load_scene_evidence
+            evidence = load_scene_evidence(scene_evidence_file)
+            scene_assignment, evidence_stats = apply_scene_evidence(
+                scene_assignment, evidence)
 
         for name in kept_names:
             path = os.path.join(input_dir, name)
@@ -206,6 +237,7 @@ class SmartOrganizer:
             'total_input': dedup_report['total'],
             'kept': len(kept_names), 'discarded': dedup_report['discarded'],
             'n_scenes': len(set(scene_assignment.values())),
+            'scene_evidence': evidence_stats,
             'threshold': threshold,
             'burst': {k: dedup_report[k] for k in
                       ('n_groups', 'kept', 'discarded')},

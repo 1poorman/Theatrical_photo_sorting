@@ -175,3 +175,7 @@ core_modules/organize/
 
 **使用方式**：/organize 页面卡片④ → 输入无标注目录 + 结果目录 → 扫描（后台）→
 逐簇查看拼图预览 → 高置信簇输入「演员（饰角色）」命名入库 → 低内聚簇按提示人工补图（路径2）。
+
+## 7. 多模态图文结合扩展
+
+在本蓝图 M1–M10 基础上，图文结合、官方剧目信息知识库、本地大模型级联和高级智能体的蓝图、里程碑及验收标准见 [`docs/multimodal_context_blueprint.md`](multimodal_context_blueprint.md)。新增方案保持现有 `scene_labels.json` 与 `SmartOrganizer.organize()` 兼容，并要求自动标签保留可追溯证据及人工复核状态。

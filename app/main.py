@@ -12,6 +12,7 @@ main.py - FastAPI API 定义
 """
 import os
 import sys
+import json
 import datetime
 import time
 import tempfile
@@ -742,8 +743,6 @@ async def face_cluster_ignore(task_id: str = Form(...),
         return JSONResponse(status_code=404, content=srv.get_error(message=str(e)))
     except Exception as e:
         return JSONResponse(status_code=500, content=srv.get_error(message=f"Error ignoring cluster: {str(e)}"))
-
-
 @app.post("/api/organize/run")
 async def organize_run(input_dir: str = Form(...),
                        output_dir: str = Form(...),
@@ -751,6 +750,7 @@ async def organize_run(input_dir: str = Form(...),
                        gap_seconds: int = Form(300),
                        classify_role: bool = Form(True),
                        scene_labels_file: str = Form(''),
+                       scene_evidence_file: str = Form(''),
                        db_root: str = Form(srv.FACE_DATABASE_ROOT)):
     """智能整理流水线（连拍去重 → 人脸识别 → 行当分类 → 场景划分 → 规范命名）
     Form 参数:
@@ -760,6 +760,7 @@ async def organize_run(input_dir: str = Form(...),
     - gap_seconds: 场景时间间隔阈值（默认 300 秒）
     - classify_role: 是否行当分类（默认 true，实验性）
     - scene_labels_file: 场景人工标注映射文件（可选）
+    - scene_evidence_file: 已审核场景证据文件（review_queue 导出，可选；未审核/unknown 保持占位）
     """
     try:
         if srv.face_recognition_model is None:
@@ -779,7 +780,8 @@ async def organize_run(input_dir: str = Form(...),
                                     keep_per_bucket=keep_per_bucket,
                                     gap_seconds=gap_seconds,
                                     classify_role=classify_role,
-                                    scene_labels=scene_labels_file or None)
+                                    scene_labels=scene_labels_file or None,
+                                    scene_evidence_file=scene_evidence_file or None)
         return JSONResponse({
             "code": 200,
             "message": "Organize pipeline completed successfully",
@@ -794,6 +796,82 @@ async def organize_run(input_dir: str = Form(...),
         })
     except Exception as e:
         return JSONResponse(status_code=500, content=srv.get_error(message=f"Error running organize pipeline: {str(e)}"))
+
+
+# ---------- 场景标签人工复核 ----------
+
+def _read_scene_evidence(path):
+    rows = []
+    with open(path, encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                rows.append(json.loads(line))
+    return rows
+
+
+@app.post("/api/organize/scene/review/seed")
+async def scene_review_seed(review_dir: str = Form(...),
+                            evidence_file: str = Form(...)):
+    """将场景判定结果并入复核队列；已人工确认的记录不被覆盖。"""
+    try:
+        if not os.path.exists(evidence_file):
+            return JSONResponse(status_code=400, content=srv.get_error(message=f"Evidence file does not exist: {evidence_file}"))
+        from core_modules.organize.review_queue import ReviewQueue
+        queue = ReviewQueue(review_dir)
+        stats = queue.seed(_read_scene_evidence(evidence_file))
+        return JSONResponse({"code": 200, "message": "Review queue seeded",
+                             "data": {**stats, "summary": queue.summary()}})
+    except Exception as e:
+        return JSONResponse(status_code=500, content=srv.get_error(message=f"Error seeding review queue: {str(e)}"))
+
+
+@app.get("/api/organize/scene/review")
+async def scene_review_list(review_dir: str, status: str = '',
+                            limit: int = 50, offset: int = 0):
+    """分页获取待审核记录。"""
+    try:
+        from core_modules.organize.review_queue import ReviewQueue
+        queue = ReviewQueue(review_dir)
+        rows = queue.list_pending(status or None, limit=limit, offset=offset)
+        return JSONResponse({"code": 200, "message": "OK",
+                             "data": {"records": rows, "summary": queue.summary()}})
+    except Exception as e:
+        return JSONResponse(status_code=500, content=srv.get_error(message=f"Error listing review queue: {str(e)}"))
+
+
+@app.post("/api/organize/scene/review")
+async def scene_review_decide(review_dir: str = Form(...), image: str = Form(...),
+                              action: str = Form(...), scene_id: str = Form(''),
+                              label: str = Form(''), reviewer: str = Form('human'),
+                              note: str = Form('')):
+    """接受/修改/拒绝一条场景标签，写入不可变修订日志。"""
+    try:
+        from core_modules.organize.review_queue import ReviewQueue
+        queue = ReviewQueue(review_dir)
+        record = queue.decide(image, action, scene_id=scene_id or None,
+                              label=label or None, reviewer=reviewer, note=note)
+        return JSONResponse({"code": 200, "message": "Review decision saved",
+                             "data": {"record": record, "summary": queue.summary()}})
+    except ValueError as e:
+        return JSONResponse(status_code=400, content=srv.get_error(message=str(e)))
+    except KeyError as e:
+        return JSONResponse(status_code=404, content=srv.get_error(message=str(e)))
+    except Exception as e:
+        return JSONResponse(status_code=500, content=srv.get_error(message=f"Error saving review decision: {str(e)}"))
+
+
+@app.post("/api/organize/scene/review/export")
+async def scene_review_export(review_dir: str = Form(...), output_file: str = Form('')):
+    """导出人工已确认的最终标签（scene_labels.json）。"""
+    try:
+        from core_modules.organize.review_queue import ReviewQueue
+        queue = ReviewQueue(review_dir)
+        path, n = queue.export_final(output_file or None)
+        return JSONResponse({"code": 200, "message": "Final labels exported",
+                             "data": {"path": path, "n_labels": n}})
+    except Exception as e:
+        return JSONResponse(status_code=500, content=srv.get_error(message=f"Error exporting final labels: {str(e)}"))
 
 
 # ---------- 启动事件 ----------

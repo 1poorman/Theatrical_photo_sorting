@@ -11,6 +11,7 @@
 | 背景修复 | 人物去除后背景修复 | LAMA (ModelScope) |
 | 图像检索 | embedding 索引、相似检索、聚类分组 | ResNet50/101、DINOv2、SigLIP2 (faiss) |
 | 智能整理 | 连拍去重选优、半自动人脸库、人脸聚类建库（无标注自举）、按演员视图、场景划分、行当分类、规范命名流水线 | SCRFD+ArcFace、YOLO11l-pose、SigLIP2 zero-shot（详见 `docs/smart_organize_blueprint.md`） |
+| 多模态整理 | 官方剧目信息/剧情知识库、图文向量候选召回、本地大模型闭集幕次判定、人工复核队列（详见 `docs/multimodal_context_blueprint.md`） | 离线词法 + SigLIP2 图文向量、OpenAI 兼容本地模型级联 |
 
 ## 目录结构
 
@@ -41,7 +42,14 @@
 │   │   ├── face_cluster.py         #     人脸聚类建库（无标注目录自举，路径2人工补图兜底）
 │   │   ├── scene_split.py          #     场景划分（EXIF 时间分段为主 + embedding 聚类为辅）
 │   │   ├── role_classifier.py      #     戏曲行当 zero-shot 分类（生旦净丑，实验性）
-│   │   └── smart_organizer.py      #     整理流水线编排入口
+│   │   ├── smart_organizer.py      #     整理流水线编排入口（支持 scene_evidence_file 接入）
+│   │   ├── play_source.py          #     剧目来源（URL/robots/限速重试/快照/离线读取）
+│   │   ├── play_knowledge.py       #     剧情/幕次/角色知识库抽取（别名与人物证据映射）
+│   │   ├── multimodal_evidence.py  #     图文向量候选召回（磁盘缓存、缺图降级）
+│   │   ├── llm_client.py           #     OpenAI 兼容本地模型客户端与级联
+│   │   ├── scene_reasoner.py       #     闭集幕次判定 + JSON 校验 + 防幻觉
+│   │   ├── review_queue.py         #     人工复核队列、修订日志、最终标签导出
+│   │   └── agent_runtime.py        #     受限智能体（工具白名单、状态机、审计日志）
 │   └── tools/                      #   跨模块共享工具
 │       ├── logger.py               #     集中日志（北京时区、按天滚动、StepTimer 计时）
 │       ├── image_io.py             #     降采样解码、最长边缩放、图片枚举
@@ -52,7 +60,7 @@
 │   └── base.py                     #   阈值/路径/向量库地址等，支持环境变量覆盖
 │
 ├── tests/                          # 测试脚本（见"测试"章节）
-├── docs/                           # 文档（优化测试报告等）
+├── docs/                           # 文档（蓝图、优化报告、多模态进度状态）
 ├── data/                           # 数据（face_database/ 人脸库、sample_images/、ncpa_test/）
 ├── weights/                        # 模型权重（不入库）
 ├── outputs/ logs/                  # 运行产物（不入库）
@@ -107,11 +115,15 @@ python app/server.py       # 纯 API，端口 8198
 | POST | `/api/embedding/group_similar` | 相似图片聚类分组 |
 | POST | `/api/organize/build_face_database` | 半自动人脸库构建（整理完成/原始目录 → 锚定库） |
 | POST | `/api/organize/actor_view` | 按演员生成整理视图 |
-| POST | `/api/organize/run` | 智能整理流水线（去重→识别→行当→场景→规范命名） |
+| POST | `/api/organize/run` | 智能整理流水线（去重→识别→行当→场景→规范命名，可传 `scene_evidence_file`） |
 | POST | `/api/organize/face_cluster/scan` | 无标注目录人脸聚类扫描（后台任务） |
 | GET | `/api/organize/face_cluster/result` | 聚类结果（簇列表+预览拼图+分诊标记） |
 | POST | `/api/organize/face_cluster/assign` | 命名簇并写入人脸库 |
 | POST | `/api/organize/face_cluster/ignore` | 忽略/恢复簇 |
+| POST | `/api/organize/scene/review/seed` | 将场景判定结果并入人工复核队列 |
+| GET | `/api/organize/scene/review` | 分页查询待审核记录 |
+| POST | `/api/organize/scene/review` | 接受/修改/拒绝场景标签（写修订日志） |
+| POST | `/api/organize/scene/review/export` | 导出人工已确认的 `scene_labels.json` |
 
 ```bash
 curl -X POST http://localhost:8198/api/face/recognize -F "image=@data/sample_images/4.jpg"
@@ -138,6 +150,9 @@ results, annotated = system.recognize_face('photo.jpg', known_threshold=0.55)
 
 将原始摄影目录自动整理为规范命名目录（推荐在 `http://localhost:8199/organize` 页面操作，
 四个卡片按序使用；设计细节见 `docs/smart_organize_blueprint.md`）。
+
+图文结合、官方剧目信息知识库、本地大模型级联和高级智能体扩展见
+[`docs/multimodal_context_blueprint.md`](docs/multimodal_context_blueprint.md)。
 
 ### 使用流程
 
@@ -207,6 +222,46 @@ results, annotated = system.recognize_face('photo.jpg', known_threshold=0.55)
   置信度 <0.4 标记 uncertain，不写入文件名
 - **样式雷类无括号散件目录**：连拍剪除偏激进（79→30），可在卡片③调高
   「每景别桶保留张数」
+
+## 多模态内容整理（官方剧目信息 + 本地大模型）
+
+在智能整理基础上，把"看图猜场景"升级为可追溯的证据融合：官方剧目信息/剧情构成
+知识库，剧照经图文向量召回候选幕次，再由本地大模型在**闭集**内判定，最后经人工
+复核写入规范文件名。设计、里程碑与验收标准见
+[`docs/multimodal_context_blueprint.md`](docs/multimodal_context_blueprint.md)，
+实施进度见 [`docs/multimodal_progress.md`](docs/multimodal_progress.md)。
+
+```
+剧目信息.txt / 官方 URL
+  → play_source（robots/限速/快照）→ play_knowledge（幕次/角色/别名知识库）
+剧照
+  → multimodal_evidence（词法 + SigLIP2 图文向量，缓存去重）
+  → scene_reasoner（规则/人物/视觉/语言证据 → 本地模型级联闭集判定）
+  → review_queue（人工接受/修改/拒绝，修订日志）
+  → SmartOrganizer.organize(scene_evidence_file=...) 写出规范文件名
+```
+
+- **证据权重**：规则 0.35 / 人物 0.20 / 时间 0.15 / 视觉 0.20 / 语言 0.10；无有效证据置信度 ≤0.49，
+  低于 0.75 转人工队列，未审核/`unknown` 保持 `scene-XX` 占位，不写入最终文件名
+- **防幻觉**：模型只能从候选 `scene_id` 或 `unknown` 中返回，引用必须来自输入证据 id，越界即判无效
+- **模型配置**：`.env`（`small_model_name` 优先，解析/校验失败或端点异常时升级 `big_model_name`），
+  密钥仅运行时读取、不写入代码/报告/`model_trace`
+- **人工复核 API**：`/api/organize/scene/review`（seed/list/decide/export），
+  修订日志 `revisions.jsonl` 不可变、可回放，人工标签不会被重跑覆盖
+- **受限智能体**：`agent_runtime.py` 提供工具白名单、任务状态机（`queued/running/review/approved/failed`）
+  与追加式审计日志，禁止任意 shell/越权 URL
+
+```bash
+# 离线验收（M11–M16，无需网络/GPU；M15 API 需 fastapi 环境）
+python tests/test_play_source.py
+python tests/test_play_knowledge.py
+python tests/test_multimodal_evidence.py
+python tests/test_scene_reasoner.py
+python tests/test_scene_evidence_merge.py
+python tests/test_agent_runtime.py
+python tests/test_e2e_scene_pipeline.py
+python tests/acceptance_multimodal_m16.py   # 聚合 8 项离线验收
+```
 
 ## 测试
 
