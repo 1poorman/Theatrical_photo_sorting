@@ -9,10 +9,18 @@
 import hashlib
 import json
 import os
+import threading
 import uuid
+from contextlib import contextmanager
 from datetime import datetime, timezone
 
+try:
+    import fcntl
+except ImportError:  # Windows 等无 fcntl 环境仍保留进程内锁
+    fcntl = None
+
 STATES = ('queued', 'running', 'review', 'approved', 'failed')
+_TASK_LOCK = threading.RLock()
 
 
 def _now():
@@ -43,24 +51,52 @@ class AgentRuntime:
 
     # ---------- 审计与状态 ----------
 
-    def _audit(self, task_id, event, **detail):
-        os.makedirs(self.root, exist_ok=True)
-        with open(self.audit_path, 'a', encoding='utf-8') as f:
-            f.write(json.dumps({'at': _now(), 'task_id': task_id, 'event': event,
-                                **detail}, ensure_ascii=False) + '\n')
+    @contextmanager
+    def _file_lock(self):
+        with _TASK_LOCK:
+            os.makedirs(self.root, exist_ok=True)
+            lock_path = os.path.join(self.root, 'agent_runtime.lock')
+            with open(lock_path, 'a+', encoding='utf-8') as lock_file:
+                if fcntl is not None:
+                    fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
+                try:
+                    yield
+                finally:
+                    if fcntl is not None:
+                        fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
 
-    def _load_tasks(self):
+    def _audit(self, task_id, event, **detail):
+        with self._file_lock():
+            with open(self.audit_path, 'a', encoding='utf-8') as f:
+                f.write(json.dumps({'at': _now(), 'task_id': task_id, 'event': event,
+                                    **detail}, ensure_ascii=False) + '\n')
+
+    def _load_tasks_unlocked(self):
         if not os.path.exists(self.tasks_path):
             return {}
         with open(self.tasks_path, encoding='utf-8') as f:
             return json.load(f)
 
-    def _save_tasks(self, tasks):
-        os.makedirs(self.root, exist_ok=True)
-        tmp = self.tasks_path + '.tmp'
+    def _load_tasks(self):
+        with self._file_lock():
+            return self._load_tasks_unlocked()
+
+    def _save_tasks_unlocked(self, tasks):
+        tmp = self.tasks_path + '.' + uuid.uuid4().hex[:8] + '.tmp'
         with open(tmp, 'w', encoding='utf-8') as f:
             json.dump(tasks, f, ensure_ascii=False, indent=2)
         os.replace(tmp, self.tasks_path)
+
+    def _save_tasks(self, tasks):
+        with self._file_lock():
+            self._save_tasks_unlocked(tasks)
+
+    def _put_task(self, task):
+        """合并写入单个任务，避免并发会话用陈旧快照覆盖其它任务。"""
+        with self._file_lock():
+            tasks = self._load_tasks_unlocked()
+            tasks[task['task_id']] = task
+            self._save_tasks_unlocked(tasks)
 
     def get_task(self, task_id):
         return self._load_tasks().get(task_id)
@@ -81,18 +117,16 @@ class AgentRuntime:
         input_hash = 'sha256:' + hashlib.sha256(
             json.dumps({'tool': tool, 'params': params},
                        ensure_ascii=False, sort_keys=True).encode('utf-8')).hexdigest()[:16]
-        tasks = self._load_tasks()
         task = {'task_id': task_id, 'tool': tool, 'params': params,
                 'input_hash': input_hash, 'state': 'queued',
                 'created_at': _now(), 'updated_at': _now(), 'result': None,
                 'error': None}
-        tasks[task_id] = task
-        self._save_tasks(tasks)
+        self._put_task(task)
         self._audit(task_id, 'queued', tool=tool, input_hash=input_hash)
 
         task['state'] = 'running'
         task['updated_at'] = _now()
-        self._save_tasks(tasks)
+        self._put_task(task)
         self._audit(task_id, 'running', tool=tool)
         try:
             result = self.tools[tool](**params)
@@ -100,37 +134,39 @@ class AgentRuntime:
             task['state'] = 'failed'
             task['error'] = f'{type(e).__name__}: {e}'
             task['updated_at'] = _now()
-            self._save_tasks(tasks)
+            self._put_task(task)
             self._audit(task_id, 'failed', error=task['error'])
             return task
         task['result'] = result
         auto = result.get('auto_approved') if isinstance(result, dict) else False
         task['state'] = 'approved' if auto else 'review'
         task['updated_at'] = _now()
-        self._save_tasks(tasks)
+        self._put_task(task)
         self._audit(task_id, task['state'], tool=tool)
         return task
 
     def resolve(self, task_id, approve=True, reviewer='human', note=''):
-        tasks = self._load_tasks()
-        if task_id not in tasks:
-            raise KeyError(f'任务不存在: {task_id}')
-        task = tasks[task_id]
-        if task['state'] not in ('review',):
-            raise ValueError(f'任务状态不可仲裁: {task["state"]}')
-        task['state'] = 'approved' if approve else 'failed'
-        task['reviewer'] = reviewer
-        task['note'] = note
-        task['updated_at'] = _now()
-        self._save_tasks(tasks)
+        with self._file_lock():
+            tasks = self._load_tasks_unlocked()
+            if task_id not in tasks:
+                raise KeyError(f'任务不存在: {task_id}')
+            task = tasks[task_id]
+            if task['state'] not in ('review',):
+                raise ValueError(f'任务状态不可仲裁: {task["state"]}')
+            task['state'] = 'approved' if approve else 'failed'
+            task['reviewer'] = reviewer
+            task['note'] = note
+            task['updated_at'] = _now()
+            self._save_tasks_unlocked(tasks)
         self._audit(task_id, task['state'], reviewer=reviewer, note=note)
         return task
 
     def audit_log(self):
         rows = []
-        if os.path.exists(self.audit_path):
-            with open(self.audit_path, encoding='utf-8') as f:
-                for line in f:
-                    if line.strip():
-                        rows.append(json.loads(line))
+        with self._file_lock():
+            if os.path.exists(self.audit_path):
+                with open(self.audit_path, encoding='utf-8') as f:
+                    for line in f:
+                        if line.strip():
+                            rows.append(json.loads(line))
         return rows
