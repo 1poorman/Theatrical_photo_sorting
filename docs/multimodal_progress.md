@@ -55,6 +55,7 @@
 - `outputs/acceptance/m16/gated_regressions.json` — 六项重型回归 6/6 通过记录
 - `outputs/acceptance/m16/siglip_calibration.json` — SigLIP2 图文检索阈值/校准结论
 - `outputs/acceptance/m16/llm_endpoint_diag.json` — `.env` 端点级联与 model_trace 诊断
+- `outputs/acceptance/m16/siglip_zero_shot_caption_eval.json` — M13 零样本 caption 实验（不可用结论）
 - `outputs/tmp_scene_llm_diag/scene_evidence_llm.jsonl` — 真实端点批量 9 图证据（含 model_trace）
 
 ## 3. 当前可复现命令
@@ -84,8 +85,8 @@ python tests/test_scene_reasoner.py   # M14 离线验收，不联网（通过）
 - [x] M14：真实本地端点联调完成（`small_diag`→`big` 级联验证 + `model_trace` 全字段落盘，见 `outputs/acceptance/m16/llm_endpoint_diag.json`）；`client_from_env` 现优先 `small_diag_*` 显式配置。
 - [x] M13：真实 SigLIP2 图文链路联调完成（35 图 top1=66%/top3=86%，富文本 top3=100%；act-02 舞台画面系统性偏高，视觉仅作辅助先验，见 `outputs/acceptance/m16/siglip_calibration.json`）。OCR/图像描述特征仍待补。
 - [x] M16：目标机 gated 重型回归 6/6 通过（`filename_parser` 已修正信息目录 GT 口径后通过；报告见 `outputs/acceptance/m16/gated_regressions.json`）。
-- [ ] M12：`马可·波罗` 正文无「第 N 幕/场」，需支持其它幕次表达或人工映射。
-- [ ] M13：补 OCR/图像描述特征。
+- [ ] M13：补 OCR/图像描述特征 → 已评估（2026-09-17）：SigLIP2 base 零样本 caption top1=0/35、短语无区分度，不作为证据源；官方图注已作 `image_caption` 证据入库替代（`outputs/acceptance/m16/siglip_zero_shot_caption_eval.json`）；真 caption 模型（BLIP2/Qwen-VL）待本地权重可用再接入。
+- [x] M12：`马可·波罗` 正文无「第 N 幕/场」已解决：`build_knowledge` 从整理完成目录文件名抽取「第N幕：标题/序：标题」，序幕映射 `act-00`，mkbl2015 知识库 3 幕生成，规则短路判定通过（`tests/test_play_knowledge.py`）。
 - [x] 连续对话智能体：JSON 会话持久化、滚动历史摘要、结构化 memory、自主白名单工具调用、非法 JSON/端点/工具失败兜底。
 - [x] 端到端串联：`reason → review → export → organize(scene_evidence_file)` 全链路脚本。
 - [x] M15 审核 UI：`/organize` 卡片⑤ 复核 + 卡片③ `scene_evidence_file`。
@@ -103,7 +104,9 @@ python tests/test_scene_reasoner.py   # M14 离线验收，不联网（通过）
 8. ✅ 目标机 gated 重型回归（2026-09-17）：6/6 通过（`filename_parser` 修正「剧组信息/剧目信息」剧情说明图口径后 555/555 通过；见 `outputs/acceptance/m16/gated_regressions.json`）。
 9. ✅ 真实 SigLIP2 联调：本地权重加载、图文 768 维向量、磁盘缓存（重跑 0 次推理）；35 图检索 top1=66%/top3=86%，富文本 top3=100%；结论：视觉向量作辅助先验，阈值记录于 `outputs/acceptance/m16/siglip_calibration.json`。
 10. ✅ `.env` 本地端点联调：`small_diag`（未启动）→`big`（Qwen3.6-27B）级联实际触发并验证；闭集 unknown 不越界；批量 9 图 `model_trace` 全字段落盘 `outputs/tmp_scene_llm_diag/scene_evidence_llm.jsonl`。
-11. 下一步：补 M13 OCR/图像描述特征；M12《马可·波罗》幕次表达扩展。
+11. ✅ M12《马可·波罗》幕次扩展（2026-09-17）：`play_knowledge.py` 新增 `parse_scene_terms`/`_scenes_from_filenames`，正文无幕次时从文件名建幕次（序=act-00）；`scene_reasoner` 规则短路覆盖新命名；commit `7c91425`/`1e49e74`。
+12. ✅ M13 OCR/图像描述评估（2026-09-17）：本地 SigLIP2 零样本 caption 两轮实验（中文短语/英文 prompt）均 top1=0/35，记录结论并归档；官方图注证据已覆盖离线语料，caption 模型待权重。
+13. 下一步（可选）：接入 BLIP2/Qwen-VL 本地权重做真实 captioning；扩展更多剧目表达（场/折）。
 
 ## 7. 状态文件维护约定
 
