@@ -1,0 +1,12 @@
+{
+  "parser": "play_knowledge/v1",
+  "urls": [
+    "https://www.chncpa.org/subsite/mkbl2015/index.html"
+  ],
+  "stats": {
+    "n_scenes": 3,
+    "n_documents": 17,
+    "n_media": 131,
+    "n_urls": 1
+  }
+}
