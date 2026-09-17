@@ -1027,15 +1027,155 @@ async def agent_run(tool: str = Form('scene_reason'), params_json: str = Form('{
         return JSONResponse(status_code=500, content=srv.get_error(message=f"Error running agent: {str(e)}"))
 
 
-def _agent_scene_reason(input_dir, knowledge_dir, output_file='', top_k=5):
+def _agent_scene_reason(input_dir, knowledge_dir, output_file='', top_k=5,
+                        use_llm=False, use_embedder=False):
     from core_modules.tools.image_io import list_images
     from core_modules.organize.scene_reasoner import reason_batch
     knowledge = _load_knowledge_from_dir(knowledge_dir)
     images = list_images(input_dir)
     out = output_file or os.path.join(input_dir, 'scene_evidence.jsonl')
-    rows = reason_batch(images, knowledge, output_path=out, top_k=top_k)
+    client = None
+    if use_llm:
+        from core_modules.organize.llm_client import client_from_env
+        client = client_from_env()
+    embedder = None
+    if use_embedder:
+        from core_modules.organize.multimodal_evidence import MultimodalRetriever
+        base_embedder, _ = _get_organize_models(False)
+        embedder = MultimodalRetriever(
+            embedder=base_embedder,
+            cache_dir=os.path.join(knowledge_dir, 'embeddings'))
+    rows = reason_batch(images, knowledge, client=client, output_path=out,
+                        top_k=int(top_k), embedder=embedder)
+    if embedder is not None:
+        embedder.save()
     return {'n_images': len(rows), 'output_file': out,
-            'n_unknown': sum(1 for r in rows if r['label'] == 'unknown')}
+            'n_unknown': sum(1 for r in rows if r['label'] == 'unknown'),
+            'llm': client is not None, 'visual': embedder is not None}
+
+
+def _agent_knowledge_summary(knowledge_dir):
+    """读取已落盘知识库的场景、角色、来源和统计，不触发模型加载。"""
+    knowledge = _load_knowledge_from_dir(knowledge_dir)
+    report_path = os.path.join(knowledge_dir, 'knowledge_report.json')
+    report = {}
+    if os.path.exists(report_path):
+        with open(report_path, encoding='utf-8') as f:
+            report = json.load(f)
+    return {
+        'knowledge_dir': os.path.abspath(knowledge_dir),
+        'scenes': [s.get('label') for s in knowledge.get('scenes', [])],
+        'roles': knowledge.get('roles', []),
+        'role_aliases': knowledge.get('role_aliases', {}),
+        'report': report,
+        'auto_approved': True,
+    }
+
+
+def _agent_review_summary(review_dir, status='', limit=20):
+    """读取人工复核队列摘要和少量记录，不修改人工决定。"""
+    from core_modules.organize.review_queue import ReviewQueue
+    queue = ReviewQueue(review_dir)
+    return {
+        'review_dir': os.path.abspath(review_dir),
+        'summary': queue.summary(),
+        'records': queue.list_pending(status or None, limit=min(int(limit), 100)),
+        'auto_approved': True,
+    }
+
+
+def _build_conversational_agent(use_llm=True, max_steps=4):
+    """构造每请求独立、存储共享的会话智能体。"""
+    from core_modules.organize.conversational_agent import ConversationalAgent
+    client = None
+    if use_llm:
+        from core_modules.organize.llm_client import client_from_env
+        client = client_from_env()
+    agent = ConversationalAgent(
+        os.path.join(srv.DEFAULT_OUTPUT_DIR, 'agent'),
+        client=client,
+        max_steps=max_steps,
+    )
+    agent.register_tool(
+        'scene_reason', _agent_scene_reason,
+        '对图片目录执行闭集场景推理并生成 scene_evidence.jsonl。',
+        parameters={
+            'type': 'object',
+            'properties': {
+                'input_dir': {'type': 'string'},
+                'knowledge_dir': {'type': 'string'},
+                'output_file': {'type': 'string'},
+                'top_k': {'type': 'integer'},
+                'use_llm': {'type': 'boolean'},
+                'use_embedder': {'type': 'boolean'},
+            },
+            'required': ['input_dir', 'knowledge_dir'],
+        },
+        aliases=['场景推理', '场景识别', '生成候选', 'reason'],
+    )
+    agent.register_tool(
+        'knowledge_summary', _agent_knowledge_summary,
+        '查询剧目知识库中的幕次、角色、别名、来源和统计。',
+        parameters={
+            'type': 'object',
+            'properties': {'knowledge_dir': {'type': 'string'}},
+            'required': ['knowledge_dir'],
+        },
+        aliases=['知识库', '幕次', '角色', 'knowledge'],
+    )
+    agent.register_tool(
+        'review_summary', _agent_review_summary,
+        '查询人工复核队列统计和待审核记录，不修改审核结果。',
+        parameters={
+            'type': 'object',
+            'properties': {
+                'review_dir': {'type': 'string'},
+                'status': {'type': 'string'},
+                'limit': {'type': 'integer'},
+            },
+            'required': ['review_dir'],
+        },
+        aliases=['复核队列', '审核状态', '待审核', 'review'],
+    )
+    return agent
+
+
+@app.post("/api/organize/agent/chat")
+async def agent_chat(message: str = Form(...), session_id: str = Form(''),
+                     context_json: str = Form('{}'), use_llm: bool = Form(True),
+                     max_steps: int = Form(4)):
+    """连续对话智能体：持久化上下文，自主选择白名单工具，失败时降级。"""
+    try:
+        context = json.loads(context_json or '{}')
+        if not isinstance(context, dict):
+            raise ValueError('context_json 必须是 JSON 对象')
+        agent = _build_conversational_agent(use_llm=use_llm, max_steps=max_steps)
+        result = agent.chat(message, session_id=session_id or None, context=context)
+        return JSONResponse({"code": 200, "message": "Agent replied", "data": result})
+    except (ValueError, json.JSONDecodeError) as e:
+        return JSONResponse(status_code=400, content=srv.get_error(message=str(e)))
+    except Exception as e:
+        return JSONResponse(status_code=500, content=srv.get_error(message=f"Error chatting with agent: {str(e)}"))
+
+
+@app.get("/api/organize/agent/session/{session_id}")
+async def agent_session(session_id: str):
+    """读取持久化会话、上下文记忆、历史消息与工具审计记录。"""
+    try:
+        agent = _build_conversational_agent(use_llm=False)
+        session = agent.get_session(session_id)
+        return JSONResponse({"code": 200, "message": "OK", "data": session})
+    except ValueError as e:
+        return JSONResponse(status_code=400, content=srv.get_error(message=str(e)))
+    except Exception as e:
+        return JSONResponse(status_code=500, content=srv.get_error(message=f"Error reading agent session: {str(e)}"))
+
+
+@app.get("/api/organize/agent/tools")
+async def agent_tools():
+    """列出智能体可自主调用的白名单工具及参数契约。"""
+    agent = _build_conversational_agent(use_llm=False)
+    return JSONResponse({"code": 200, "message": "OK", "data": {"tools": agent.tools()}})
 
 
 # ---------- 启动事件 ----------
