@@ -130,9 +130,14 @@ class CascadeClient:
 def client_from_env(env_path=DEFAULT_ENV_PATH, cascade_enabled=None, opener=urlopen):
     """根据 `.env` 构造级联客户端；缺少配置时返回 ``None``。"""
     cfg = load_env(env_path)
-    small_url = cfg.get('base_url') or cfg.get('small_diag_url')
-    small_key = cfg.get('api_key') or cfg.get('small_diag_key')
-    small_model = cfg.get('small_model_name') or cfg.get('small_diag_model')
+    if cfg.get('small_diag_url') and cfg.get('small_diag_model'):
+        small_url = cfg['small_diag_url']
+        small_key = cfg.get('small_diag_key')
+        small_model = cfg['small_diag_model']
+    else:
+        small_url = cfg.get('base_url')
+        small_key = cfg.get('api_key')
+        small_model = cfg.get('small_model_name')
     big_url = cfg.get('url') or cfg.get('big_diag_url')
     big_key = cfg.get('key') or cfg.get('big_diag_key')
     big_model = cfg.get('big_model_name')

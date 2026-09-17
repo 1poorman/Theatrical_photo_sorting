@@ -90,7 +90,12 @@ def _build_prompt(image_path, parsed, candidates, evidences):
         candidate_lines.append({
             'scene_id': cand['scene_id'], 'label': cand['label'],
             'score': cand['score'],
-            'evidence_ids': [e['id'] for e in cand.get('evidence', [])],
+            'evidence_ids': [
+                e['id'] for e in evidences
+                if e.get('source_ref') in {
+                    item.get('source_ref') for item in cand.get('evidence', [])
+                }
+            ],
         })
     evidence_lines = [{'id': e['id'], 'type': e['type'],
                        'quote': e.get('quote', '')} for e in evidences]
