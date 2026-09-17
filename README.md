@@ -124,7 +124,10 @@ python app/server.py       # 纯 API，端口 8198
 | POST | `/api/organize/play/ingest` | 构建剧目知识库（幕次/角色/媒体，离线可跑） |
 | GET | `/api/organize/play/knowledge` | 查询幕次、角色与知识库统计 |
 | POST | `/api/organize/scene/reason` | 生成候选场景与证据报告（可选接入本地模型） |
-| POST | `/api/organize/agent/run` | 执行受限智能体任务（工具白名单 + 审计） |
+| POST | `/api/organize/agent/run` | 执行一次受限智能体任务（工具白名单 + 审计） |
+| POST | `/api/organize/agent/chat` | 连续对话智能体：持久化 session、记忆、自主工具调用与兜底 |
+| GET | `/api/organize/agent/session/{session_id}` | 查询会话历史、记忆和工具调用记录 |
+| GET | `/api/organize/agent/tools` | 查询智能体工具白名单和参数契约 |
 | POST | `/api/organize/scene/review/seed` | 将场景判定结果并入人工复核队列 |
 | GET | `/api/organize/scene/review` | 分页查询待审核记录 |
 | POST | `/api/organize/scene/review` | 接受/修改/拒绝场景标签（写修订日志） |
@@ -132,6 +135,17 @@ python app/server.py       # 纯 API，端口 8198
 
 ```bash
 curl -X POST http://localhost:8198/api/face/recognize -F "image=@data/sample_images/4.jpg"
+
+# 首轮对话：上下文参数会写入 session 记忆，模型可自主调用知识库工具
+curl -X POST http://localhost:8198/api/organize/agent/chat \
+  -F "session_id=txgx-demo" \
+  -F "message=查询这个剧目的幕次" \
+  -F 'context_json={"knowledge_dir":"outputs/play_knowledge/txgx201410"}'
+
+# 后续对话只需复用 session_id；历史、memory 和工具记录保存在 outputs/agent/conversations/
+curl -X POST http://localhost:8198/api/organize/agent/chat \
+  -F "session_id=txgx-demo" \
+  -F "message=再列出主要角色"
 ```
 
 ## 人脸识别

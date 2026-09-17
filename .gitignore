@@ -22,3 +22,7 @@ core_modules/face_recognition/trt_cache/
 
 # 测试工作区
 tests/*
+
+
+.env 
+opencode.json
