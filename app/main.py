@@ -1137,6 +1137,8 @@ def _build_conversational_agent(use_llm=True, max_steps=4):
         },
         aliases=['复核队列', '审核状态', '待审核', 'review'],
     )
+    from core_modules.organize.agent_tools import register_image_tools
+    register_image_tools(agent)
     return agent
 
 

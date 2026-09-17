@@ -299,7 +299,8 @@ class ConversationalAgent:
                 ranked.append((hits, name))
         if ranked:
             ranked.sort(reverse=True)
-            return {'action': 'tool', 'tool': ranked[0][1], 'arguments': {},
+            return {'action': 'tool', 'tool': ranked[0][1],
+                    'arguments': self._inline_path_arguments(text),
                     'reason': 'deterministic_fallback_router'}
 
         if any(word in text for word in ('工具', '能做什么', '帮助')):
@@ -310,6 +311,26 @@ class ConversationalAgent:
             'content': '本轮内容已保存到会话记忆，但本地模型当前不可用或未返回有效指令。'
                        '请明确要执行的操作，或使用 /tool 工具名 {参数}。',
         }
+
+    def _inline_path_arguments(self, text):
+        """从自然语言消息提取路径类参数（目录/输出路径），供确定性路由使用。"""
+        paths = re.findall(
+            r'(?:(?:/[^\s，。；,;]+)+|~/(?:[^\s，。；,;]+)+)', text or '')
+        if not paths:
+            return {}
+        cleaned = []
+        for p in paths:
+            p = p.rstrip('。，、；!？?)】》"\'')
+            if p and p not in ('/', '/tmp'):
+                cleaned.append(p)
+        if not cleaned:
+            return {}
+        args = {}
+        if len(cleaned) >= 1:
+            args['input_dir'] = cleaned[0]
+        if len(cleaned) >= 2:
+            args['output_file'] = cleaned[1]
+        return args
 
     def _tool_result_answer(self, call):
         if call.get('ok'):
