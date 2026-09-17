@@ -9,6 +9,8 @@ from pathlib import Path
 from core_modules.organize.play_source import extract_urls, load_local_sources
 
 ACT_RE = re.compile(r'^\s*第\s*([一二三四五六七八九十百\d]+)\s*幕\s*(.*)$')
+# 整理完成文件名场景段：第1幕：元都之恋 / 序：东方奇遇 / 第3场xxx
+SCENE_TEXT_RE = re.compile(r'(第\s*[一二三四五六七八九十百\d]+\s*[幕场]\s*[：:：]?\s*[^-]+|序\s*[：:]\s*[^-]+)')
 ROLE_RE = re.compile(r'([\u4e00-\u9fffA-Za-z·]{2,20})\s*[（(]\s*饰\s*([^）)]+)[）)]')
 ROLE_INLINE_RE = re.compile(r'([\u4e00-\u9fffA-Za-z·]{2,20})饰([\u4e00-\u9fffA-Za-z·]{2,20})')
 IMAGE_EXTS = {'.jpg', '.jpeg', '.png', '.webp'}
@@ -36,6 +38,30 @@ def _clean_text(text):
     text = text.replace('\ufeff', '').replace('\u3000', ' ')
     text = re.sub(r'[ \t]+', ' ', text)
     return text.strip()
+
+
+def parse_scene_terms(text):
+    """从场景文本（文件名场景段/图注）提取标准化场景词条。
+
+    返回 [(act, title, normalized)]：act 为幕号（序曲为 0），title 为场名。
+    normalized 形如 ``第1幕元都之恋``，与知识库 ``label`` 同构，便于子串匹配。
+    """
+    found = []
+    for m in SCENE_TEXT_RE.finditer(text or ''):
+        raw = m.group(1).strip().strip('-— ')
+        pm = re.match(r'^第\s*([一二三四五六七八九十百\d]+)\s*([幕场])\s*[：:：]?\s*(.*)$', raw)
+        if pm:
+            number = chinese_number(pm.group(1))
+            if number is None:
+                continue
+            unit = pm.group(2)
+            title = pm.group(3).strip() or f'第{number}{unit}'
+            found.append((number, title, f'第{number}{unit}{title}'))
+            continue
+        om = re.match(r'^序\s*[：:]\s*(.+)$', raw)
+        if om:
+            found.append((0, om.group(1).strip(), f'序：{om.group(1).strip()}'))
+    return found
 
 
 def parse_plot_text(text, source_ref='local:剧目信息.txt'):
@@ -136,6 +162,38 @@ def _fill_scene_roles(scenes, docs, cast):
             doc.setdefault('entities', {})['roles'] = role_pairs
 
 
+def _scenes_from_filenames(play_root, source_ref='local:整理完成'):
+    """扫描整理完成目录文件名，抽取「第N幕：标题/序：标题」幕次集合。
+
+    用于正文没有幕次表达的剧目；同一 (act, title) 只保留一条，
+    标签与 ``parse_plot_text`` 产出同构（``第1幕元都之恋``），可复用词法匹配。
+    """
+    done_dirs = [name for name in os.listdir(play_root)
+                 if os.path.isdir(os.path.join(play_root, name))
+                 and name.startswith('【整理完成】')]
+    found = {}
+    for dir_name in sorted(done_dirs):
+        dir_path = os.path.join(play_root, dir_name)
+        for name in sorted(os.listdir(dir_path)):
+            stem = os.path.splitext(name)[0]
+            m = re.match(r'^\d{1,3}-(\d{8})-', stem)
+            scene_seg = ''
+            if m:
+                rest = stem[m.end():]
+                parts = rest.split('-')
+                if len(parts) >= 2:
+                    scene_seg = parts[1] if len(parts) >= 3 else parts[-1]
+            for act, title, normalized in parse_scene_terms(scene_seg):
+                key = (act, normalized)
+                if key not in found:
+                    found[key] = {
+                        'scene_id': (f'act-{act:02d}' if act else 'act-00'),
+                        'act': act, 'title': title, 'label': normalized,
+                        'source_ref': f'{source_ref}#{key[1]}',
+                    }
+    return [found[k] for k in sorted(found)]
+
+
 def _keywords(text, title=''):
     words = set(re.findall(r'[\u4e00-\u9fff]{2,8}', f'{title} {text}'))
     stop = {'这是', '一个', '我们', '自己', '他们', '最终', '不禁', '因此', '原来', '时候'}
@@ -171,11 +229,30 @@ def _media_record(path, play_root, scenes):
 
 
 def build_knowledge(info_path, play_root, output_dir=None):
-    """构建剧目知识库；返回完整 dict，output_dir 非空时同时写 JSONL/JSON。"""
+    """构建剧目知识库；返回完整 dict，output_dir 非空时同时写 JSONL/JSON。
+
+    正文无「第 N 幕」标记时（如《马可·波罗》），从整理完成目录文件名中
+    抽取「第N幕：标题/序：标题」作为幕次来源，剧情正文整体挂在序幕之后。
+    """
     local = load_local_sources(info_path, play_root)
     urls = extract_urls(info_path)
     docs, scenes, roles = parse_plot_text(local['text'])
     media = [_media_record(p, play_root, scenes) for p in local['image_paths']]
+    if not scenes:
+        scenes = _scenes_from_filenames(play_root, source_ref='local:整理完成')
+        if scenes:
+            # 无幕次正文时，简介文档引用第一个场景锚点，便于语义检索兜底。
+            for scene in scenes:
+                entities = {'acts': [scene['act']], 'scenes': [scene['title']],
+                            'roles': []}
+                docs.append({'kind': 'scene', 'text': '',
+                             'source_ref': scene['source_ref'],
+                             'content_hash': _hash_text(scene['title']),
+                             'entities': entities})
+            scene_by_act = {s['act']: s for s in scenes}
+            for doc in docs:
+                if doc.get('kind') == 'synopsis':
+                    doc['entities'] = {'acts': sorted(scene_by_act)}
     cast = _merge_cast(roles, media)
     _fill_scene_roles(scenes, docs, cast)
     roles = [{'actor': a, 'role': role}
