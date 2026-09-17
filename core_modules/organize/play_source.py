@@ -18,6 +18,8 @@ from urllib.robotparser import RobotFileParser
 URL_RE = re.compile(r'https?://[^\s<>"\u3001，。]+')
 DEFAULT_ALLOWED_HOSTS = {'www.chncpa.org', 'chncpa.org'}
 USER_AGENT = 'TheatricalPhotoSorting/1.0'
+PARSER_VERSION = 'play_source/v2'
+DEFAULT_LICENSE_NOTE = '仅用于内部剧照整理证据；保留原始链接与版权归属。'
 
 
 def extract_urls(info_path):
@@ -44,7 +46,8 @@ def validate_url(url, allowed_hosts=None):
     return url
 
 
-def source_manifest(info_path, urls=None, allowed_hosts=None):
+def source_manifest(info_path, urls=None, allowed_hosts=None,
+                    license_note=DEFAULT_LICENSE_NOTE):
     """生成不含敏感信息的来源清单。"""
     urls = urls if urls is not None else extract_urls(info_path)
     checked = [validate_url(u, allowed_hosts) for u in urls]
@@ -52,7 +55,10 @@ def source_manifest(info_path, urls=None, allowed_hosts=None):
         'info_path': os.path.abspath(info_path),
         'urls': checked,
         'created_at': datetime.now(timezone.utc).isoformat(),
-        'parser': 'play_source/v1',
+        'parser': PARSER_VERSION,
+        'license_note': license_note,
+        'pages': [],
+        'errors': [],
     }
 
 
@@ -120,6 +126,10 @@ def fetch_url(url, output_dir, allowed_hosts=None, timeout=20, max_bytes=20 * 10
                     raise ValueError(f'source exceeds max_bytes: {url}')
                 status = getattr(response, 'status', 200)
                 content_type = response.headers.get('Content-Type', '')
+                charset = None
+                match = re.search(r'charset\s*=\s*([^;\s]+)', content_type, re.I)
+                if match:
+                    charset = match.group(1).strip('"\'')
             digest = hashlib.sha256(body).hexdigest()
             os.makedirs(output_dir, exist_ok=True)
             snapshot = os.path.join(output_dir, f'{digest[:16]}.html')
@@ -129,11 +139,13 @@ def fetch_url(url, output_dir, allowed_hosts=None, timeout=20, max_bytes=20 * 10
                 'url': url,
                 'status': status,
                 'content_type': content_type,
+                'encoding': charset or 'utf-8',
                 'bytes': len(body),
                 'sha256': digest,
                 'snapshot': snapshot,
                 'attempts': attempt + 1,
                 'fetched_at': datetime.now(timezone.utc).isoformat(),
+                'parser': PARSER_VERSION,
             }
         except HTTPError as e:
             if 400 <= e.code < 500:      # 客户端错误不重试
@@ -150,7 +162,10 @@ def crawl(urls, output_dir, policy=None, opener=urlopen):
     """按策略抓取多个 URL，返回 manifest（含成功页、跳过与错误）。"""
     policy = policy or CrawlPolicy()
     manifest = {'created_at': datetime.now(timezone.utc).isoformat(),
-                'policy': policy.as_dict(), 'pages': [], 'skipped': [], 'errors': []}
+                'parser': PARSER_VERSION,
+                'license_note': DEFAULT_LICENSE_NOTE,
+                'policy': policy.as_dict(), 'pages': [], 'skipped': [], 'errors': [],
+                'robots': {}}
     seen, robot_cache = set(), {}
     for url in urls:
         if len(manifest['pages']) >= policy.max_pages:
@@ -171,11 +186,16 @@ def crawl(urls, output_dir, policy=None, opener=urlopen):
                 robot_cache[host] = fetch_robots(url, opener=opener,
                                                  timeout=policy.timeout,
                                                  user_agent=policy.user_agent)
+                manifest['robots'][host] = {
+                    'available': robot_cache[host] is not None,
+                    'checked_at': datetime.now(timezone.utc).isoformat(),
+                }
             if not robots_allows(url, robot_cache[host], policy.user_agent):
                 manifest['skipped'].append({'url': url, 'reason': 'robots'})
                 continue
         try:
-            entry = fetch_url(url, output_dir, allowed_hosts=policy.allowed_hosts,
+            pages_dir = os.path.join(output_dir, 'pages')
+            entry = fetch_url(url, pages_dir, allowed_hosts=policy.allowed_hosts,
                               timeout=policy.timeout, max_bytes=policy.max_bytes,
                               delay_seconds=policy.delay_seconds, opener=opener,
                               max_retries=policy.max_retries,
@@ -194,7 +214,33 @@ def load_snapshot(snapshot_path, encoding='utf-8'):
         body = f.read()
     text = body.decode(encoding, errors='replace')
     return {'path': os.path.abspath(snapshot_path), 'text': text,
-            'sha256': hashlib.sha256(body).hexdigest(), 'bytes': len(body)}
+            'sha256': hashlib.sha256(body).hexdigest(), 'bytes': len(body),
+            'encoding': encoding, 'parser': PARSER_VERSION}
+
+
+def snapshot_entries(source_dir):
+    """从来源目录的 manifest/pages 返回可离线摄取的快照条目。"""
+    manifest_path = os.path.join(source_dir, 'source_manifest.json')
+    manifest = {}
+    if os.path.exists(manifest_path):
+        with open(manifest_path, encoding='utf-8') as f:
+            manifest = json.load(f)
+    rows = []
+    for entry in manifest.get('pages', []):
+        snapshot = entry.get('snapshot')
+        if snapshot and not os.path.isabs(snapshot):
+            snapshot = os.path.join(source_dir, snapshot)
+        if snapshot and os.path.exists(snapshot):
+            rows.append({**entry, 'snapshot': os.path.abspath(snapshot)})
+    if rows:
+        return rows
+    pages_dir = os.path.join(source_dir, 'pages')
+    if os.path.isdir(pages_dir):
+        for name in sorted(os.listdir(pages_dir)):
+            if name.lower().endswith(('.html', '.htm')):
+                rows.append({'snapshot': os.path.join(pages_dir, name),
+                             'url': None, 'encoding': 'utf-8'})
+    return rows
 
 
 def write_manifest(path, manifest):
