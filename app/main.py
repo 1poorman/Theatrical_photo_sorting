@@ -1180,6 +1180,59 @@ async def agent_tools():
     return JSONResponse({"code": 200, "message": "OK", "data": {"tools": agent.tools()}})
 
 
+def _agent_organize_photos(input_dir, output_dir, db_root, keep_per_bucket=2,
+                           gap_seconds=300, scene_evidence_file=''):
+    if srv.face_recognition_model is None:
+        raise ValueError('人脸模型未初始化，请在视觉服务环境启动主 API')
+    from core_modules.organize.smart_organizer import SmartOrganizer
+    embedder, _ = _get_organize_models(False)
+    organizer = SmartOrganizer(srv.face_recognition_model, db_root,
+                               shot_classifier=srv.pose_model, embedder=embedder)
+    report = organizer.organize(
+        input_dir, output_dir, keep_per_bucket=keep_per_bucket,
+        gap_seconds=gap_seconds, classify_role=False,
+        scene_evidence_file=scene_evidence_file or None,
+    )
+    return {key: report[key] for key in ('total_input', 'kept', 'discarded', 'n_scenes')} | {
+        'report_path': os.path.join(output_dir, 'organize_report.json'),
+        'output_dir': output_dir,
+    }
+
+
+@app.post('/api/organize/agent/advanced/chat')
+def advanced_agent_chat(message: str = Form(...), session_id: str = Form(''),
+                        context_json: str = Form('{}'), model: str = Form('auto'),
+                        protocol: str = Form('json'), max_steps: int = Form(6)):
+    """LangChain 自主工具调用；同步路由在工作线程执行，避免阻塞事件循环。"""
+    try:
+        from core_modules.organize.langchain_agent import build_photo_agent
+        context = json.loads(context_json or '{}')
+        if not isinstance(context, dict):
+            raise ValueError('context_json 必须是 JSON 对象')
+        agent = build_photo_agent(os.path.join(srv.DEFAULT_OUTPUT_DIR, 'agent'),
+                                  selection=model, protocol=protocol, max_steps=max_steps,
+                                  organize=_agent_organize_photos)
+        result = agent.chat(message, session_id or None, context)
+        return JSONResponse({'code': 200, 'message': 'Agent replied', 'data': result})
+    except ValueError as exc:
+        return JSONResponse(status_code=400, content=srv.get_error(message=str(exc)))
+    except ImportError:
+        return JSONResponse(status_code=503, content=srv.get_error(
+            message='请在 API 环境安装 requirements_agent.txt'))
+    except Exception:
+        app_logger.exception('Advanced agent failed')
+        return JSONResponse(status_code=500, content=srv.get_error(message='高级智能体执行失败，请检查服务日志'))
+
+
+@app.get('/api/organize/agent/advanced/tools')
+def advanced_agent_tools():
+    from core_modules.organize.conversational_agent import ConversationalAgent
+    from core_modules.organize.photo_agent_tools import register_photo_tools
+    agent = ConversationalAgent(os.path.join(srv.DEFAULT_OUTPUT_DIR, 'agent'))
+    register_photo_tools(agent, organize=_agent_organize_photos)
+    return JSONResponse({'code': 200, 'message': 'OK', 'data': {'tools': agent.tools()}})
+
+
 # ---------- 启动事件 ----------
 
 @app.on_event("startup")

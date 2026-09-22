@@ -11,13 +11,15 @@
 | M11 | `play_source.py` | 🟢 离线完成 | URL 白名单、robots 合规、限速重试、页数/大小上限、快照哈希与离线读取 |
 | M12 | `play_knowledge.py` | 🟢 离线完成 | 《天下归心》五幕解析、角色别名（郑庄公→庄公）映射回幕次，人物证据生效 |
 | M13 | `multimodal_evidence.py` | 🟢 离线完成 | 词法 + 图文向量召回、向量磁盘缓存（重跑不重复推理）、缺图/缺编码器降级；OCR/图像描述待补 |
-| M14 | `scene_reasoner.py` | 🟢 离线完成 | 闭集候选 + LLM JSON + 小/大模型级联 + 防幻觉校验；真实端点联调待做 |
+| M14 | `scene_reasoner.py` | 🟢 完成（历史验收） | 闭集候选、LLM JSON、级联和防幻觉；旧客户端真实端点联调记录见第 5、6 节，不代表新 LangChain 端到端验收 |
 | M15 | `review_queue.py` + API + UI | 🟢 离线完成 | 复核队列、接受/修改/拒绝、不可变修订日志、最终标签导出；`/organize` 卡片⑤ 审核 UI |
-| M16 | `SmartOrganizer` 接入 + 智能体 + 全量验收 | 🟢 离线完成 | `scene_evidence_file` 接入、证据合并、受限智能体运行时、离线验收聚合；模型/ES 全量验收待目标机 |
+| M16 | `SmartOrganizer` 接入 + 智能体 + 全量验收 | 🟢 完成（历史验收） | 审核证据接入、受限运行时、离线聚合及目标机 gated 回归记录见第 6 节；不表示所有新环境均已验收 |
 
 图例：🟢 完成 / 🟡 进行中或部分完成 / ⚪ 未开始
 
-## 2. 已完成产物（工作区，未提交）
+## 2. 已完成产物与历史验收
+
+下列 M11–M16 源码已有提交记录，并非全部未提交。测试与报告部分仅存在本地；以 `git ls-files` 和 `git status` 为准。当前未发布 LangChain 扩展见 [CHANGELOG](CHANGELOG.md)，目录与部署见 [项目说明](PROJECT_GUIDE.md)。
 
 新增源码：
 - `core_modules/organize/play_source.py` — URL 提取、域名校验、robots 合规、限速重试、抓取快照、离线读取
@@ -49,7 +51,7 @@
 
 知识库产物：
 - `outputs/play_knowledge/txgx201410/` — 《天下归心》`documents.jsonl`/`media.jsonl`/`entities.json`/`scene_candidates.jsonl`/`knowledge_report.json`
-- `outputs/play_knowledge/mkbl2015/` — 《马可·波罗》同名产物（正文无「第 N 幕」，`n_scenes=0`）
+- `outputs/play_knowledge/mkbl2015/` — 《马可·波罗》同名产物；初版正文无幕次导致 `n_scenes=0`，已从整理完成文件名派生 3 幕（见第 5、6 节）
 
 验收归档（2026-09-17）：
 - `outputs/acceptance/m16/gated_regressions.json` — 六项重型回归 6/6 通过记录

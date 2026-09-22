@@ -13,6 +13,18 @@
 | 智能整理 | 连拍去重选优、半自动人脸库、人脸聚类建库（无标注自举）、按演员视图、场景划分、行当分类、规范命名流水线 | SCRFD+ArcFace、YOLO11l-pose、SigLIP2 zero-shot（详见 `docs/smart_organize_blueprint.md`） |
 | 多模态整理 | 官方剧目信息/剧情知识库、图文向量候选召回、本地大模型闭集幕次判定、人工复核队列（详见 `docs/multimodal_context_blueprint.md`） | 离线词法 + SigLIP2 图文向量、OpenAI 兼容本地模型级联 |
 
+![界面1](./assets/界面-1.png)
+![界面2](./assets/界面-2.png)
+![人脸聚类建库](./assets/人脸聚类建库.png)
+
+
+## 文档导航
+
+- [文档中心](docs/README.md)：阅读顺序、现行说明与历史设计分类。
+- [项目说明](docs/PROJECT_GUIDE.md)：文件职责、部署配置、业务流程、数据产物、维护与排障。
+- [版本迭代记录](docs/CHANGELOG.md)：按日期和 Git 提交追溯；未发布改动单独记录，不虚构版本号。
+- [高级智能体](docs/agentic_tools_blueprint.md)：LangChain CLI/API、工具边界及模型配置。
+
 ## 目录结构
 
 ```
@@ -127,7 +139,9 @@ python app/server.py       # 纯 API，端口 8198
 | POST | `/api/organize/agent/run` | 执行一次受限智能体任务（工具白名单 + 审计） |
 | POST | `/api/organize/agent/chat` | 连续对话智能体：持久化 session、记忆、自主工具调用与兜底 |
 | GET | `/api/organize/agent/session/{session_id}` | 查询会话历史、记忆和工具调用记录 |
-| GET | `/api/organize/agent/tools` | 查询智能体工具白名单和参数契约 |
+| GET | `/api/organize/agent/tools` | 查询原对话智能体工具白名单和参数契约 |
+| POST | `/api/organize/agent/advanced/chat` | LangChain 高级智能体：多步工具调用、持久会话（需额外依赖） |
+| GET | `/api/organize/agent/advanced/tools` | 查询高级智能体工具契约 |
 | POST | `/api/organize/scene/review/seed` | 将场景判定结果并入人工复核队列 |
 | GET | `/api/organize/scene/review` | 分页查询待审核记录 |
 | POST | `/api/organize/scene/review` | 接受/修改/拒绝场景标签（写修订日志） |
@@ -147,6 +161,20 @@ curl -X POST http://localhost:8198/api/organize/agent/chat \
   -F "session_id=txgx-demo" \
   -F "message=再列出主要角色"
 ```
+
+## LangChain 高级智能体
+
+在项目根目录运行；独立 CLI 不加载视觉模型，也不注册完整视觉整理工具：
+
+```bash
+conda activate agent
+python -m pip install -r requirements_agent.txt
+python -m app.photo_agent_cli --model auto --protocol json --session demo
+```
+
+`auto` 使用 `small_diag_*` 小模型配置优先、`.env` 大模型兜底；可用 `--model big` 单独选择大模型。
+CLI 支持目录检查、知识库、场景候选与复核准备；完整整理需在主服务环境安装智能体依赖后，调用高级智能体 API。
+原 `/api/organize/agent/chat` 保留不变。详细示例与限制见 [高级智能体蓝图](docs/agentic_tools_blueprint.md)。
 
 ## 人脸识别
 
@@ -263,7 +291,7 @@ results, annotated = system.recognize_face('photo.jpg', known_threshold=0.55)
 - **证据权重**：规则 0.35 / 人物 0.20 / 时间 0.15 / 视觉 0.20 / 语言 0.10；无有效证据置信度 ≤0.49，
   低于 0.75 转人工队列，未审核/`unknown` 保持 `scene-XX` 占位，不写入最终文件名
 - **防幻觉**：模型只能从候选 `scene_id` 或 `unknown` 中返回，引用必须来自输入证据 id，越界即判无效
-- **模型配置**：`.env`（`small_model_name` 优先，解析/校验失败或端点异常时升级 `big_model_name`），
+- **模型配置**：`.env`（优先使用完整 `small_diag_url` + `small_diag_model` 组合，否则使用 `small_model_name` 配置；小模型失败时按级联配置升级 `big_model_name`），
   密钥仅运行时读取、不写入代码/报告/`model_trace`
 - **人工复核 API**：`/api/organize/scene/review`（seed/list/decide/export），
   修订日志 `revisions.jsonl` 不可变、可回放，人工标签不会被重跑覆盖
@@ -327,5 +355,5 @@ docker compose up -d --build   # API 端口 8198，需宿主机 NVIDIA 驱动 + 
 
 - 需 **NVIDIA GPU**；无 GPU 自动回退 CPU 推理（速度大幅下降）
 - 服务默认使用物理 GPU1（`app/server.py` 中 `CUDA_VISIBLE_DEVICES=1`，可按需修改）
-- `outputs/`、`logs/`、`weights/`、`data/` 均不入库；临时文件 `outputs/temp/` 超 1 小时自动清理
+- `outputs/`、`logs/`、`weights/` 默认忽略；`data/ncpa_test/` 和 `data/face_database/` 不入库，`data/sample_images/` 样例保留；已跟踪的历史文件不受忽略规则影响
 - 依赖版本以 `requirements_scrfd_arcface.txt` 为准（ES 客户端 8.x 对应服务端 8.12）

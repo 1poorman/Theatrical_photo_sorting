@@ -1,0 +1,35 @@
+# 文档中心
+
+更新时间：2026-09-17。文档基于当前工作区与 Git 历史整理；代码和测试文件保留原路径，避免破坏导入、样本路径及历史链接。
+
+## 推荐阅读顺序
+
+1. [项目 README](../README.md)：能力概览、快速开始、API 清单。
+2. [项目说明](PROJECT_GUIDE.md)：文件职责、运行配置、业务操作、数据与维护。
+3. [版本迭代记录](CHANGELOG.md)：已提交历史与未发布改动。
+4. 按需求阅读以下设计与验收资料。
+
+## 文档分层
+
+| 文档 | 定位 | 使用方式 |
+| --- | --- | --- |
+| [PROJECT_GUIDE.md](PROJECT_GUIDE.md) | 当前项目手册 | 部署、接手开发、排障与文件管理 |
+| [CHANGELOG.md](CHANGELOG.md) | 可追溯迭代记录 | 日期、提交、变更与验证边界 |
+| [agentic_tools_blueprint.md](agentic_tools_blueprint.md) | 当前 LangChain 智能体实现说明 | 独立 CLI、主 API、模型配置、工具契约 |
+| [smart_organize_blueprint.md](smart_organize_blueprint.md) | 智能整理设计 | 去重、建库、演员视图与流水线背景 |
+| [multimodal_context_blueprint.md](multimodal_context_blueprint.md) | M11–M16 设计与验收目标 | 证据融合、知识库与人工审核边界 |
+| [multimodal_progress.md](multimodal_progress.md) | 多模态实施与历史验收记录 | 查找报告、已知问题与后续工作 |
+| [optimization_report.md](optimization_report.md) | 历史性能实验 | 理解 TRT、批量检索和性能取舍；不视为当前机器基准 |
+| [实施计划.md](实施计划.md) | 早期实施背景 | 保留历史方案；未完成规划不代表现有功能 |
+
+## 文件整理原则
+
+- 入口和总览集中在 README 与本目录；不再在不同蓝图中重复维护完整 API 清单。
+- 源码保留在 `app/`、`core_modules/`、`config/`；文档不代替代码契约。
+- 原图、人脸库、模型权重和运行输出不迁移、不删除；管理规则见项目说明。
+- `tests/tmp_*.py` 属于本地实验/历史补丁，不作为安装步骤，也不自动执行或批量清理。
+- 运行报告放在 `outputs/`；文档记录测试条件、报告位置、结果和局限，不复制密钥或原始人脸数据。
+
+## 后续维护
+
+新增功能时同时更新 API/CLI 使用说明、对应蓝图和 CHANGELOG 的“未发布”部分。发布时记录真实 Git tag/commit、环境、测试命令、兼容性和迁移步骤；没有 tag 时使用日期与 commit，不补造语义版本。
