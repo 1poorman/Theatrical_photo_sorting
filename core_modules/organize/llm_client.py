@@ -9,6 +9,8 @@ import json
 import os
 import re
 import time
+import base64
+import io
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
@@ -51,7 +53,8 @@ class OpenAICompatClient:
     """最小 OpenAI ``/chat/completions`` 客户端，支持超时、重试和 trace。"""
 
     def __init__(self, base_url, api_key, model, timeout=60, max_retries=2,
-                 temperature=0.0, max_tokens=1024, opener=urlopen):
+                 temperature=0.0, max_tokens=1024, opener=urlopen,
+                 chat_template_kwargs=None):
         if not base_url or not model:
             raise ValueError('base_url 与 model 不能为空')
         self.base_url = base_url.rstrip('/')
@@ -62,6 +65,7 @@ class OpenAICompatClient:
         self.temperature = temperature
         self.max_tokens = max_tokens
         self._opener = opener
+        self.chat_template_kwargs = dict(chat_template_kwargs or {})
 
     def chat(self, messages, temperature=None, max_tokens=None):
         """返回 ``{'content': str, 'trace': dict}``；失败抛 ``LLMError``。"""
@@ -71,6 +75,8 @@ class OpenAICompatClient:
             'temperature': self.temperature if temperature is None else temperature,
             'max_tokens': self.max_tokens if max_tokens is None else max_tokens,
         }
+        if self.chat_template_kwargs:
+            payload['chat_template_kwargs'] = self.chat_template_kwargs
         body = json.dumps(payload, ensure_ascii=False).encode('utf-8')
         prompt_text = json.dumps(messages, ensure_ascii=False)
         url = f'{self.base_url}/chat/completions'
@@ -86,6 +92,8 @@ class OpenAICompatClient:
                     raw = resp.read().decode('utf-8', errors='replace')
                 data = json.loads(raw)
                 content = data['choices'][0]['message']['content']
+                if not isinstance(content, str) or not content.strip():
+                    raise ValueError('模型响应正文为空或类型错误')
                 trace = {
                     'model': self.model,
                     'endpoint': self.base_url,
@@ -97,7 +105,7 @@ class OpenAICompatClient:
                 }
                 return {'content': content, 'trace': trace}
             except (HTTPError, URLError, TimeoutError, OSError, ValueError,
-                    KeyError, IndexError, json.JSONDecodeError) as e:
+                    KeyError, IndexError, TypeError, json.JSONDecodeError) as e:
                 last_err = e
                 if attempt < self.max_retries:
                     time.sleep(min(2 ** attempt, 4))
@@ -125,6 +133,35 @@ class CascadeClient:
             result = self.big.chat(messages, **kwargs)
             result['trace']['cascade_upgraded_from'] = self.small.model
             return result
+
+
+def image_content(image_path, max_side=None):
+    """Encode an EXIF-corrected RGB preview for an OpenAI vision message."""
+    from PIL import Image, ImageOps
+    from config.base import VISION_IMAGE_MAX_SIDE
+    with Image.open(image_path) as original:
+        preview = ImageOps.exif_transpose(original).convert('RGB')
+        preview.thumbnail((max_side or VISION_IMAGE_MAX_SIDE,) * 2)
+        buffer = io.BytesIO()
+        preview.save(buffer, format='JPEG', quality=90)
+    return {'type': 'image_url', 'image_url': {
+        'url': 'data:image/jpeg;base64,' + base64.b64encode(buffer.getvalue()).decode('ascii')}}
+
+
+def vision_client_from_env(env_path=DEFAULT_ENV_PATH, opener=urlopen):
+    """Use the deployed big vision model, preserving its served model alias."""
+    from config.base import VISION_MODEL_IDENTITY, VISION_ENABLE_THINKING
+    cfg = load_env(env_path)
+    url = cfg.get('url') or cfg.get('big_diag_url')
+    model = cfg.get('big_model_name')
+    if not url or not model:
+        return None
+    client = OpenAICompatClient(url, cfg.get('key') or cfg.get('big_diag_key'),
+                                model, max_tokens=2048, opener=opener,
+                                chat_template_kwargs={'enable_thinking': VISION_ENABLE_THINKING})
+    client.model_identity = VISION_MODEL_IDENTITY
+    client.model_identity_source = 'configuration'
+    return client
 
 
 def client_from_env(env_path=DEFAULT_ENV_PATH, cascade_enabled=None, opener=urlopen):

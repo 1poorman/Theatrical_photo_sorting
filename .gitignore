@@ -26,6 +26,7 @@ tests/*
 !tests/test_workspace.py
 !tests/test_workspace_browser.cjs
 !tests/test_scene_review_ui.py
+!tests/test_core_upgrade.py
 
 
 .env 

@@ -459,13 +459,11 @@ class ImageEmbedder:
                     except Exception as e:
                         # One bad chunk should not kill the whole batch: fall back per-image
                         print(f"Chunked batch extraction failed, retrying per-image: {e}")
-                        for p, _ in pairs:
-                            if self.model_name.startswith('nomic'):
-                                feat = self._extract_features_nomic_local(Image.open(p).convert('RGB'))
-                            elif self.model_name.startswith('blip2'):
-                                feat = self._extract_features_blip2(Image.open(p).convert('RGB'))
-                            else:
-                                feat = self._extract_features_siglip(Image.open(p).convert('RGB'))
+                        for _, p in pairs:
+                            try:
+                                feat = self.extract_features(p)
+                            except Exception:
+                                continue
                             if feat is not None:
                                 all_feats.append(feat[None, :])
                                 ok_paths.append(p)

@@ -1,6 +1,6 @@
 # 文档中心
 
-更新时间：2026-09-17。文档基于当前工作区与 Git 历史整理；代码和测试文件保留原路径，避免破坏导入、样本路径及历史链接。
+更新时间：2026-10-19。文档基于当前工作区与 Git 历史整理；代码和测试文件保留原路径，避免破坏导入、样本路径及历史链接。
 
 ## 推荐阅读顺序
 
@@ -15,6 +15,8 @@
 | --- | --- | --- |
 | [PROJECT_GUIDE.md](PROJECT_GUIDE.md) | 当前项目手册 | 部署、接手开发、排障与文件管理 |
 | [workspace_guide.md](workspace_guide.md) | 多模态整理工作台 | 图片浏览、剧情关联、看图复核、整理导出与界面验收 |
+| [core_upgrade_blueprint.md](core_upgrade_blueprint.md) | 核心算法与性能后续蓝图 | U0–U8 实施依赖、开源选型、数据划分、验收门槛与默认采用规则 |
+| [core_upgrade_progress.md](core_upgrade_progress.md) | 核心升级执行状态 | 全目录清单、正确性修复、真实模型探索、配置与后续待验收项 |
 | [CHANGELOG.md](CHANGELOG.md) | 可追溯迭代记录 | 日期、提交、变更与验证边界 |
 | [agentic_tools_blueprint.md](agentic_tools_blueprint.md) | 当前 LangChain 智能体实现说明 | 独立 CLI、主 API、模型配置、工具契约 |
 | [smart_organize_blueprint.md](smart_organize_blueprint.md) | 智能整理设计 | 去重、建库、演员视图与流水线背景 |

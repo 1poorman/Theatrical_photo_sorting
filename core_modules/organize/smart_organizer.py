@@ -28,7 +28,7 @@ from core_modules.organize.burst_dedup import BurstDeduplicator, image_quality
 from core_modules.organize.scene_split import split_scenes, apply_labels
 from core_modules.tools.image_io import list_images, resize_max_side
 from core_modules.tools.logger import get_app_logger
-from config.base import KNOWN_FACE_THRESHOLD, FACE_IMAGE_MAX_SIDE
+from config.base import KNOWN_FACE_THRESHOLD, FACE_IMAGE_MAX_SIDE, FACE_AMBIGUOUS_MARGIN
 
 logger = get_app_logger()
 
@@ -45,10 +45,19 @@ def apply_scene_evidence(scene_assignment, evidence):
         (new_assignment, stats)
     """
     by_image = evidence.get('by_image') or {}
+    by_path = evidence.get('by_path') or {}
+    legacy = evidence.get('legacy_by_image', by_image)
     by_scene = evidence.get('by_scene') or {}
+    names = {}
+    for path in scene_assignment:
+        names.setdefault(os.path.basename(path), set()).add(os.path.abspath(path))
+    if any(len(paths) > 1 and name in legacy for name, paths in names.items()):
+        raise ValueError('裸文件名场景标签存在跨目录同名歧义')
     out, applied = {}, 0
     for path, scene in scene_assignment.items():
-        label = by_image.get(os.path.basename(path))
+        label = by_path.get(os.path.abspath(path))
+        if label is None:
+            label = legacy.get(os.path.basename(path))
         if label is None:
             label = by_scene.get(scene)
         if label:
@@ -110,14 +119,30 @@ class SmartOrganizer:
             return {}, faces
         feats = self.system.extractor.extract_features(aligned_list)
         feats = self.system.extractor.l2_normalize(feats)
-        person_max = {}
+        hits = {}
         for fv in feats:
             sims = self._lib_matrix @ fv
+            person_max = {}
             for i, s in enumerate(sims):
                 p = self._lib_persons[i]
-                if s > person_max.get(p, -1):
-                    person_max[p] = float(s)
-        hits = {p: s for p, s in person_max.items() if s >= threshold}
+                # Several role directories may belong to the same actor.
+                identity = re.split(r'[（(]|饰', os.path.basename(p), maxsplit=1)[0].strip()
+                if np.isfinite(s) and s > person_max.get(identity, (-1, None))[0]:
+                    person_max[identity] = (float(s), p)
+            ranked = sorted(person_max.values(), reverse=True)
+            if not ranked or ranked[0][0] < threshold:
+                continue
+            if len(ranked) > 1 and ranked[0][0] - ranked[1][0] < FACE_AMBIGUOUS_MARGIN:
+                continue
+            score, person = ranked[0]
+            hits[person] = max(score, hits.get(person, -1))
+        # Merge identities appearing in several detected faces/role directories.
+        by_identity = {}
+        for person, score in hits.items():
+            identity = re.split(r'[（(]|饰', os.path.basename(person), maxsplit=1)[0].strip()
+            if score > by_identity.get(identity, (-1, None))[0]:
+                by_identity[identity] = (score, person)
+        hits = {person: score for score, person in by_identity.values()}
         return hits, faces
 
     # ---------- 主流程 ----------
@@ -149,14 +174,16 @@ class SmartOrganizer:
         records = []
         embeddings = None
         if self.embedder is not None:
-            feats, valid = [], []
+            embeddings = {}
             for name in kept_names:
-                f = self.embedder.extract_features(os.path.join(input_dir, name))
+                path = os.path.join(input_dir, name)
+                try:
+                    f = self.embedder.extract_features(path)
+                except Exception as exc:
+                    logger.warning(f'场景特征提取失败 {name}: {type(exc).__name__}')
+                    continue
                 if f is not None:
-                    feats.append(f)
-                    valid.append(name)
-            if len(valid) == len(kept_names):
-                embeddings = np.array(feats)
+                    embeddings[path] = f
 
         scene_assignment = split_scenes(
             [os.path.join(input_dir, n) for n in kept_names],

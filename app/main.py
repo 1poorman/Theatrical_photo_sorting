@@ -517,6 +517,18 @@ def _get_organize_models(classify_role: bool):
     return srv.organize_models['embedder'], role_clf
 
 
+def _get_scene_embedder():
+    from config.base import SCENE_EMBEDDING_BACKEND
+    if SCENE_EMBEDDING_BACKEND == 'embeddinggemma2':
+        if 'embeddinggemma2' not in srv.organize_models:
+            from core_modules.organize.embedding_gemma import EmbeddingGemmaEmbedder
+            srv.organize_models['embeddinggemma2'] = EmbeddingGemmaEmbedder()
+        return srv.organize_models['embeddinggemma2']
+    if SCENE_EMBEDDING_BACKEND != 'siglip2_base':
+        raise ValueError(f'不支持的场景嵌入模型: {SCENE_EMBEDDING_BACKEND}')
+    return _get_organize_models(False)[0]
+
+
 @app.post("/api/organize/build_face_database")
 async def organize_build_face_database(organized_dirs: str = Form(...),
                                        db_root: str = Form(srv.FACE_DATABASE_ROOT),
@@ -824,6 +836,8 @@ async def scene_review_seed(review_dir: str = Form(...),
         stats = queue.seed(_read_scene_evidence(evidence_file))
         return JSONResponse({"code": 200, "message": "Review queue seeded",
                              "data": {**stats, "summary": queue.summary()}})
+    except ValueError as e:
+        return JSONResponse(status_code=400, content=srv.get_error(message=str(e)))
     except Exception as e:
         return JSONResponse(status_code=500, content=srv.get_error(message=f"Error seeding review queue: {str(e)}"))
 
@@ -983,19 +997,20 @@ async def scene_reason(input_dir: str = Form(...), knowledge_dir: str = Form(...
         images = [os.path.abspath(os.path.join(input_dir, name)) for name in list_images(input_dir)]
         if not images:
             return JSONResponse(status_code=400, content=srv.get_error(message=f"No images found in: {input_dir}"))
-        client = None
+        client = vision_client = None
         if use_llm:
-            from core_modules.organize.llm_client import client_from_env
-            client = client_from_env()   # 缺配置时为 None，自动退化为规则/检索
+            from core_modules.organize.llm_client import client_from_env, vision_client_from_env
+            vision_client = vision_client_from_env()
+            client = vision_client or client_from_env()
         embedder = None
         if use_embedder:
             from core_modules.organize.multimodal_evidence import MultimodalRetriever
-            base_embedder, _ = _get_organize_models(False)
+            base_embedder = _get_scene_embedder()
             embedder = MultimodalRetriever(
                 embedder=base_embedder, cache_dir=os.path.join(knowledge_dir, 'embeddings'))
         out = output_file or os.path.join(input_dir, 'scene_evidence.jsonl')
         rows = reason_batch(images, knowledge, client=client, output_path=out,
-                            top_k=top_k, embedder=embedder)
+                            top_k=top_k, embedder=embedder, vision_client=vision_client)
         if embedder is not None and hasattr(embedder, 'save'):
             embedder.save()
         labels = [r['label'] for r in rows]
@@ -1039,19 +1054,20 @@ def _agent_scene_reason(input_dir, knowledge_dir, output_file='', top_k=5,
     knowledge = _load_knowledge_from_dir(knowledge_dir)
     images = [os.path.abspath(os.path.join(input_dir, name)) for name in list_images(input_dir)]
     out = output_file or os.path.join(input_dir, 'scene_evidence.jsonl')
-    client = None
+    client = vision_client = None
     if use_llm:
-        from core_modules.organize.llm_client import client_from_env
-        client = client_from_env()
+        from core_modules.organize.llm_client import client_from_env, vision_client_from_env
+        vision_client = vision_client_from_env()
+        client = vision_client or client_from_env()
     embedder = None
     if use_embedder:
         from core_modules.organize.multimodal_evidence import MultimodalRetriever
-        base_embedder, _ = _get_organize_models(False)
+        base_embedder = _get_scene_embedder()
         embedder = MultimodalRetriever(
             embedder=base_embedder,
             cache_dir=os.path.join(knowledge_dir, 'embeddings'))
     rows = reason_batch(images, knowledge, client=client, output_path=out,
-                        top_k=int(top_k), embedder=embedder)
+                        top_k=int(top_k), embedder=embedder, vision_client=vision_client)
     if embedder is not None:
         embedder.save()
     return {'n_images': len(rows), 'output_file': out,

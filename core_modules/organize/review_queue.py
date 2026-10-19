@@ -8,6 +8,8 @@
 """
 import json
 import os
+import hashlib
+import tempfile
 from datetime import datetime, timezone
 
 ACTIONS = ('accept', 'modify', 'reject')
@@ -31,11 +33,30 @@ def _read_jsonl(path):
 
 def _atomic_write_jsonl(path, rows):
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
-    tmp = path + '.tmp'
-    with open(tmp, 'w', encoding='utf-8') as f:
-        for row in rows:
-            f.write(json.dumps(row, ensure_ascii=False) + '\n')
-    os.replace(tmp, path)
+    tmp = None
+    try:
+        with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8',
+                                         dir=os.path.dirname(os.path.abspath(path)),
+                                         delete=False) as f:
+            tmp = f.name
+            for row in rows:
+                f.write(json.dumps(row, ensure_ascii=False) + '\n')
+        os.replace(tmp, path)
+    finally:
+        if tmp and os.path.exists(tmp):
+            os.unlink(tmp)
+
+
+def _candidate_version(record):
+    machine = {k: v for k, v in record.items()
+               if k not in ('review', 'candidate_version', 'previous_candidate_version')}
+    return hashlib.sha256(json.dumps(machine, sort_keys=True, ensure_ascii=False,
+                                    allow_nan=False).encode('utf-8')).hexdigest()[:24]
+
+
+def _image_bindings(root):
+    return {row['image']: row['source_image']
+            for row in _read_jsonl(os.path.join(root, 'image_bindings.jsonl'))}
 
 
 class ReviewQueue:
@@ -44,6 +65,7 @@ class ReviewQueue:
         self.queue_path = os.path.join(root, 'review_queue.jsonl')
         self.revisions_path = os.path.join(root, 'revisions.jsonl')
         self.final_path = os.path.join(root, 'scene_labels.json')
+        self.bindings_path = os.path.join(root, 'image_bindings.jsonl')
 
     # ---------- 读取 ----------
 
@@ -52,46 +74,85 @@ class ReviewQueue:
 
     def is_locked(self, record):
         review = record.get('review') or {}
-        return bool(review.get('reviewer')) and review.get('status') in ('approved', 'rejected')
+        # Machines always emit pending; old human records may omit reviewer.
+        return review.get('status') in ('approved', 'rejected')
 
     # ---------- 写入 ----------
 
     def seed(self, reasoner_records):
         """并入候选记录；已人工确认的图片保持原样。返回统计。"""
         existing = self.records()
-        added = kept = skipped = 0
+        added = kept = skipped = updated = 0
+        reasoner_records = list(reasoner_records)
+        bindings = _image_bindings(self.root)
+        original_bindings = dict(bindings)
+        images = list(existing) + [rec['image'] for rec in reasoner_records]
+        # Persist the first unambiguous full path separately so locked records
+        # stay byte-for-byte unchanged, including across fresh queue instances.
+        locations = {}
+        for image in images + list(bindings.values()):
+            if os.path.dirname(image):
+                locations.setdefault(os.path.basename(image), set()).add(os.path.abspath(image))
+        for image in images:
+            if image == os.path.basename(image) and image in locations:
+                if len(locations[image]) != 1:
+                    raise ValueError(f'旧版记录存在跨目录同名歧义: {image}')
+                bindings[image] = next(iter(locations[image]))
         for rec in reasoner_records:
             image = rec['image']
             # Older API evidence used bare filenames. Keep those human decisions
             # when the same project is re-analyzed with full image paths.
             legacy_name = os.path.basename(image)
             if image not in existing and image != legacy_name and legacy_name in existing:
-                kept += 1
-                continue
-            if image in existing:
+                image = legacy_name
+            elif image not in existing and image == legacy_name and image in bindings:
+                image = next((key for key in existing
+                              if os.path.abspath(key) == bindings[image]), image)
+            previous = existing.get(image)
+            if previous and self.is_locked(previous):
                 kept += 1
                 continue
             rec = dict(rec)
+            rec['image'] = image
             rec.setdefault('review', {'status': 'pending', 'reviewer': None,
                                       'updated_at': None})
+            rec['candidate_version'] = _candidate_version(rec)
+            if previous:
+                old_version = previous.get('candidate_version') or _candidate_version(previous)
+                if old_version != rec['candidate_version']:
+                    rec['previous_candidate_version'] = old_version
+                elif previous.get('previous_candidate_version'):
+                    rec['previous_candidate_version'] = previous['previous_candidate_version']
+            if previous == rec:
+                kept += 1
+                continue
             existing[image] = rec
-            added += 1
+            if previous:
+                updated += 1
+            else:
+                added += 1
         ordered = [existing[k] for k in sorted(existing)]
+        if bindings != original_bindings:
+            _atomic_write_jsonl(self.bindings_path, [
+                {'image': key, 'source_image': value} for key, value in sorted(bindings.items())])
         _atomic_write_jsonl(self.queue_path, ordered)
-        return {'added': added, 'kept': kept, 'skipped': skipped,
+        return {'added': added, 'kept': kept, 'skipped': skipped, 'updated': updated,
                 'total': len(ordered)}
 
     def list_pending(self, status=None, limit=50, offset=0):
         rows = [r for r in self.records().values()
                 if status is None or (r.get('review') or {}).get('status') == status]
         rows.sort(key=lambda r: r['image'])
-        return rows[offset:offset + limit]
+        bindings = _image_bindings(self.root)
+        return [dict(row, source_image=bindings[row['image']]) if row['image'] in bindings else row
+                for row in rows[offset:offset + limit]]
 
     def decide(self, image, action, scene_id=None, label=None,
                reviewer='human', note=''):
         """接受/修改/拒绝一条记录，同时追加不可变修订日志。"""
         if action not in ACTIONS:
             raise ValueError(f'未知动作: {action}（应为 {ACTIONS}）')
+        reviewer = reviewer or 'human'
         records = self.records()
         if image not in records:
             raise KeyError(f'待审核记录不存在: {image}')
@@ -109,12 +170,17 @@ class ReviewQueue:
             record['scene_id'] = scene_id or label
             record['label'] = label or scene_id
             record['decision'] = 'human'
+            record.setdefault('machine_confidence', record.get('confidence'))
+            record['confidence'] = None
             record['review'] = {'status': 'approved', 'reviewer': reviewer,
                                 'updated_at': _now(), 'action': action, 'note': note,
                                 'original_label': before['label']}
         else:  # reject
             record['scene_id'] = 'unknown'
             record['label'] = 'unknown'
+            record['decision'] = 'human'
+            record.setdefault('machine_confidence', record.get('confidence'))
+            record['confidence'] = None
             record['review'] = {'status': 'rejected', 'reviewer': reviewer,
                                 'updated_at': _now(), 'action': action, 'note': note,
                                 'original_label': before['label']}
@@ -144,6 +210,8 @@ class ReviewQueue:
     def export_final(self, path=None):
         path = path or self.final_path
         labels = self.final_labels()
+        bindings = _image_bindings(self.root)
+        labels = {bindings.get(image, image): label for image, label in labels.items()}
         os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
         with open(path, 'w', encoding='utf-8') as f:
             json.dump(labels, f, ensure_ascii=False, indent=2)
@@ -170,29 +238,38 @@ def load_scene_evidence(path):
     Returns:
         dict: {``by_image``: {basename: label}, ``by_scene``: {scene_id: label}}
     """
-    by_image, by_scene = {}, {}
+    by_image, by_scene, by_path, legacy_by_image = {}, {}, {}, {}
+    result = {'by_image': by_image, 'by_scene': by_scene,
+              'by_path': by_path, 'legacy_by_image': legacy_by_image}
+    def add_image(image, label):
+        by_image[os.path.basename(image)] = label  # compatibility for old readers
+        if os.path.dirname(image):
+            by_path[os.path.abspath(image)] = label
+        else:
+            legacy_by_image[image] = label
     if not path or not os.path.exists(path):
-        return {'by_image': by_image, 'by_scene': by_scene}
+        return result
     if path.endswith('.jsonl'):
+        bindings = _image_bindings(os.path.dirname(path))
         for record in _read_jsonl(path):
             review = record.get('review')
-            if review is not None and review.get('status') != 'approved':
+            if not review or review.get('status') != 'approved':
                 continue
             label = record.get('label')
             image = record.get('image')
             if label and label != 'unknown' and image:
-                by_image[os.path.basename(image)] = label
-        return {'by_image': by_image, 'by_scene': by_scene}
+                add_image(bindings.get(image, image), label)
+        return result
     with open(path, encoding='utf-8') as f:
         mapping = json.load(f)
     if not isinstance(mapping, dict):
-        return {'by_image': by_image, 'by_scene': by_scene}
+        return result
     for key, label in mapping.items():
         if not label or label == 'unknown':
             continue
         if isinstance(key, str) and key.startswith('scene-'):
             by_scene[key] = label
         else:
-            by_image[os.path.basename(key)] = label
-    return {'by_image': by_image, 'by_scene': by_scene}
+            add_image(key, label)
+    return result
 

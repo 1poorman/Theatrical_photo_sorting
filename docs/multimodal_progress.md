@@ -100,6 +100,8 @@ python tests/test_scene_reasoner.py   # M14 离线验收，不联网（通过）
 
 ## 6. 下一步（接续从这里开始）
 
+2026-10-19 接续入口为 [核心升级蓝图](core_upgrade_blueprint.md) 与 [升级进度](core_upgrade_progress.md)。C1–C4 首轮修复、全目录清单、EmbeddingGemma 2 探索对比及现有 Qwen 端点的真实视觉链路已实施并记录检查；正式质量、完整批量/任务事务和整链路性能仍待验收。以下保留 M11–M16 历史记录，不代替新阶段验收。
+
 1. ✅ M11 来源/robots/重试/快照通过（`tests/test_play_source.py`）。
 2. ✅ M11–M13 知识库与候选召回通过（`tests/test_play_knowledge.py`，含角色别名人物证据）。
 3. ✅ M13 图文向量召回/缓存/降级通过（`tests/test_multimodal_evidence.py`）。

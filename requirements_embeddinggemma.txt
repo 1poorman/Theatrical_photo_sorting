@@ -1,0 +1,7 @@
+# Install in an isolated project target/venv; the existing vision environment is preserved.
+# The checkpoint declares transformers 5.18.0.dev0; architecture support is mandatory.
+transformers==5.20.1
+sentence-transformers==6.1.0
+huggingface-hub==2.2.0
+tokenizers==0.23.3
+safetensors==0.8.0

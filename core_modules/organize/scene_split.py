@@ -23,17 +23,17 @@ DEFAULT_GAP_SECONDS = 300
 def read_exif_datetime(img_path):
     """读取 EXIF 拍摄时间（DateTimeOriginal 优先，退回 DateTime），失败返回 None。"""
     try:
-        img = Image.open(img_path)
-        exif = img.getexif()
-        dt = None
-        # 36867 DateTimeOriginal（在 Exif IFD 中）
-        try:
-            ifd = exif.get_ifd(0x8769)
-            dt = ifd.get(36867)
-        except Exception:
-            pass
-        if not dt:
-            dt = exif.get(306)   # DateTime
+        with Image.open(img_path) as img:
+            exif = img.getexif()
+            dt = None
+            # 36867 DateTimeOriginal（在 Exif IFD 中）
+            try:
+                ifd = exif.get_ifd(0x8769)
+                dt = ifd.get(36867)
+            except Exception:
+                pass
+            if not dt:
+                dt = exif.get(306)   # DateTime
         if not dt:
             return None
         return datetime.strptime(str(dt).strip(), '%Y:%m:%d %H:%M:%S')
@@ -53,8 +53,14 @@ def split_scenes(image_paths, gap_seconds=DEFAULT_GAP_SECONDS, embeddings=None,
     Returns:
         dict: {image_path: scene_id}，scene_id 形如 'scene-01'
     """
+    image_paths = list(image_paths)
     timed = []
     no_time = []
+    # Resolve against the original order before EXIF sorting or segmentation.
+    if embeddings is not None and not isinstance(embeddings, dict):
+        if len(embeddings) != len(image_paths):
+            raise ValueError('embeddings 必须与 image_paths 等长，或按图片路径提供映射')
+        embeddings = dict(zip(image_paths, embeddings))
     for p in image_paths:
         dt = read_exif_datetime(p)
         if dt:
@@ -103,8 +109,16 @@ def _subcluster(paths, embeddings, max_k):
     from sklearn.cluster import KMeans
     from sklearn.metrics import silhouette_score
 
-    idx = {p: i for i, p in enumerate(paths)}
-    X = np.array([embeddings[idx[p]] for p in paths])
+    vectors = [embeddings.get(p) for p in paths]
+    # A missing vector disables subdivision only for its own segment.
+    if any(v is None for v in vectors):
+        return [list(paths)]
+    try:
+        X = np.asarray(vectors, dtype='float32')
+    except (TypeError, ValueError):
+        return [list(paths)]
+    if X.ndim != 2 or not np.isfinite(X).all():
+        return [list(paths)]
     best_k, best_score = 1, -1.0
     for k in range(2, min(max_k, len(paths) - 1) + 1):
         try:

@@ -9,6 +9,7 @@
 import json
 import os
 import re
+import math
 
 from core_modules.organize.filename_parser import parse_filename
 from core_modules.organize.multimodal_evidence import retrieve_evidence
@@ -22,7 +23,7 @@ MAX_NO_EVIDENCE = 0.49
 
 def _parse_json(content):
     """从模型输出中容错提取 JSON 对象。"""
-    if not content:
+    if not isinstance(content, str) or not content:
         return None
     text = content.strip()
     fence = re.search(r'```(?:json)?\s*(.*?)```', text, re.S)
@@ -45,7 +46,7 @@ def validate_choice(choice, candidate_ids, evidence_ids):
     scene_id = choice.get('scene_id')
     if scene_id not in candidate_ids and scene_id != 'unknown':
         return False, f'scene_id 越界: {scene_id}'
-    refs = choice.get('evidence_refs') or []
+    refs = choice.get('evidence_refs', [])
     if not isinstance(refs, list):
         return False, 'evidence_refs 非列表'
     for ref in refs:
@@ -53,7 +54,7 @@ def validate_choice(choice, candidate_ids, evidence_ids):
             return False, f'引用不存在: {ref}'
     conf = choice.get('confidence')
     if conf is not None:
-        if not isinstance(conf, (int, float)) or not 0.0 <= float(conf) <= 1.0:
+        if isinstance(conf, bool) or not isinstance(conf, (int, float)) or not 0.0 <= float(conf) <= 1.0:
             return False, f'置信度非法: {conf}'
     return True, ''
 
@@ -69,7 +70,7 @@ def _filename_scene_match(parsed, scene):
     text = parsed.get('scene') or ''
     if not text:
         return False
-    return scene.get('title', '') in text or scene.get('label', '') in text
+    return any(term and term in text for term in (scene.get('title'), scene.get('label')))
 
 
 def _person_match(parsed, scene):
@@ -118,7 +119,7 @@ def _build_prompt(image_path, parsed, candidates, evidences):
 
 class SceneReasoner:
     def __init__(self, knowledge, client=None, weights=None, embedder=None,
-                 top_k=5, use_rule_shortcut=True):
+                 top_k=5, use_rule_shortcut=True, vision_client=None):
         self.knowledge = knowledge
         self.client = client
         self.weights = dict(DEFAULT_WEIGHTS)
@@ -127,6 +128,7 @@ class SceneReasoner:
         self.embedder = embedder
         self.top_k = top_k
         self.use_rule_shortcut = use_rule_shortcut
+        self.vision_client = vision_client
 
     # ---------- 证据与候选 ----------
 
@@ -174,14 +176,43 @@ class SceneReasoner:
         if _person_match(parsed, scene):
             matched['person'] = 1.0
             detail.append({'type': 'person', 'quote': '演员/角色匹配'})
-        if candidate.get('score', 0) > 0:
-            matched['visual'] = min(1.0, float(candidate['score']))
+        visual = candidate.get('visual_score')
+        if candidate.get('retrieval_mode') == 'visual' and isinstance(visual, (int, float)) \
+                and math.isfinite(visual) and visual > 0:
+            matched['visual'] = min(1.0, visual)
         if llm_pick and llm_pick == scene['scene_id']:
             matched['language'] = 1.0
         conf = sum(self.weights[k] * v for k, v in matched.items())
         return min(0.99, round(conf, 4)), matched, detail
 
     # ---------- 模型调用 ----------
+
+    def _observe(self, image_path):
+        from core_modules.organize.llm_client import image_content, LLMError
+        try:
+            content = image_content(image_path)
+            result = self.vision_client.chat([
+                {'role': 'system', 'content': '请观察剧照，只描述可见事实，不猜演员姓名或幕次。'
+                 '只输出 JSON，字段 clothing、props、setting、actions、visible_text、uncertain 均为字符串列表。'},
+                {'role': 'user', 'content': [{'type': 'text', 'text': '描述画面可见内容及不确定项。'}, content]},
+            ])
+            observation = _parse_json(result['content'])
+            fields = ('clothing', 'props', 'setting', 'actions', 'visible_text', 'uncertain')
+            if not isinstance(observation, dict) or any(
+                not isinstance(observation.get(key), list) or
+                any(not isinstance(item, str) for item in observation[key]) for key in fields
+            ):
+                return None, {'error': 'invalid_visual_schema', **result.get('trace', {})}
+            trace = dict(result.get('trace', {}))
+            trace['model_identity'] = getattr(self.vision_client, 'model_identity',
+                                              getattr(self.vision_client, 'model', 'unknown'))
+            trace['model_identity_source'] = getattr(self.vision_client, 'model_identity_source', 'configuration')
+            trace['prompt_version'] = 'visual-observation-v1'
+            return {'id': 'observation:' + os.path.basename(image_path), 'type': 'observation',
+                    'quote': json.dumps({k: observation[k] for k in fields}, ensure_ascii=False),
+                    'ref': os.path.basename(image_path)}, trace
+        except (LLMError, OSError, ValueError, KeyError, TypeError) as exc:
+            return None, {'error': type(exc).__name__}
 
     def _ask(self, messages, candidate_ids, evidence_ids):
         if self.client is None:
@@ -212,6 +243,9 @@ class SceneReasoner:
 
         decision = 'rule'
         model_trace = {'prompt_version': PROMPT_VERSION, 'weights': self.weights}
+        if self.embedder is not None:
+            model_trace['retrieval_model_signature'] = getattr(self.embedder, 'model_signature', 'unknown')
+            model_trace['retrieval_errors'] = getattr(self.embedder, 'diagnostics', {}).get(image_path, [])
         llm_pick = None
 
         if manual_label:
@@ -223,11 +257,19 @@ class SceneReasoner:
             chosen_id = rule_matches[0]['scene_id']
         else:
             chosen_id = 'unknown'
+            if self.vision_client is not None:
+                observation, trace = self._observe(image_path)
+                model_trace['vision'] = trace
+                if observation:
+                    evidences.append(observation)
+                    evidence_ids.append(observation['id'])
             if self.client is not None:
                 decision = 'model'
                 messages = _build_prompt(image_path, parsed, candidates, evidences)
                 choice, trace = self._ask(messages, candidate_ids, evidence_ids)
                 model_trace.update(trace or {})
+                if choice:
+                    model_trace['choice'] = choice
                 if choice and choice.get('scene_id') not in (None, 'unknown'):
                     llm_pick = choice['scene_id']
                     chosen_id = llm_pick
@@ -263,13 +305,20 @@ class SceneReasoner:
                              'confidence': s['confidence']}
                             for s in scored if s['candidate']['scene_id'] != chosen_id][:3]
 
-        status = 'pending' if decision != 'human' and confidence < HIGH_CONFIDENCE else \
-            ('approved' if decision == 'human' else 'pending')
+        status = 'approved' if decision == 'human' else 'pending'
+        machine_confidence = confidence
+        if decision == 'human':
+            selected = next((scene for scene in self.knowledge.get('scenes', [])
+                             if manual_label in (scene['scene_id'], scene.get('label'))), None)
+            label = selected['label'] if selected else manual_label
+            scene_id = selected['scene_id'] if selected else manual_label
+            confidence = None
         record = {
             'image': image_path,
             'scene_id': scene_id,
             'label': label,
             'confidence': confidence,
+            'score_kind': 'evidence',
             'decision': decision,
             'evidence_types': sorted(set(matched)),
             'retrieval_mode': candidates[0].get('retrieval_mode', 'lexical') if candidates else 'lexical',
@@ -278,6 +327,9 @@ class SceneReasoner:
             'model_trace': model_trace,
             'review': {'status': status, 'reviewer': None, 'updated_at': None},
         }
+        if decision == 'human':
+            record['machine_confidence'] = machine_confidence
+            record['review']['reviewer'] = 'human'
         return record
 
 
@@ -287,7 +339,10 @@ def reason_image(image_path, knowledge, client=None, embedder=None, **kwargs):
 
 
 def reason_batch(image_paths, knowledge, client=None, output_path=None, **kwargs):
+    image_paths = list(image_paths)
     reasoner = SceneReasoner(knowledge, client=client, **kwargs)
+    if reasoner.embedder is not None and hasattr(reasoner.embedder, 'prepare'):
+        reasoner.embedder.prepare(image_paths, knowledge)
     rows = [reasoner.reason(p) for p in image_paths]
     if output_path:
         os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)

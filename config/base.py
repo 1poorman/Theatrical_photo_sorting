@@ -33,6 +33,13 @@ POSE_MODEL_PATH = os.path.join(WEIGHTS_DIR, 'yolo11l-pose.pt')
 INPAINTER_MODEL_PATH = os.path.join(WEIGHTS_DIR, 'cv_fft_inpainting_lama')
 # SigLIP2 本地权重根目录（子目录名需与 image_search.SIGLIP_MODEL_MAP 一致）
 SIGLIP_WEIGHTS_ROOT = os.environ.get('TRANS_SIGLIP_WEIGHTS_ROOT', os.path.join(WEIGHTS_DIR, 'siglip2'))
+# Multimodal upgrade is opt-in until real quality acceptance is complete.
+SCENE_EMBEDDING_BACKEND = os.environ.get('TRANS_SCENE_EMBEDDING_BACKEND', 'siglip2_base')
+EMBEDDINGGEMMA_MODEL_PATH = os.environ.get('TRANS_EMBEDDINGGEMMA_MODEL_PATH', '/models/hch/embeddinggemma-2')
+EMBEDDINGGEMMA_DEVICE = os.environ.get('TRANS_EMBEDDINGGEMMA_DEVICE', 'cuda:0')
+VISION_MODEL_IDENTITY = os.environ.get('TRANS_VISION_MODEL_IDENTITY', 'Qwen3.8-27B')
+VISION_IMAGE_MAX_SIDE = int(os.environ.get('TRANS_VISION_IMAGE_MAX_SIDE', '1280'))
+VISION_ENABLE_THINKING = os.environ.get('TRANS_VISION_ENABLE_THINKING', 'false').lower() in ('1', 'true', 'yes')
 
 # ---------- 推理设备 ----------
 # 'tensorrt' / 'tensorrt:N' / 'cuda' / 'cuda:N' / 'cpu'

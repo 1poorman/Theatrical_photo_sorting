@@ -9,6 +9,7 @@ import hashlib
 import json
 import os
 import re
+import tempfile
 
 from core_modules.organize.filename_parser import parse_filename
 
@@ -37,11 +38,11 @@ def _scene_candidates(image_path, knowledge, top_k=5):
     ranked = []
     for scene in knowledge.get('scenes', []):
         score = _lexical_score(query, scene.get('label', '') + ' ' + scene.get('text', ''))
-        if parsed.get('scene') and scene.get('title') in (parsed.get('scene') or ''):
+        if parsed.get('scene') and scene.get('title') and scene['title'] in parsed['scene']:
             score += 1.0
         ranked.append((score, scene))
     ranked.sort(key=lambda x: (-x[0], x[1].get('act', 0)))
-    return query, ranked[:top_k]
+    return query, ranked if top_k is None else ranked[:top_k]
 
 
 def _cosine(a, b):
@@ -71,6 +72,7 @@ class MultimodalRetriever:
                                 or getattr(embedder, 'model_signature', None)
                                 or 'unknown')
         self._cache = {}
+        self.diagnostics = {}
         self.calls = {'image': 0, 'text': 0}
         self._load_cache()
 
@@ -94,21 +96,77 @@ class MultimodalRetriever:
         if not path or np is None:
             return None
         os.makedirs(self.cache_dir, exist_ok=True)
-        np.savez(path, **self._cache)
+        with tempfile.NamedTemporaryFile(dir=self.cache_dir, suffix='.npz', delete=False) as f:
+            tmp = f.name
+        try:
+            np.savez(tmp, **self._cache)
+            os.replace(tmp, path)
+        finally:
+            if os.path.exists(tmp):
+                os.unlink(tmp)
         return path
 
     def _image_key(self, path):
         path = os.path.abspath(path)
         try:
-            mtime = os.path.getmtime(path)
+            stat = os.stat(path)
+            version = f'{stat.st_mtime_ns}:{stat.st_size}'
         except OSError:
-            mtime = 0
-        return f'image:{path}:{int(mtime)}'
+            version = 'missing'
+        return f'image:{path}:{version}'
 
     def _text_key(self, text):
         return 'text:' + hashlib.sha256(text.encode('utf-8')).hexdigest()[:24]
 
     # ---------- 向量 ----------
+
+    def prepare(self, image_paths, knowledge, batch_size=8):
+        """Bounded batch prefill; batch failures retry each item independently."""
+        if np is None:
+            return
+        image_paths = list(dict.fromkeys(os.path.abspath(p) for p in image_paths))
+        missing = [p for p in image_paths if os.path.isfile(p) and self._image_key(p) not in self._cache]
+        batch = getattr(self.embedder, 'extract_features_batch', None)
+        if batch:
+            for start in range(0, len(missing), batch_size):
+                paths = missing[start:start + batch_size]
+                try:
+                    result = batch(paths)
+                    vectors, valid = result if isinstance(result, tuple) else (result, paths)
+                    if len(vectors) != len(valid) or not set(valid).issubset(paths):
+                        raise ValueError('批量特征路径不匹配')
+                    for path, vector in zip(valid, vectors):
+                        vector = np.asarray(vector, dtype='float32').reshape(-1)
+                        if not np.isfinite(vector).all() or np.linalg.norm(vector) == 0:
+                            continue
+                        self._cache[self._image_key(path)] = vector
+                        self.calls['image'] += 1
+                except Exception:
+                    pass
+                for path in paths:
+                    if self._image_key(path) not in self._cache:
+                        try:
+                            self.image_vector(path)
+                        except Exception:
+                            continue
+        texts = list(dict.fromkeys(s.get('label', '') + ' ' + s.get('text', '')
+                                   for s in knowledge.get('scenes', [])))
+        missing_texts = [t for t in texts if self._text_key(t) not in self._cache]
+        batch_text = getattr(self.embedder, 'encode_text_batch', None)
+        if batch_text:
+            for start in range(0, len(missing_texts), batch_size):
+                chunk = missing_texts[start:start + batch_size]
+                try:
+                    vectors = batch_text(chunk)
+                    if len(vectors) != len(chunk):
+                        raise ValueError('批量文本特征数量不匹配')
+                    for value, vector in zip(chunk, vectors):
+                        vector = np.asarray(vector, dtype='float32').reshape(-1)
+                        if np.isfinite(vector).all() and np.linalg.norm(vector) > 0:
+                            self._cache[self._text_key(value)] = vector
+                            self.calls['text'] += 1
+                except Exception:
+                    continue
 
     def image_vector(self, image_path):
         if self.embedder is None or not os.path.exists(image_path):
@@ -120,6 +178,8 @@ class MultimodalRetriever:
         if vector is None:
             return None
         vector = np.asarray(vector, dtype='float32').reshape(-1)
+        if not np.isfinite(vector).all() or np.linalg.norm(vector) == 0:
+            return None
         self.calls['image'] += 1
         self._cache[key] = vector
         return vector
@@ -134,6 +194,8 @@ class MultimodalRetriever:
         if vector is None:
             return None
         vector = np.asarray(vector, dtype='float32').reshape(-1)
+        if not np.isfinite(vector).all() or np.linalg.norm(vector) == 0:
+            return None
         self.calls['text'] += 1
         self._cache[key] = vector
         return vector
@@ -141,25 +203,43 @@ class MultimodalRetriever:
     # ---------- 召回 ----------
 
     def rank(self, image_path, knowledge, top_k=5):
-        query, lexical = _scene_candidates(image_path, knowledge, top_k)
-        image_vec = self.image_vector(image_path)
+        query, lexical = _scene_candidates(image_path, knowledge, None)
+        errors = []
+        try:
+            image_vec = self.image_vector(image_path)
+        except Exception as exc:
+            image_vec = None
+            errors.append({'component': 'image_embedding', 'reason': type(exc).__name__})
         if image_vec is None:
-            return query, lexical, 'lexical'
-        scene_vecs = []
-        for score, scene in lexical:
-            vec = self.text_vector(scene.get('label', '') + ' ' + scene.get('text', ''))
-            if vec is not None:
-                scene_vecs.append((_cosine(image_vec, vec), scene))
-        if not scene_vecs:
-            return query, lexical, 'lexical'
-        scene_vecs.sort(key=lambda x: (-x[0], x[1].get('act', 0)))
-        # 词法作为弱先验叠加，避免纯向量漏掉明确幕次信息
+            if not errors:
+                errors.append({'component': 'image_embedding', 'reason': 'unavailable'})
+            self.diagnostics[image_path] = errors
+            return query, lexical[:top_k], 'lexical'
         merged = []
-        lex = {s['scene_id']: sc for sc, s in lexical}
-        for cos, scene in scene_vecs:
-            visual = min(1.0, max(0.0, cos)) * 0.8
-            lexical_prior = min(1.0, lex.get(scene['scene_id'], 0.0)) * 0.2
-            merged.append((round(visual + lexical_prior, 4), scene))
+        available = 0
+        for score, scene in lexical:
+            error = None
+            try:
+                vec = self.text_vector(scene.get('label', '') + ' ' + scene.get('text', ''))
+            except Exception as exc:
+                vec = None
+                error = type(exc).__name__
+            lexical_score = min(1.0, max(0.0, score))
+            visual_score = None
+            if vec is not None and vec.shape == image_vec.shape and np.isfinite(vec).all():
+                visual_score = min(1.0, max(0.0, _cosine(image_vec, vec)))
+                available += 1
+            else:
+                errors.append({'component': 'text_embedding', 'scene_id': scene['scene_id'],
+                               'reason': error or ('dimension_mismatch' if vec is not None else 'unavailable')})
+            details = {'visual_score': visual_score, 'lexical_score': lexical_score}
+            # Missing text features retain their lexical candidate. A single
+            # failed encoding must not remove a scene from the candidate pool.
+            fused = .8 * (visual_score or 0.0) + .2 * lexical_score
+            merged.append((round(fused, 4), dict(scene, _retrieval_scores=details)))
+        self.diagnostics[image_path] = errors
+        if not available:
+            return query, lexical[:top_k], 'lexical'
         merged.sort(key=lambda x: (-x[0], x[1].get('act', 0)))
         return query, merged[:top_k], 'visual'
 
@@ -178,19 +258,26 @@ def retrieve_evidence(image_path, knowledge, top_k=5, embedder=None):
     for score, scene in ranked:
         evidence = []
         if score > 0:
-            evidence.append({'type': 'knowledge', 'source_ref': scene['source_ref'],
+            evidence.append({'type': 'knowledge', 'source_ref': scene.get('source_ref'),
                              'quote': scene['label'], 'score': round(float(score), 4)})
         candidates.append({'scene_id': scene['scene_id'], 'label': scene['label'],
-                           'retrieval_mode': mode,
+                           'retrieval_mode': 'visual' if scene.get('_retrieval_scores', {}).get('visual_score') is not None else 'lexical',
+                           'lexical_score': scene.get('_retrieval_scores', {}).get(
+                               'lexical_score', round(float(min(1.0, score)), 4)),
+                           'visual_score': scene.get('_retrieval_scores', {}).get('visual_score'),
                            'score': round(float(min(1.0, score)), 4),
                            'evidence': evidence})
     return {'image': image_path, 'query': query, 'candidates': candidates,
-            'retrieval': {'lexical': True, 'visual': mode == 'visual', 'mode': mode}}
+            'retrieval': {'lexical': True, 'visual': mode == 'visual', 'mode': mode,
+                          'errors': getattr(embedder, 'diagnostics', {}).get(image_path, [])}}
 
 
 def build_scene_candidates(image_paths, knowledge, output_path=None, top_k=5,
                            embedder=None, cache_dir=None):
     """批量生成候选；若传入缓存目录，重跑命中向量缓存不重复推理。"""
+    image_paths = list(image_paths)
+    if embedder is not None and hasattr(embedder, 'prepare'):
+        embedder.prepare(image_paths, knowledge)
     rows = [retrieve_evidence(p, knowledge, top_k=top_k, embedder=embedder)
             for p in image_paths]
     if embedder is not None and hasattr(embedder, 'save'):
