@@ -99,6 +99,8 @@ python -m app.photo_agent_cli --session demo --model auto --protocol json
 
 ## 5. 业务操作与数据产物
 
+浏览器推荐使用 `/organize` 多模态工作台，操作顺序见 [工作台使用指南](workspace_guide.md)。`/ui` 为同入口；右上角「旧版界面」通往 `/legacy`，保留 `/legacy/ui` 照片处理与 `/legacy/organize` 智能整理，两页可互相切换并返回新版。`/tools` 和 `/organize/advanced` 分别作为旧版两页的兼容入口。项目设置在浏览器保存，照片、知识库和人工复核结果仍保存在服务器目录。
+
 ### 标准整理
 
 1. 准备原始照片和本地人脸锚定库；可通过已标注图片建库，或聚类后人工命名。

@@ -2,7 +2,7 @@
 
 > 用途：记录 `docs/multimodal_context_blueprint.md`（M11–M16）的实施进度、关键决策与接续入口。
 > 每次继续工作前先读本文件，收工后更新「当前进度」「下一步」和「未提交产物」。
-> 最后更新：2026-09-17
+> 最后更新：2026-10-19
 
 ## 1. 里程碑状态总览
 
@@ -12,12 +12,14 @@
 | M12 | `play_knowledge.py` | 🟢 离线完成 | 《天下归心》五幕解析、角色别名（郑庄公→庄公）映射回幕次，人物证据生效 |
 | M13 | `multimodal_evidence.py` | 🟢 离线完成 | 词法 + 图文向量召回、向量磁盘缓存（重跑不重复推理）、缺图/缺编码器降级；OCR/图像描述待补 |
 | M14 | `scene_reasoner.py` | 🟢 完成（历史验收） | 闭集候选、LLM JSON、级联和防幻觉；旧客户端真实端点联调记录见第 5、6 节，不代表新 LangChain 端到端验收 |
-| M15 | `review_queue.py` + API + UI | 🟢 离线完成 | 复核队列、接受/修改/拒绝、不可变修订日志、最终标签导出；`/organize` 卡片⑤ 审核 UI |
+| M15 | `review_queue.py` + API + UI | 🟢 离线完成 | 复核队列、接受/修改/拒绝、不可变修订日志、最终标签导出；`/organize` 看图复核，原卡片⑤位于 `/legacy/organize` |
 | M16 | `SmartOrganizer` 接入 + 智能体 + 全量验收 | 🟢 完成（历史验收） | 审核证据接入、受限运行时、离线聚合及目标机 gated 回归记录见第 6 节；不表示所有新环境均已验收 |
 
 图例：🟢 完成 / 🟡 进行中或部分完成 / ⚪ 未开始
 
 ## 2. 已完成产物与历史验收
+
+2026-10-17 工作台更新，2026-10-19 复验并纳入 Git 提交：`/organize` 与 `/ui` 接入照片网格、剧情建库、图文分析、看图复核与自动标签导出；旧版总入口 `/legacy`，原照片处理与卡片界面分别位于 `/legacy/ui`、`/legacy/organize`，兼容 `/tools` 与 `/organize/advanced`。新增 `app/workspace_api.py`、`app/templates/workspace.html`、`app/static/workspace.*` 和工作台回归测试。工作台接口 9/9、复核 UI、图文召回和人工证据合并回归通过；35 张真实剧照的浏览器离线操作及五种屏宽验收通过；GPU/LLM 质量没有重新评测。详见 [工作台指南](workspace_guide.md)。
 
 下列 M11–M16 源码已有提交记录，并非全部未提交。测试与报告部分仅存在本地；以 `git ls-files` 和 `git status` 为准。当前未发布 LangChain 扩展见 [CHANGELOG](CHANGELOG.md)，目录与部署见 [项目说明](PROJECT_GUIDE.md)。
 
@@ -84,6 +86,8 @@ python tests/test_scene_reasoner.py   # M14 离线验收，不联网（通过）
 
 ## 5. 已知问题 / 待办
 
+- [x] 2026-10-17：将现有多模态 API 接入以剧照为中心的可视化工作流，补齐真实图片路径、依据查看和复核到导出的自动衔接。
+
 - [x] M14：真实本地端点联调完成（`small_diag`→`big` 级联验证 + `model_trace` 全字段落盘，见 `outputs/acceptance/m16/llm_endpoint_diag.json`）；`client_from_env` 现优先 `small_diag_*` 显式配置。
 - [x] M13：真实 SigLIP2 图文链路联调完成（35 图 top1=66%/top3=86%，富文本 top3=100%；act-02 舞台画面系统性偏高，视觉仅作辅助先验，见 `outputs/acceptance/m16/siglip_calibration.json`）。OCR/图像描述特征仍待补。
 - [x] M16：目标机 gated 重型回归 6/6 通过（`filename_parser` 已修正信息目录 GT 口径后通过；报告见 `outputs/acceptance/m16/gated_regressions.json`）。
@@ -109,6 +113,7 @@ python tests/test_scene_reasoner.py   # M14 离线验收，不联网（通过）
 11. ✅ M12《马可·波罗》幕次扩展（2026-09-17）：`play_knowledge.py` 新增 `parse_scene_terms`/`_scenes_from_filenames`，正文无幕次时从文件名建幕次（序=act-00）；`scene_reasoner` 规则短路覆盖新命名；commit `7c91425`/`1e49e74`。
 12. ✅ M13 OCR/图像描述评估（2026-09-17）：本地 SigLIP2 零样本 caption 两轮实验（中文短语/英文 prompt）均 top1=0/35，记录结论并归档；官方图注证据已覆盖离线语料，caption 模型待权重。
 13. 下一步（可选）：接入 BLIP2/Qwen-VL 本地权重做真实 captioning；扩展更多剧目表达（场/折）。
+14. ✅ 2026-10-19 工作台及旧版入口复验完成，源码、文档、截图与三项工作台测试纳入 Git 提交。后续可在目标 GPU 服务上按新界面复测全量识别与归档；本次仅对 GPU 操作做接口交互验证。
 
 ## 7. 状态文件维护约定
 

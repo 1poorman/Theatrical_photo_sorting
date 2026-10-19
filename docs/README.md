@@ -14,6 +14,7 @@
 | 文档 | 定位 | 使用方式 |
 | --- | --- | --- |
 | [PROJECT_GUIDE.md](PROJECT_GUIDE.md) | 当前项目手册 | 部署、接手开发、排障与文件管理 |
+| [workspace_guide.md](workspace_guide.md) | 多模态整理工作台 | 图片浏览、剧情关联、看图复核、整理导出与界面验收 |
 | [CHANGELOG.md](CHANGELOG.md) | 可追溯迭代记录 | 日期、提交、变更与验证边界 |
 | [agentic_tools_blueprint.md](agentic_tools_blueprint.md) | 当前 LangChain 智能体实现说明 | 独立 CLI、主 API、模型配置、工具契约 |
 | [smart_organize_blueprint.md](smart_organize_blueprint.md) | 智能整理设计 | 去重、建库、演员视图与流水线背景 |

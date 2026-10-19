@@ -4,7 +4,7 @@ server_ui.py - 可视化界面服务（FastAPI）
 
 职责：
 - 复用 main.py 中定义的全部 API 路由（人脸识别 / 人像检测分割 / 修复 / 检索聚类）
-- 额外提供 /ui 可视化操作界面（浏览器直接操作，无需 curl）
+- 提供 /ui 与 /organize 工作台，/legacy 保留旧版可视化界面
 - 独立启动入口，默认端口 8199，与纯 API 服务 (server.py, 8198) 互不冲突
 
 启动方式：python app/server_ui.py
@@ -12,15 +12,17 @@ server_ui.py - 可视化界面服务（FastAPI）
 """
 import sys
 import os
+from pathlib import Path
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, PROJECT_ROOT)
 
 from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 
 from main import app  # 复用 main.py 中定义的全部 API 路由与模型
 
-ORGANIZE_HTML = """<!DOCTYPE html>
+LEGACY_ORGANIZE_HTML = r"""<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -148,8 +150,9 @@ ORGANIZE_HTML = """<!DOCTYPE html>
             <div class="sub">连拍去重 → 人脸识别 → 行当分类 → 场景划分 → 规范命名</div>
         </div>
         <div class="nav">
-            <a href="/ui">🎭 照片处理</a>
-            <a href="/organize" class="active">📦 智能整理</a>
+            <a href="/legacy/ui">🎭 照片处理（旧版）</a>
+            <a href="/legacy/organize" class="active">📦 智能整理（旧版）</a>
+            <a href="/organize">返回新版工作台</a>
             <a href="/docs" target="_blank">API 文档</a>
         </div>
     </div>
@@ -937,8 +940,9 @@ UI_HTML = """<!DOCTYPE html>
                 <span class="dot"></span><span id="status-text">检测服务状态</span>
             </div>
             <nav class="nav">
-                <a href="/ui" class="active">🎭 照片处理</a>
-                <a href="/organize">📦 智能整理</a>
+                <a href="/legacy/ui" class="active">🎭 照片处理（旧版）</a>
+                <a href="/legacy/organize">📦 智能整理（旧版）</a>
+                <a href="/organize">返回新版工作台</a>
             </nav>
         </div>
     </div>
@@ -1241,10 +1245,34 @@ UI_HTML = """<!DOCTYPE html>
 
 # ---------- 界面路由（附加到 main.app，不影响原有 API） ----------
 
+UI_ROOT = Path(__file__).resolve().parent
+ORGANIZE_HTML = (UI_ROOT / 'templates' / 'workspace.html').read_text(encoding='utf-8')
+app.mount('/static', StaticFiles(directory=UI_ROOT / 'static'), name='workspace-static')
+
+
+@app.get('/legacy', include_in_schema=False)
+async def legacy_redirect():
+    """旧版界面总入口。"""
+    return RedirectResponse(url='/legacy/ui')
+
+
+@app.get('/legacy/ui', response_class=HTMLResponse, include_in_schema=False)
+@app.get('/tools', response_class=HTMLResponse, include_in_schema=False)
+async def tools_page():
+    """旧版照片处理与相似检索；/tools 保留为兼容入口。"""
+    return HTMLResponse(content=UI_HTML)
+
+
+@app.get('/legacy/organize', response_class=HTMLResponse, include_in_schema=False)
+@app.get('/organize/advanced', response_class=HTMLResponse, include_in_schema=False)
+async def advanced_organize_page():
+    """旧版智能整理，保留多目录与高级参数表单。"""
+    return HTMLResponse(content=LEGACY_ORGANIZE_HTML)
+
 @app.get("/ui", response_class=HTMLResponse, include_in_schema=False)
 async def ui_page():
     """可视化操作界面"""
-    return HTMLResponse(content=UI_HTML)
+    return HTMLResponse(content=ORGANIZE_HTML)
 
 
 @app.get("/organize", response_class=HTMLResponse, include_in_schema=False)
@@ -1253,7 +1281,7 @@ async def organize_page():
     return HTMLResponse(content=ORGANIZE_HTML)
 
 
-# 移除 main.py 中根路径指向 /docs 的路由，改为指向可视化界面 /ui
+# 移除 main.py 中根路径指向 /docs 的路由，改为指向工作台 /organize
 _main_index_route = None
 for _i, _r in enumerate(app.routes):
     if getattr(_r, 'path', None) == '/' and getattr(_r, 'name', None) == 'index':
@@ -1265,7 +1293,7 @@ if _main_index_route is not None:
 @app.get("/", include_in_schema=False)
 async def index_redirect():
     """根路径重定向到可视化界面"""
-    return RedirectResponse(url="/ui")
+    return RedirectResponse(url="/organize")
 
 
 if __name__ == "__main__":
@@ -1279,6 +1307,7 @@ if __name__ == "__main__":
     print("=" * 60)
     print("可视化界面服务启动")
     print("  界面地址: http://localhost:8199/ui")
+    print("  旧版界面: http://localhost:8199/legacy")
     print("  API 文档: http://localhost:8199/docs")
     print("=" * 60)
     # log_config=None：交给我们自己的日志配置，uvicorn 日志统一落盘

@@ -23,6 +23,9 @@ core_modules/face_recognition/trt_cache/
 # 测试工作区
 tests/*
 !tests/test_langchain_agent.py
+!tests/test_workspace.py
+!tests/test_workspace_browser.cjs
+!tests/test_scene_review_ui.py
 
 
 .env 

@@ -62,6 +62,12 @@ class ReviewQueue:
         added = kept = skipped = 0
         for rec in reasoner_records:
             image = rec['image']
+            # Older API evidence used bare filenames. Keep those human decisions
+            # when the same project is re-analyzed with full image paths.
+            legacy_name = os.path.basename(image)
+            if image not in existing and image != legacy_name and legacy_name in existing:
+                kept += 1
+                continue
             if image in existing:
                 kept += 1
                 continue

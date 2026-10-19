@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#182b29">
+  <title>幕间 · 戏剧影像整理</title>
+  <link rel="stylesheet" href="/static/workspace.css">
+  <script src="/static/workspace.js" defer></script>
+</head>
+<body>
+  <a href="#main" class="skip-link">跳到工作区</a>
+  <aside class="sidebar">
+    <a class="brand" href="/organize" aria-label="幕间首页"><span class="brand-mark">幕</span><span>幕间<small>戏剧影像整理工作台</small></span></a>
+    <div class="sidebar-caption">我的工作区</div>
+    <nav aria-label="整理步骤">
+      <button class="nav-item active" data-view="photos"><i data-icon="images"></i><span>影像资料</span><span id="nav-total" class="nav-count">—</span></button>
+      <button class="nav-item" data-view="knowledge"><i data-icon="book"></i><span>剧目与剧情</span></button>
+      <button class="nav-item" data-view="actors"><i data-icon="people"></i><span>演员与角色</span></button>
+      <button class="nav-item" data-view="review"><i data-icon="check"></i><span>场景复核</span><span id="nav-pending" class="nav-count">—</span></button>
+      <button class="nav-item" data-view="export"><i data-icon="export"></i><span>整理与导出</span></button>
+    </nav>
+    <div class="sidebar-guide"><span class="eyebrow">从影像到档案</span><p>让每一张剧照，<br>回到它的故事里。</p><div class="guide-line"></div><small>图像 · 人物 · 剧情 · 幕次</small></div>
+    <div class="sidebar-bottom"><a href="/tools"><i data-icon="sliders"></i>单图处理与检索<i data-icon="arrow-up-right"></i></a><a href="/organize/advanced"><i data-icon="folder"></i>高级整理工具<i data-icon="arrow-up-right"></i></a><div id="service-status" class="service-status"><span></span>正在连接服务</div></div>
+  </aside>
+
+  <div class="app-shell">
+    <header class="topbar"><div class="breadcrumb">工作台 <span>/</span> <strong id="breadcrumb-view">影像资料</strong></div><div class="topbar-actions"><span class="local-badge"><i data-icon="drive"></i>本地资料库</span><a href="/legacy" class="button subtle">旧版界面</a><button id="project-settings" class="button subtle"><i data-icon="sliders"></i>项目设置</button></div></header>
+    <main id="main">
+      <section class="page-heading"><div><div class="eyebrow">THEATRE PHOTO ARCHIVE</div><h1 id="project-title">开启一场影像整理</h1><p id="project-subtitle">连接剧照、人物与剧情，建立清晰可追溯的戏剧影像档案。</p></div><button class="button primary" id="import-button"><i data-icon="plus"></i>导入剧照目录</button></section>
+
+      <section class="workflow" aria-label="工作流程">
+        <button data-view="photos"><span class="step-number">01</span><span><strong>汇集影像资料</strong><small id="step-photos">选择本次整理的剧照</small></span><i data-icon="chevron-right"></i></button>
+        <button data-view="knowledge"><span class="step-number">02</span><span><strong>关联人物与剧情</strong><small id="step-knowledge">用剧目资料辅助场景分析</small></span><i data-icon="chevron-right"></i></button>
+        <button data-view="review"><span class="step-number">03</span><span><strong>复核并归档</strong><small id="step-review">确认幕次，生成规范档案</small></span><i data-icon="chevron-right"></i></button>
+      </section>
+
+      <div id="task-status" class="task-status" role="status" aria-live="polite" hidden></div>
+      <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+
+      <section id="gallery-view" class="view">
+        <div class="metrics"><div><span>本次影像</span><strong id="metric-total">—</strong><small>张剧照</small></div><div><span>待复核</span><strong id="metric-pending">—</strong><small>场景判断</small></div><div><span>已确认</span><strong id="metric-approved">—</strong><small>可用于归档</small></div><div><span>剧目幕次</span><strong id="metric-scenes">—</strong><small id="metric-scenes-note">等待关联剧情</small></div></div>
+        <div class="section-title"><div><h2 id="gallery-title">影像资料</h2><span id="gallery-caption">从一个演出、一部剧目开始</span></div><div class="inline-actions"><button class="button subtle" id="reload-button"><i data-icon="refresh"></i>刷新</button><button class="button primary" id="analyze-button"><i data-icon="sparkles"></i>分析场景</button></div></div>
+        <div class="gallery-toolbar"><div class="filter-tabs" aria-label="按状态筛选"><button data-filter="all" class="active" aria-pressed="true">全部影像</button><button data-filter="pending" aria-pressed="false">待复核 <span id="filter-pending">0</span></button><button data-filter="approved" aria-pressed="false">已确认</button><button data-filter="rejected" aria-pressed="false">已拒绝</button></div><label class="search-field"><i data-icon="search"></i><input id="photo-search" type="search" placeholder="搜索文件名、演员或幕次" aria-label="搜索文件名、演员或幕次"></label></div>
+        <div class="gallery-layout">
+          <div class="gallery-main">
+            <div id="photo-grid" class="photo-grid"></div>
+            <div id="gallery-empty" class="empty-state"><div class="empty-art" aria-hidden="true"><div class="art-frame back"></div><div class="art-frame front"><i data-icon="images"></i><span>THEATRE ARCHIVE</span></div><span class="art-star">✦</span></div><span class="eyebrow">每一幕，都值得被好好收藏</span><h3>把剧照带进来，整理从这里开始</h3><p>选择服务端的照片目录，即可浏览剧照。<br>再补充剧目资料，让图像与剧情共同提供整理线索。</p><button class="button primary" id="empty-import"><i data-icon="folder"></i>选择剧照目录</button><button class="text-button" id="sample-button">先浏览项目样例 <span>→</span></button><div class="empty-formats">JPG · JPEG · PNG · BMP · TIFF</div></div>
+            <div id="no-matches" class="compact-empty" hidden><i data-icon="search"></i><h3>没有符合条件的影像</h3><p>试试其他关键词或切换筛选条件。</p><button id="clear-filters" class="button secondary">清除筛选</button></div>
+            <div id="gallery-pagination" class="pagination" hidden><span id="gallery-count"></span><div><button id="prev-page" class="button subtle">上一页</button><span id="page-number"></span><button id="next-page" class="button subtle">下一页</button></div></div>
+          </div>
+          <aside id="inspector" class="inspector" aria-label="影像详情与场景复核"><div class="inspector-heading"><i data-icon="layers"></i><h3>影像详情</h3></div><div id="inspector-body" class="inspector-placeholder"><div class="placeholder-icon"><i data-icon="focus"></i></div><h3>从一张剧照开始</h3><p>选中影像，查看人物信息、<br>幕次候选与判断依据。</p><div class="evidence-guide"><span><i data-icon="images"></i>舞台与画面线索</span><span><i data-icon="people"></i>演员与角色信息</span><span><i data-icon="book"></i>剧情与幕次依据</span></div><small>人工确认的标签将用于最终归档。</small></div></aside>
+        </div>
+      </section>
+
+      <section id="knowledge-view" class="view" hidden>
+        <div class="section-title"><div><h2>让剧照与故事建立联系</h2><span>补充剧情、幕次与演员信息，为影像分析提供依据。</span></div></div>
+        <div class="two-column"><article class="panel"><div class="panel-heading"><i data-icon="book"></i><h3>剧目资料</h3></div><form id="knowledge-form"><label for="info-path">剧目信息文件</label><input id="info-path" placeholder="/资料/剧目/剧目信息.txt" required><p class="field-hint">填写服务端的文本文件路径，包含剧情、幕次或官方来源信息。</p><label for="play-root">剧目资料目录</label><input id="play-root" placeholder="/资料/剧目" required><p class="field-hint">目录中的本地剧情资料、图注和已有文件名将一起用于整理。</p><details><summary>知识库位置</summary><label for="knowledge-dir">知识库目录</label><input id="knowledge-dir" required></details><div class="form-actions"><button class="button primary" type="submit"><i data-icon="book"></i>建立剧目知识库</button><button class="button secondary" type="button" id="load-knowledge">载入已有知识库</button></div></form></article><article class="panel"><div class="panel-heading"><i data-icon="layers"></i><h3>已关联的剧情与角色</h3></div><div id="knowledge-content" class="compact-empty"><p>建立或载入知识库后，在这里查看幕次与角色。</p></div></article></div>
+        <article class="panel analysis-panel"><div><span class="eyebrow">MULTIMODAL ANALYSIS</span><h3>将剧情依据带回影像</h3><p>结合文件名中的人物与幕次、图文相似度和可选的语言模型，生成场景候选供你复核。</p></div><div><label class="check-label"><input id="use-embedder" type="checkbox" checked> 图文匹配 <small>关联剧照与幕次文本</small></label><label class="check-label"><input id="use-llm" type="checkbox"> 语言模型辅助 <small>需要已配置的本地模型服务</small></label><button class="button primary" id="knowledge-analyze"><i data-icon="sparkles"></i>分析场景并进入复核</button></div></article>
+        <details class="panel"><summary>载入已有场景分析结果</summary><form id="review-import-form" class="form-stack"><label for="evidence-file">场景证据文件（JSONL）</label><input id="evidence-file" required placeholder="/资料/scene_evidence.jsonl"><button class="button secondary" type="submit">载入复核队列</button><p class="field-hint">已人工复核的记录会保留；结果应来自当前剧照目录。</p></form></details>
+      </section>
+
+      <section id="actors-view" class="view" hidden>
+        <div class="section-title"><div><h2>把演员与角色对应起来</h2><span>选择适合现有照片的建库方式，命名后的演员用于识别和归档。</span></div></div>
+        <div class="two-column"><article class="panel"><div class="panel-heading"><i data-icon="people"></i><h3>从未标注剧照发现演员</h3></div><p>扫描当前目录，将相似人脸分组。看图填写演员及角色，建立可复用的人脸库。</p><button class="button primary" id="cluster-button"><i data-icon="focus"></i>扫描演员分组</button><p class="field-hint">低置信分组建议补充 3–5 张清晰人脸图。</p></article><article class="panel"><div class="panel-heading"><i data-icon="folder"></i><h3>从已标注照片建立人脸库</h3></div><p>适用于文件名已包含「演员饰角色」的照片。</p><form id="actor-build-form"><label for="actor-source">标注照片目录</label><input id="actor-source" required placeholder="/资料/已标注剧照"><label class="check-label"><input type="checkbox" id="actor-dry-run" checked> 先检查可用照片（仅统计）</label><button class="button secondary" type="submit">检查并建立人脸库</button></form></article></div>
+        <div id="actor-result" class="panel" hidden></div><div id="cluster-grid" class="cluster-grid"></div>
+        <article class="panel"><div class="panel-heading"><i data-icon="images"></i><h3>生成演员专辑</h3></div><form id="actor-view-form" class="inline-form"><div><label for="actor-filter">指定演员（可选）</label><input id="actor-filter" placeholder="如：陈少云、史依弘，留空选择全部演员"></div><button type="submit" class="button secondary">生成专辑</button></form><p class="field-hint">识别当前剧照目录，专辑保存到项目输出目录。</p></article>
+      </section>
+
+      <section id="export-view" class="view" hidden>
+        <div class="section-title"><div><h2>为影像建立清晰的归档</h2><span>使用确认后的场景标签，完成连拍选优、演员识别与规范命名。</span></div></div>
+        <div class="two-column"><article class="panel"><div class="panel-heading"><i data-icon="check"></i><h3>复核进度</h3></div><div id="export-summary" class="export-summary">尚未载入复核队列</div><p>已确认且有明确幕次的标签用于归档。待复核、已拒绝和未知场景保留场景编号。</p><button class="button secondary" id="export-labels"><i data-icon="export"></i>导出已确认标签</button><div id="labels-download"></div></article><article class="panel"><div class="panel-heading"><i data-icon="folder"></i><h3>整理设置</h3></div><form id="organize-form"><div class="form-row"><div><label for="keep-per-bucket">每组每景别保留</label><select id="keep-per-bucket"><option value="1">1 张 · 精选</option><option value="2" selected>2 张 · 推荐</option><option value="3">3 张 · 多保留</option><option value="5">5 张</option></select></div><div><label for="gap-seconds">场景分段时间</label><select id="gap-seconds"><option value="120">2 分钟</option><option value="300" selected>5 分钟 · 推荐</option><option value="600">10 分钟</option></select></div></div><label class="check-label"><input id="classify-role" type="checkbox"> 辅助识别戏曲行当 <small>实验性，可按需开启</small></label><label for="scene-evidence-file">已确认场景标签文件</label><input id="scene-evidence-file" name="scene_evidence_file" readonly placeholder="导出标签后自动关联"><p class="field-hint">执行整理前会重新导出当前复核结果，避免遗漏最新修改。</p><div class="naming-preview"><span>归档命名示例</span><p>序号－日期－剧场－剧目 幕次－演员－摄影师.jpg</p></div><p class="field-hint" id="output-location"></p><button type="submit" class="button primary"><i data-icon="export"></i>执行整理并生成档案</button></form></article></div><div id="organize-result" class="panel" hidden></div>
+      </section>
+      <footer class="page-footer"><span>幕间 · 戏剧影像整理</span><span>影像有序，故事完整。</span></footer>
+    </main>
+  </div>
+
+  <dialog id="project-dialog"><form id="project-form"><div class="dialog-heading"><div><span class="eyebrow">YOUR NEXT ARCHIVE</span><h2>连接你的剧照资料</h2></div><button type="button" class="icon-button" data-close="project-dialog" aria-label="关闭"><i data-icon="close"></i></button></div><p>选择一部剧目的照片目录，相关资料和结果将在同一工作区中关联。</p><label for="project-name">项目名称（可选）</label><input id="project-name" placeholder="例如：京剧《天下归心》· 彩排"><label for="input-dir">剧照目录 <span class="required">*</span></label><input id="input-dir" placeholder="/资料/剧目/原始剧照" required><p class="field-hint">填写服务端路径；读取该目录下的照片，不包含子目录。</p><label for="output-dir">整理结果目录 <span class="required">*</span></label><input id="output-dir" required><details><summary>演员库与已有成果位置</summary><label for="db-root">演员人脸库</label><input id="db-root" placeholder="data/face_database"><label for="project-knowledge">剧目知识库（可选）</label><input id="project-knowledge" placeholder="自动保存在整理结果目录下"><label for="project-review">场景复核目录（可选）</label><input id="project-review" placeholder="自动保存在整理结果目录下"></details><p id="project-error" class="inline-error" role="alert" hidden></p><div class="dialog-actions"><button type="button" class="button secondary" data-close="project-dialog">取消</button><button type="submit" class="button primary"><i data-icon="folder"></i>打开工作区</button></div></form></dialog>
+  <dialog id="image-dialog" class="image-dialog"><div class="lightbox-heading"><span id="lightbox-name"></span><button type="button" class="icon-button" data-close="image-dialog" aria-label="关闭大图"><i data-icon="close"></i></button></div><img id="lightbox-image" alt="剧照大图"></dialog>
+</body>
+</html>

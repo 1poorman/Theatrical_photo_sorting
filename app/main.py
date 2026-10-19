@@ -43,6 +43,9 @@ app = FastAPI(
     version="2.0.0",
 )
 
+from app.workspace_api import router as workspace_router
+app.include_router(workspace_router)
+
 # CORS 中间件
 app.add_middleware(
     CORSMiddleware,
@@ -619,8 +622,8 @@ def _run_face_cluster_scan(task_id, input_dir, output_dir,
         srv.update_progress(task_id, 100, "聚类完成")
     except Exception as e:
         import traceback
-        logger.error("face cluster scan failed: %s", e, exc_info=True)
-        srv.progress_tracker[task_id]["error"] = str(e)
+        app_logger.error("face cluster scan failed: %s", e, exc_info=True)
+        srv.progress_tracker[task_id].update(error=str(e), status='failed', message=str(e))
 
 
 @app.post("/api/organize/face_cluster/scan")
@@ -665,13 +668,12 @@ async def face_cluster_result(task_id: str):
         task = srv.progress_tracker.get(task_id)
         if task is None:
             return JSONResponse(status_code=404, content=srv.get_error(message="Task not found"))
-        if task.get("progress", 0) < 100:
+        if task.get("error"):
+            return JSONResponse(status_code=500, content=srv.get_error(message=task["error"]))
+        if task.get("progress", 0) < 100 or "result" not in task:
             return JSONResponse({"code": 200, "message": "Scan in progress",
                                  "data": {"progress": task.get("progress"),
                                           "message": task.get("message")}})
-        if task.get("error"):
-            return JSONResponse(status_code=500, content=srv.get_error(message=task["error"]))
-
         from core_modules.organize.face_cluster import FaceClusterBuilder
         state = FaceClusterBuilder.load_state(task["result"]["state_path"])
         clusters = [{
@@ -955,6 +957,8 @@ async def play_knowledge_query(output_dir: str):
         return JSONResponse({"code": 200, "message": "OK",
                              "data": {"report": report,
                                       "scenes": [s.get('label') for s in entities['scenes']],
+                                      "scene_options": [{'scene_id': s['scene_id'], 'label': s['label']}
+                                                        for s in entities['scenes']],
                                       "roles": entities['roles'],
                                       "role_aliases": entities['role_aliases']}})
     except Exception as e:
@@ -976,7 +980,7 @@ async def scene_reason(input_dir: str = Form(...), knowledge_dir: str = Form(...
         from core_modules.tools.image_io import list_images
         from core_modules.organize.scene_reasoner import reason_batch
         knowledge = _load_knowledge_from_dir(knowledge_dir)
-        images = list_images(input_dir)
+        images = [os.path.abspath(os.path.join(input_dir, name)) for name in list_images(input_dir)]
         if not images:
             return JSONResponse(status_code=400, content=srv.get_error(message=f"No images found in: {input_dir}"))
         client = None
@@ -999,6 +1003,7 @@ async def scene_reason(input_dir: str = Form(...), knowledge_dir: str = Form(...
                              "data": {"n_images": len(rows), "output_file": out,
                                       "n_unknown": labels.count('unknown'),
                                       "labels": labels,
+                                      "n_visual": sum(r.get('retrieval_mode') == 'visual' for r in rows),
                                       "llm": client is not None,
                                       "visual": embedder is not None}})
     except Exception as e:
@@ -1032,7 +1037,7 @@ def _agent_scene_reason(input_dir, knowledge_dir, output_file='', top_k=5,
     from core_modules.tools.image_io import list_images
     from core_modules.organize.scene_reasoner import reason_batch
     knowledge = _load_knowledge_from_dir(knowledge_dir)
-    images = list_images(input_dir)
+    images = [os.path.abspath(os.path.join(input_dir, name)) for name in list_images(input_dir)]
     out = output_file or os.path.join(input_dir, 'scene_evidence.jsonl')
     client = None
     if use_llm:

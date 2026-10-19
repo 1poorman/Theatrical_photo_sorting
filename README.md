@@ -13,14 +13,17 @@
 | 智能整理 | 连拍去重选优、半自动人脸库、人脸聚类建库（无标注自举）、按演员视图、场景划分、行当分类、规范命名流水线 | SCRFD+ArcFace、YOLO11l-pose、SigLIP2 zero-shot（详见 `docs/smart_organize_blueprint.md`） |
 | 多模态整理 | 官方剧目信息/剧情知识库、图文向量候选召回、本地大模型闭集幕次判定、人工复核队列（详见 `docs/multimodal_context_blueprint.md`） | 离线词法 + SigLIP2 图文向量、OpenAI 兼容本地模型级联 |
 
-![界面1](./assets/界面-1.png)
-![界面2](./assets/界面-2.png)
-![人脸聚类建库](./assets/人脸聚类建库.png)
+可视化入口已整合为「幕间」工作台，按 **影像资料 → 剧目与剧情 → 演员与角色 → 场景复核 → 整理与导出** 组织功能。剧照、剧情和人工标签共享一个项目上下文；支持看图复核并自动将最新标签传给整理流水线。
+
+![幕间整理工作台](./assets/workspace-desktop.png)
+
+操作与验证说明见 [工作台使用指南](docs/workspace_guide.md)。之前的可视化界面完整保留，可通过工作台右上角「旧版界面」或 `/legacy` 进入。
 
 
 ## 文档导航
 
 - [文档中心](docs/README.md)：阅读顺序、现行说明与历史设计分类。
+- [工作台使用指南](docs/workspace_guide.md)：目录导入、图文分析、看图复核与归档。
 - [项目说明](docs/PROJECT_GUIDE.md)：文件职责、部署配置、业务流程、数据产物、维护与排障。
 - [版本迭代记录](docs/CHANGELOG.md)：按日期和 Git 提交追溯；未发布改动单独记录，不虚构版本号。
 - [高级智能体](docs/agentic_tools_blueprint.md)：LangChain CLI/API、工具边界及模型配置。
@@ -106,8 +109,10 @@ python app/server.py       # 纯 API，端口 8198
 
 | 服务 | 地址 |
 |------|------|
-| 可视化界面（照片处理） | `http://localhost:8199/ui` |
-| 可视化界面（智能整理） | `http://localhost:8199/organize` |
+| 多模态整理工作台 | `http://localhost:8199/organize`（`/ui` 同入口） |
+| 旧版界面入口 | `http://localhost:8199/legacy` |
+| 旧版照片处理与相似检索 | `http://localhost:8199/legacy/ui`（兼容 `/tools`） |
+| 旧版智能整理与高级表单 | `http://localhost:8199/legacy/organize`（兼容 `/organize/advanced`） |
 | Swagger 文档 | `http://localhost:8199/docs` 或 `:8198/docs` |
 
 启动时自动加载全部模型（需 GPU，约 1 分钟；TensorRT 引擎首次构建约十几秒，之后走缓存秒级加载）。
@@ -196,7 +201,8 @@ results, annotated = system.recognize_face('photo.jpg', known_threshold=0.55)
 ## 智能整理（Smart Organizer）
 
 将原始摄影目录自动整理为规范命名目录（推荐在 `http://localhost:8199/organize` 页面操作，
-五个卡片按序使用；设计细节见 `docs/smart_organize_blueprint.md`）。
+按工作台导航使用；[使用指南](docs/workspace_guide.md) 说明完整操作链。下文卡片编号对应
+`/organize/advanced` 中保留的高级表单；设计细节见 `docs/smart_organize_blueprint.md`）。
 
 图文结合、官方剧目信息知识库、本地大模型级联和高级智能体扩展见
 [`docs/multimodal_context_blueprint.md`](docs/multimodal_context_blueprint.md)。
@@ -295,8 +301,9 @@ results, annotated = system.recognize_face('photo.jpg', known_threshold=0.55)
   密钥仅运行时读取、不写入代码/报告/`model_trace`
 - **人工复核 API**：`/api/organize/scene/review`（seed/list/decide/export），
   修订日志 `revisions.jsonl` 不可变、可回放，人工标签不会被重跑覆盖
-- **审核 UI**：`/organize` 页面卡片⑤「场景标签人工复核」——载入证据后逐条接受/修改/拒绝，
-  导出 `scene_labels.json`；卡片③「场景证据文件」引用该导出，未审核/`unknown` 保持占位
+- **审核 UI**：`/organize` 工作台「场景复核」支持原图、候选和剧情依据对照，逐条接受/修改/拒绝；
+  「整理与导出」自动导出并引用最新 `scene_labels.json`，未审核/`unknown` 保持占位。
+  原卡片⑤/③表单保留在 `/organize/advanced`
 - **受限智能体**：`agent_runtime.py` 提供工具白名单、任务状态机（`queued/running/review/approved/failed`）
   与追加式审计日志，禁止任意 shell/越权 URL
 - **API**：`play/source`、`play/ingest`、`play/knowledge` 建库，`scene/reason` 生成证据，

@@ -181,6 +181,7 @@ def retrieve_evidence(image_path, knowledge, top_k=5, embedder=None):
             evidence.append({'type': 'knowledge', 'source_ref': scene['source_ref'],
                              'quote': scene['label'], 'score': round(float(score), 4)})
         candidates.append({'scene_id': scene['scene_id'], 'label': scene['label'],
+                           'retrieval_mode': mode,
                            'score': round(float(min(1.0, score)), 4),
                            'evidence': evidence})
     return {'image': image_path, 'query': query, 'candidates': candidates,

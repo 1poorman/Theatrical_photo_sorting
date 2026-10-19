@@ -150,7 +150,7 @@ class SceneReasoner:
             ev_id = f'knowledge:{src}'
             if ev_id not in [e['id'] for e in evidences]:
                 evidences.append({'id': ev_id, 'type': 'knowledge',
-                                  'source_ref': src, 'quote': scene.get('label'),
+                                  'source_ref': src, 'quote': scene.get('text') or scene.get('label'),
                                   'score': cand.get('score')})
         return parsed, candidates, evidences
 
@@ -248,7 +248,7 @@ class SceneReasoner:
             confidence = min(MAX_NO_EVIDENCE, scored[0]['confidence'] if scored else 0.0)
             label, scene_id = 'unknown', 'unknown'
             matched = []
-            alternatives = [{'label': s['candidate']['label'],
+            alternatives = [{'scene_id': s['candidate']['scene_id'], 'label': s['candidate']['label'],
                              'confidence': s['confidence']} for s in scored[:3]]
         else:
             picked = next((s for s in scored if s['candidate']['scene_id'] == chosen_id),
@@ -259,7 +259,7 @@ class SceneReasoner:
             label = picked['candidate']['label']
             scene_id = chosen_id
             matched = list(picked['matched'].keys())
-            alternatives = [{'label': s['candidate']['label'],
+            alternatives = [{'scene_id': s['candidate']['scene_id'], 'label': s['candidate']['label'],
                              'confidence': s['confidence']}
                             for s in scored if s['candidate']['scene_id'] != chosen_id][:3]
 
@@ -272,6 +272,7 @@ class SceneReasoner:
             'confidence': confidence,
             'decision': decision,
             'evidence_types': sorted(set(matched)),
+            'retrieval_mode': candidates[0].get('retrieval_mode', 'lexical') if candidates else 'lexical',
             'evidence': evidences,
             'alternatives': alternatives,
             'model_trace': model_trace,
