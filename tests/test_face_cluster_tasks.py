@@ -186,7 +186,7 @@ class FaceClusterTasksTests(unittest.TestCase):
         self.assertEqual(wait_for(queue, task_id)['status'], 'failed')
         queue.resume(task_id)
         self.assertEqual(wait_for(queue, task_id)['status'], 'completed')
-        self.assertEqual(len(queue.item_page(task_id)), 4)
+        self.assertEqual(len(queue.item_page(task_id)), 7)
         self.assertEqual(len(self.calls), 3)
 
     def test_source_change_after_checkpoint_cannot_publish_stale_clustering(self):
@@ -210,6 +210,111 @@ class FaceClusterTasksTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'output_directory_symlink'):
             FaceClusterBuilder(self.system).assign(str(self.output / 'cluster_state.json'), 'cluster-01', '演员', str(gallery))
         self.assertEqual({path.name: fingerprint(path) for path in self.photos.iterdir()}, before)
+
+    def test_crop_stage_decodes_each_source_once_across_clusters(self):
+        self.system.extractor.max_batch_size = 2
+        self.system.extractor.extract_features = lambda faces: np.eye(2, dtype=np.float32)
+        original = FaceClusterBuilder.read_image
+        decoded = []
+        def read(path):
+            decoded.append(path)
+            return original(path)
+        with patch.object(FaceClusterBuilder, 'read_image', staticmethod(read)):
+            queue, task_id = self.submit()
+            final = wait_for(queue, task_id)
+        self.assertEqual(final['status'], 'completed', final)
+        self.assertEqual(final['result']['n_clusters'], 2)
+        self.assertEqual(len(decoded), 3)
+        self.assertEqual(len(set(decoded)), 3)
+
+    def test_cancel_after_crop_restart_reuses_lossless_crops(self):
+        reached, release = threading.Event(), threading.Event()
+        decoded = []
+        original_read = FaceClusterBuilder.read_image
+        def read(path):
+            decoded.append(path)
+            return original_read(path)
+        def factory(params):
+            handler = FaceClusterTask(params, self.system)
+            original = handler.process
+            def process(item):
+                row = original(item)
+                if item['stage'] == 'crops' and not reached.is_set():
+                    reached.set()
+                    release.wait(5)
+                return row
+            handler.process = process
+            return handler
+        with patch.object(FaceClusterBuilder, 'read_image', staticmethod(read)):
+            queue, task_id = self.submit(factory)
+            try:
+                self.assertTrue(reached.wait(5))
+                queue.cancel(task_id)
+            finally:
+                release.set()
+            self.assertEqual(wait_for(queue, task_id)['status'], 'cancelled')
+            queue.close(10)
+            replacement = TaskQueue(self.root / 'tasks', {'face_cluster': lambda p: FaceClusterTask(p, self.system)})
+            self.addCleanup(replacement.close, 10)
+            replacement.resume(task_id)
+            self.assertEqual(wait_for(replacement, task_id)['status'], 'completed')
+        self.assertEqual(len(decoded), 3)
+        self.assertEqual(len(self.calls), 3)
+
+    def test_source_changed_during_crop_decode_cannot_commit_crop(self):
+        original = FaceClusterBuilder.read_image
+        changed = []
+        def read(path):
+            image = original(path)
+            if not changed:
+                changed.append(path)
+                Path(path).write_bytes(b'changed during crop read')
+            return image
+        with patch.object(FaceClusterBuilder, 'read_image', staticmethod(read)):
+            queue, task_id = self.submit()
+            final = wait_for(queue, task_id)
+        self.assertEqual(final['status'], 'failed', final)
+        failures = [row for row in queue.item_page(task_id) if row['status'] == 'failed']
+        self.assertEqual(len(failures), 1)
+        self.assertEqual(failures[0]['input']['stage'], 'crops')
+        self.assertIn('source_content_changed', failures[0]['result']['error']['message'])
+        self.assertFalse((self.output / 'cluster_state.json').exists())
+
+    def test_source_changed_after_crops_cannot_reuse_stale_preview(self):
+        interrupted = []
+        class Interrupted(FaceClusterTask):
+            def advance(self):
+                changed = super().advance()
+                if changed and self.context.checkpoint('preview_plan') and not interrupted:
+                    interrupted.append(True)
+                    raise OSError('stop after preview plan')
+                return changed
+        queue, task_id = self.submit(lambda p: Interrupted(p, self.system))
+        self.assertEqual(wait_for(queue, task_id)['status'], 'failed')
+        (self.photos / '0.png').write_bytes(b'changed after saved crop')
+        queue.resume(task_id)
+        final = wait_for(queue, task_id)
+        self.assertEqual(final['status'], 'failed', final)
+        failure = next(row for row in queue.item_page(task_id) if row['status'] == 'failed')
+        self.assertEqual(failure['input']['stage'], 'preview')
+        self.assertFalse((self.output / 'cluster_state.json').exists())
+
+    def test_damaged_durable_crop_is_rejected_before_publication(self):
+        from core_modules.organize.task_queue import TaskContext
+        original = TaskContext.result_for
+        def damaged(context, image, stage):
+            row = original(context, image, stage)
+            if stage == 'crops':
+                crop = next(iter(row['crops'].values()))
+                crop['sha256'] = '0' * 64
+            return row
+        with patch.object(TaskContext, 'result_for', damaged):
+            queue, task_id = self.submit()
+            final = wait_for(queue, task_id)
+        self.assertEqual(final['status'], 'failed', final)
+        failure = next(row for row in queue.item_page(task_id) if row['status'] == 'failed')
+        self.assertEqual(failure['result']['error']['message'], 'crop_content_corrupt')
+        self.assertFalse((self.output / 'cluster_state.json').exists())
 
 
 if __name__ == '__main__':

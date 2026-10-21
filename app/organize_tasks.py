@@ -224,6 +224,8 @@ def execute_staged(kind, params):
             return self.plans.get(key)
         def results(self):
             return self.rows
+        def result_for(self, image, stage):
+            return next(row for row in self.rows if row['image'] == image and row.get('stage') == stage and not row.get('error'))
         def advance(self, key, value, items):
             if key in self.plans:
                 return False
@@ -401,6 +403,7 @@ class PreparedTask:
                 check = self.context.check
                 checkpoint = self.context.checkpoint
                 advance = self.context.advance
+                result_for = self.context.result_for
                 def results(self):
                     return outer._rows()
             self.delegate.context = Context()

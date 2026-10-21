@@ -146,12 +146,18 @@ class FaceClusterBuilder:
                              'members': [{key: value for key, value in member.items() if key != 'feat'} for member in cmembers]})
         return sorted(clusters, key=lambda cluster: -cluster['size'])
 
-    def aligned_member(self, member):
-        img = cv2.imread(member['img_path'])
+    @staticmethod
+    def read_image(path):
+        img = cv2.imread(path)
         if img is None:
             raise ValueError('image_read_failed')
         if max(img.shape[:2]) > 1920:
             img = resize_max_side(img, 1920)
+        return img
+
+    def aligned_member(self, member, img=None):
+        if img is None:
+            img = self.read_image(member['img_path'])
         aligned = self.system.extractor.align_face(img, np.asarray(member['landmark'], dtype=float))
         if aligned is None:
             raise ValueError('face_alignment_failed')

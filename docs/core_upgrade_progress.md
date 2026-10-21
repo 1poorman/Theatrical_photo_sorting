@@ -1,6 +1,6 @@
 # 核心升级执行进度
 
-> 更新：2026-10-21。C1–C4 已提交为 `fdc1fda`，U2 以此为 corrected baseline；U2 缓存/批量路径与 U3 首批改动已提交为 `3ebadf3`；整理/知识库后台阶段和执行版本校验已提交并推送为 `f7cb66a`。后续聚类、标注照片建库恢复、多输出占用及真实 HTTP 验证纳入本次提交。
+> 更新：2026-10-21。C1–C4 已提交为 `fdc1fda`，U2 以此为 corrected baseline；U2 缓存/批量路径与 U3 首批改动已提交为 `3ebadf3`；整理/知识库后台阶段和执行版本校验已提交并推送为 `f7cb66a`。聚类、标注照片建库恢复、多输出占用及真实 HTTP 验证已提交并推送为 `961ffb7`。后续 200 图计划/发布恢复与预览优化对照已完成，裁剪阶段、工具和记录纳入本次提交。
 > 验收定义见 [核心升级蓝图](core_upgrade_blueprint.md)。U0–U8 独立记录，不改变 M11–M16 的历史状态。
 
 ## 1. 当前状态
@@ -12,7 +12,7 @@
 | U0 | 清单、去重、保守划分；4 个 raw/corrected 复现各重复 5 次 | GT 核对、final test 锁定、真实 raw 流水线基准 | 不适用 |
 | U1 | C1–C4 核心修复；核心回归 28/28、工作台 9/9、多模态 11/11 | 显式身份 ID/剧目角色映射、身份阈值校准 | 正确性修复已启用 |
 | U2 | 分析/整理共用内容缓存；批量图文推理、有界解码、人脸批次上限；缓存 24/24、核心 28/28、多模态 11/11 | 新 200 图 × 5 次完整复验仅特征吞吐未通过；质量 GT、DALI 未验收 | 默认 8 图/批、2 解码线程；正式性能仍 not_passed |
-| U3 | 五类持久任务、后台内容哈希、取消/恢复、执行版本绑定；任务核心 10/10、阶段/导出/版本 17/17、聚类 13/13、建库 17/17、工作台 22/22；分析/聚类/建库 HTTP 与 35 图恢复一致性通过 | 聚类/建库计划与发布阶段的规模性能、真实整理整链路性能、远端权重验证 | 部分启用，阶段未完成 |
+| U3 | 五类持久任务、后台内容哈希、取消/恢复、执行版本绑定；任务核心 10/10、阶段/导出/版本 17/17、聚类 18/18、建库 17/17、工作台 22/22；三类 HTTP、35 图结果与恢复、200 图发布恢复通过；预览 3 轮对照总耗时约 2.25 倍 | 新裁剪阶段完整 HTTP/规模复验、受控整链路性能对照、远端权重验证 | 部分启用，阶段未完成 |
 | U4 | Gemma 可选后端；同池 34 图/5 幕对比及 5 次编码计时 | 多剧目独立标注、质量门槛；其他候选未运行 | 保留 SigLIP2 base；Gemma 可选 |
 | U5 | 图片观察 → 引用校验 → 闭集判断；1 图真实双请求通过 | 100 图双人事实核对、预算、缓存、OCR、Macro-F1 | “视觉模型辅助”选项启用 |
 | U6 | 尚未实施，not_run | 变化点、DINOv3、边界 GT | 未采用 |
@@ -116,6 +116,45 @@ profiling 显示 GPU 前向仅约 2 秒，CPU 解码/预处理与完整内容哈
 - 报告分别位于 `u3_cluster_http_200_20261021/summary.json` 与 `u3_database_http_200_20261021/summary.json`。原图及副本完整内容保持一致，被测源码摘要前后相同；聚类取消时已完成 58 张，其余 142 张保留检查点待继续。
 - 两组顺序运行，模型提前加载但未预热首次真实推理，共享 GPU 负载存在。只证明该配置逐图处理期间的响应和取消门槛，不等于全部计划/发布阶段、大规模层次聚类、模型身份质量或 U2 性能验收；这些阶段的取消与恢复已有单元测试，但仍需真实规模测量。
 
+### 2026-10-21：200 图计划与部分发布跨服务恢复
+
+`961ffb7` 已提交并推送。新增 `benchmark_face_task_completion.py` 沿用上节隔离的两个 200 图任务与原执行版本：第一次服务恢复剩余图片，计划事务提交后取消；第二次新服务恢复预览/写入，在首个文件独占发布后注入异常；第三次新服务复用该文件并完成其余发布。业务源码未改动，执行版本仍匹配原任务。三次启动只写隔离任务目录与输出。
+
+| 测量 | 聚类 | 标注建库 |
+| --- | --- | --- |
+| 最终输出 | 704 脸、326 簇/预览 | 50 锚定图、17 演员角色目录 |
+| 本轮剩余候选处理 | 142 图、累计 63.757 秒 | 77 图、累计 21.495 秒 |
+| 首次计划 | 0.317 秒 | 0.228 秒 |
+| 预览处理 | 326 簇、累计 194.574 秒 | 不适用 |
+| 两次最终发布尝试累计 | 11.882 秒 | 13.570 秒 |
+| 各恢复尝试耗时 | 66.507 / 204.592 / 7.058 秒 | 23.167 / 6.049 / 9.072 秒 |
+| 各进程峰值 RSS | 2232.00 / 1633.43 / 1385.82 MiB | 2123.38 / 1364.48 / 1357.55 MiB |
+| 期间健康/分页查询 P95 | 3.12 / 8.77 ms | 3.53 / 8.78 ms |
+
+报告分别为 `u3_cluster_completion_200_20261021/summary.json` 与 `u3_database_completion_200_20261021/summary.json`。检查全部通过：先前已成功项的检查点 payload 未变，无候选或预览重复处理；计划取消和首次复制失败均恢复；最后无条目失败；查询无错误且 P95 达标；原图与副本完整摘要、被测源码未变。独立 `artifact_audit.json` 核对所有发布路径及字节与 SQLite 计划一致，每个文件只新建一次，恰好复用中断前的一个文件。
+
+这些是前轮任务继续后的阶段实测，不是重新跑完整冷基线，也没有隔离同卡负载或身份 GT；RSS 每秒采样可能漏掉短峰值。查询采用每秒五个错开的请求直到结束，短发布阶段样本稀疏，不等同于每阶段单独满足 5 客户端/60 秒实验。聚类计划本身很快，预览逐簇重新解码原图、校验和 SQLite 查询是当前主要成本；下一步优化有界预览读取并保持完整内容校验，再做同配置对照。大于 704 脸的二次方层次聚类开销仍未验证，真实整理性能和远端权重契约仍待完成。
+
+### 2026-10-21：聚类预览按原图保存无损裁剪
+
+- 聚类计划不变，将预览选中成员按源图分组，每张原图只解码/缩放一次，以 PNG 无损保存各脸裁剪结果；完成裁剪后再事务追加逐簇拼图项。每阶段保存检查点，取消/重启跳过成功裁剪，无需再次检测、解码该图或生成完成的预览。不保留整批解码原图，只处理当前图；持久裁剪增加磁盘开销。
+- `TaskContext.result_for(image, stage)` 读取单个成功依赖，预览不再反复加载完整聚类计划或所有历史裁剪；旧同步内联执行器与后台委托上下文提供同一接口。裁剪前后、拼图读取和最终发布仍验证原图完整内容，PNG 校验和及尺寸不符拒绝发布。
+- 聚类回归扩至 18/18，新增跨簇只解码一次、裁剪后取消与执行器恢复、解码期间原图改写、裁剪后原图改写及损坏裁剪拒绝发布。任务核心 10/10、整理阶段 17/17、建库 17/17、工作台 22/22 通过，合计 84 项。历史任务执行版本受源码变更影响，不能直接用新版继续旧版本任务，需新建或使用原版本完成。
+- 真实 CUDA SCRFD/ArcFace 新版恢复复验 `u3_cluster_crops_recovery_20261021/summary.json`：35 图、111 脸、41 簇与旧版成员一致，取消后重建执行器无重复检测、失败及原图改动。任务含恢复 24.369 秒、随后已预热旧版 7.903 秒；不同执行路径的一次顺序测量仍不作性能比较。
+
+`benchmark_cluster_previews.py` 对既有 200 图/704 脸/326 簇真实检测检查点做 3 轮交替顺序对照，旧路径来自 `961ffb7`，两者使用相同人脸框、关键点、ArcFace 对齐和输出配置。所有检查点持久保存，计时包含最终发布；不运行检测/特征模型。报告 `u3_cluster_previews_200x3_20261021/summary.json` 被测源码前后相同，6 次输出 JPEG 均与前轮真实模型预览字节一致，详见同目录 `artifact_audit.json`。
+
+| 项目 | `961ffb7` 逐脸预览 | 原图裁剪阶段 |
+| --- | --- | --- |
+| 预览源图解码 | 671 次 | 159 次，每张一次 |
+| 裁剪与拼图中位耗时 | 198.539 秒 | 77.482 秒（约 2.56 倍） |
+| 含检查点与发布中位耗时 | 211.604 秒 | 94.168 秒（约 2.25 倍，减少 55.50%） |
+| 3 次总耗时 | 208.474 / 237.185 / 211.604 秒 | 94.168 / 100.052 / 83.682 秒 |
+| 检查点数据库 | 16.20 MiB | 50.25 MiB |
+| 各次峰值 RSS | 593.46 / 673.70 / 674.36 MiB | 668.18 / 672.02 / 674.54 MiB |
+
+该对照只证明真实输入预览阶段的收益，不能替代 U2 性能门槛、完整 GPU 流水线或身份质量。相同进程交替运行，文件系统缓存、分配器和同机负载影响结果；RSS 每 20 ms 采样且包含导入依赖，峰值比较不作内存收益结论。新增裁剪增加约 34 MiB 持久存储，尚无大型任务清理策略。下一步以新版本复验完整聚类 HTTP 与更大规模，随后处理真实整理性能和远端权重契约。
+
 ### 2026-10-19：正确性与模型探索
 
 - **C1**：排序、分段前按原始路径建立特征映射；缺失、非有限或维度不齐的特征只停用所在段的细分。单图特征异常不再中断其他图片，EXIF 文件句柄正确关闭。
@@ -216,6 +255,11 @@ MPLCONFIGDIR=/tmp/theatre-core-mpl /home/huachenghao/.conda/envs/face_scrfd_arcf
 # 真实 SCRFD/ArcFace HTTP（200 唯一图清单，新的空目录，独立图库）
 MPLCONFIGDIR=/tmp/theatre-core-mpl /home/huachenghao/.conda/envs/face_scrfd_arcface/bin/python tools/benchmark_face_task_http.py --manifest outputs/acceptance/core_upgrade/u3_http_versioned_final_20261021/input_manifest.json --kind face_cluster --output outputs/acceptance/core_upgrade/u3_cluster_http_new_run --gpu 1
 MPLCONFIGDIR=/tmp/theatre-core-mpl /home/huachenghao/.conda/envs/face_scrfd_arcface/bin/python tools/benchmark_face_task_http.py --manifest outputs/acceptance/core_upgrade/u3_http_versioned_final_20261021/input_manifest.json --kind face_database --output outputs/acceptance/core_upgrade/u3_database_http_new_run --gpu 1
+# 继续同版本已取消的隔离 HTTP 任务，经过计划取消/首文件失败/服务重启
+MPLCONFIGDIR=/tmp/theatre-core-mpl /home/huachenghao/.conda/envs/face_scrfd_arcface/bin/python tools/benchmark_face_task_completion.py --resume-from outputs/acceptance/core_upgrade/u3_cluster_http_new_run --kind face_cluster --output outputs/acceptance/core_upgrade/u3_cluster_completion_new_run --gpu 1
+MPLCONFIGDIR=/tmp/theatre-core-mpl /home/huachenghao/.conda/envs/face_scrfd_arcface/bin/python tools/benchmark_face_task_completion.py --resume-from outputs/acceptance/core_upgrade/u3_database_http_new_run --kind face_database --output outputs/acceptance/core_upgrade/u3_database_completion_new_run --gpu 1
+# 同一真实检测检查点比较新旧持久预览，新的空目录
+MPLCONFIGDIR=/tmp/theatre-core-mpl /home/huachenghao/.conda/envs/face_scrfd_arcface/bin/python tools/benchmark_cluster_previews.py --task-root outputs/acceptance/core_upgrade/u3_cluster_http_200_20261021/tasks --output outputs/acceptance/core_upgrade/u3_cluster_previews_new_run --repeats 3
 MPLCONFIGDIR=/tmp/theatre-core-mpl /home/huachenghao/.conda/envs/face_scrfd_arcface/bin/python tests/acceptance_multimodal_m16.py
 
 # U2：缓存契约、统计等价和真实流水线；基准输出必须使用新的空目录
@@ -258,7 +302,7 @@ WORKSPACE_URL=http://127.0.0.1:18301 node tests/test_workspace_browser.cjs
 1. 核对场次、资料分类、弱标签和近重复，再锁定独立 final test；现有舞台照数量基本够幕次初评，主要缺口是可信标注。
 2. 补齐身份 ID 与剧目角色映射，隔离 gallery/query 并校准 margin；保存真实 raw/corrected 流水线 5 次基准。
 3. U2：完整复验已结束且仍 not_passed；继续降低 CPU 预处理成本，保持完整内容改写失效和路径对应契约。正式质量核对和 DALI 实验另行记录。
-4. U3：补聚类/建库计划和发布阶段规模性能、远端模型权重验证及真实整理整链路性能。聚类与标注照片建库逐图恢复及真实 HTTP 已验证；分析、聚类和建库均单列响应报告。初次载入仍下载分页队列，兼容复核快照每次决定仍全量生成。
+4. U3：新版裁剪阶段已减少重复解码，200 图/3 轮预览对照约 2.25 倍且字节一致；补完整聚类 HTTP、更大人脸规模、远端权重验证与真实整理性能。历史 200 图计划/部分发布跨服务恢复报告对应 `961ffb7`，源码变化后不可直接复用其执行版本。初次载入仍下载分页队列，兼容复核快照每次决定仍全量生成。
 5. 扩展多剧目检索和 U5 预算/事实质量评估，再进入 U6/U7；未达门槛组件保留实验状态。
 
 新增测试已加入 `.gitignore` 例外。每阶段更新命令、代码版本、报告和质量状态，禁止将合成复现、小样本 smoke 或历史结果计为正式效果通过。

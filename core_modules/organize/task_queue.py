@@ -60,6 +60,16 @@ class TaskContext:
     def results(self):
         return self.queue.results(self.task_id)
 
+    def result_for(self, image, stage):
+        """Read one durable dependency without decoding all prior results."""
+        with closing(self.queue._connect()) as connection:
+            row = connection.execute("SELECT result FROM items WHERE task_id=? AND status='succeeded' "
+                                     "AND json_extract(input, '$.image')=? AND json_extract(input, '$.stage')=?",
+                                     (self.task_id, image, stage)).fetchone()
+        if row is None:
+            raise ValueError('task_dependency_missing: ' + stage)
+        return json.loads(row[0])
+
     def checkpoint(self, key):
         with closing(self.queue._connect()) as connection:
             row = connection.execute('SELECT payload FROM checkpoints WHERE task_id=? AND name=?',
