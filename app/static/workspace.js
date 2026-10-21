@@ -326,12 +326,13 @@
     state.project = {...project, input: result.input_dir};
     state.photos = result.photos; state.records = new Map(); state.knowledge = null; state.summary = null;
     state.selected = result.photos.some(photo => photo.path === project.selected) ? project.selected : null;
-    state.query = ''; state.page = 0; state.taskId = null; state.queueMismatch = false;
+    state.query = ''; state.page = 0; state.taskId = project.clusterTask || null; state.queueMismatch = false;
     $('photo-search').value = ''; $('actor-result').hidden = true; $('organize-result').hidden = true;
     $('labels-download').innerHTML = ''; $('cluster-grid').innerHTML = '';
     populateProject(); saveProject(); renderKnowledge(); renderHeader(); renderGallery();
     const restored = await Promise.allSettled([loadKnowledge(true), loadReviews()]);
     restored.forEach(result => { if (result.status === 'rejected') notice(`工作区已打开，部分资料暂未载入：${result.reason.message}`, true); });
+    if (state.taskId) { try { await loadClusters(); } catch (error) { notice(`演员分组暂未载入：${error.message}`, true); } }
     if (result.truncated) notice(`目录有 ${result.total} 张图片，当前显示前 ${result.photos.length} 张。请分成较小的目录整理。`, true);
     else if (!result.total) notice('这个目录中没有支持的照片；如果照片存放在子目录，请直接选择那个子目录。');
     if (state.project.analysisTask) {
@@ -373,6 +374,21 @@
   let analysisTimer = null;
   let analysisRunning = false;
   async function applyAnalysis(project, result) {
+    if (project.analysisKind === 'face_database') {
+      await task('正在载入人脸库构建结果…', async () => {
+        showFaceDatabaseResult(result); project.analysisApplied = project.analysisTask; saveProject(); setView('actors');
+        notice(result.dry_run ? '检查完成。取消「仅统计」后可将锚定照片写入演员库。' : '演员库已更新，可用于整理及生成演员专辑。');
+      });
+      return;
+    }
+    if (project.analysisKind === 'face_cluster') {
+      await task('正在载入演员分组…', async () => {
+        state.taskId = project.analysisTask; project.clusterTask = state.taskId;
+        await loadClusters(); project.analysisApplied = project.analysisTask; saveProject(); setView('actors');
+        notice(`扫描完成，请核对分组并填写演员及角色。${result.failed ? `${result.failed} 张图片失败，原图保留。` : ''}`);
+      });
+      return;
+    }
     if (project.analysisKind === 'knowledge') {
       await task('知识库构建完成，正在载入幕次…', async () => {
         await loadKnowledge(); project.analysisApplied = project.analysisTask; saveProject();
@@ -404,7 +420,7 @@
       const status = await api(`/api/organize/tasks/${encodeURIComponent(project.analysisTask)}`);
       if (state.project !== project) return;
       analysisRunning = ['queued', 'running', 'cancel_requested'].includes(status.status);
-      const name = {knowledge: '知识库构建', organize: '整理', scene_reason: '场景分析'}[project.analysisKind || 'scene_reason'];
+      const name = {knowledge: '知识库构建', organize: '整理', scene_reason: '场景分析', face_cluster: '演员扫描', face_database: '人脸建库'}[project.analysisKind || 'scene_reason'];
       const labels = {queued: '排队中', running: '执行中', cancel_requested: '等待当前操作结束后取消', cancelled: '已取消', interrupted: '已中断', failed: '执行失败', completed: '完成', completed_with_errors: '完成，部分条目失败'};
       $('analysis-task').hidden = false;
       $('analysis-task-message').textContent = `${name}${labels[status.status] || status.status}：${status.preparing ? `${status.preparing} 张图片待校验；` : ''}${status.succeeded} 项完成，${status.failed} 项失败，${status.pending} 项待处理。${status.error || ''}`;
@@ -413,6 +429,9 @@
       $('analysis-resume').hidden = !['cancelled', 'interrupted', 'failed'].includes(status.status);
       $('analysis-new').hidden = !['cancelled', 'interrupted', 'failed', 'completed_with_errors'].includes(status.status);
       $('analysis-new').textContent = project.analysisKind && project.analysisKind !== 'scene_reason' ? '结束此任务，保留已有文件' : '按当前资料重新分析';
+      if (project.analysisKind === 'face_database' && status.result && project.analysisApplied === project.analysisTask && $('actor-result').hidden) {
+        showFaceDatabaseResult(status.result);
+      }
       if (['completed', 'completed_with_errors'].includes(status.status) && project.analysisApplied !== project.analysisTask && !state.busy) {
         await applyAnalysis(project, status.result);
       }
@@ -484,6 +503,7 @@
     const body = await response.json();
     if (!response.ok) throw new Error(body.message || '无法创建后台任务');
     project.analysisTask = body.data.task_id; project.analysisKind = kind; project.backgroundSubmission = null;
+    if (kind === 'face_cluster') state.taskId = body.data.task_id;
     analysisRunning = true; saveProject();
     analysisTimer = setTimeout(() => pollAnalysis(project), 0);
   }
@@ -581,15 +601,16 @@
       });
   }
 
+  function showFaceDatabaseResult(result) {
+    $('actor-result').hidden = false;
+    $('actor-result').innerHTML = `<h3>${result.dry_run ? '照片检查完成' : '演员库已更新'}</h3><div class="result-stats"><div><strong>${esc(result.scanned ?? 0)}</strong><span>扫描照片</span></div><div><strong>${esc(result.added ?? 0)}</strong><span>${result.dry_run ? '可用锚定照片' : '新增锚定照片'}</span></div><div><strong>${esc(result.failed ?? 0)}</strong><span>处理失败</span></div></div><div class="role-tags">${(result.added_persons || []).map(person => `<span class="tag">${esc(person)}</span>`).join('')}</div>${result.failed ? '<p>部分图片处理失败，原图保留，请查看构建报告。</p>' : ''}${result.report_path ? `<a href="${esc(fileURL(result.report_path))}" download>下载人脸建库报告 ↗</a>` : ''}`;
+  }
   $('actor-build-form').onsubmit = event => {
     event.preventDefault(); if (!needProject()) return;
     const source = $('actor-source').value.trim(), dryRun = $('actor-dry-run').checked;
-    task(dryRun ? '正在检查标注照片…' : '正在建立演员人脸库…', async () => {
-      const result = await api('/api/organize/build_face_database', {organized_dirs: source, db_root: state.project.db, dry_run: dryRun});
-      $('actor-result').hidden = false;
-      $('actor-result').innerHTML = `<h3>${dryRun ? '照片检查完成' : '演员库已更新'}</h3><div class="result-stats"><div><strong>${esc(result.scanned ?? 0)}</strong><span>扫描照片</span></div><div><strong>${esc(result.added ?? 0)}</strong><span>${dryRun ? '可用锚定照片' : '新增锚定照片'}</span></div></div><div class="role-tags">${(result.added_persons || []).map(person => `<span class="tag">${esc(person)}</span>`).join('')}</div>`;
-      notice(dryRun ? '检查完成。取消「仅统计」后可将锚定照片写入演员库。' : '演员库已更新，可用于整理及生成演员专辑。');
-    });
+    task('正在提交人脸库构建任务…', () => submitBackground(state.project, 'face_database', {
+      organized_dirs: source, db_root: state.project.db, dry_run: dryRun,
+      output_dir: join(state.project.output, 'face_database')}));
   };
   $('actor-view-form').onsubmit = event => {
     event.preventDefault(); if (!needProject()) return;
@@ -619,20 +640,8 @@
   }
   $('cluster-button').onclick = () => {
     if (!needProject()) return;
-    task('正在扫描当前目录中的演员人脸…', async () => {
-      const result = await api('/api/organize/face_cluster/scan', {input_dir: state.project.input, output_dir: join(state.project.output, 'clusters')});
-      state.taskId = result.task_id;
-      // A bounded polling window keeps a disconnected service from locking the UI forever.
-      const deadline = Date.now() + 60 * 60 * 1000;
-      while (Date.now() < deadline) {
-        await new Promise(resolve => setTimeout(resolve, 1800));
-        const status = await api(`/api/progress/${encodeURIComponent(state.taskId)}`);
-        if (status.error || status.status === 'error' || status.status === 'failed') throw new Error(status.message || '演员扫描失败');
-        progress(`演员扫描：${status.message || '处理中'}${Number.isFinite(status.progress) ? ` · ${Math.round(status.progress)}%` : ''}`);
-        if ((status.status === 'completed' || status.progress >= 100) && await loadClusters()) { notice('扫描完成，请核对分组并填写演员及角色。'); return; }
-      }
-      throw new Error('扫描时间较长，已停止自动查询。任务可能仍在后台运行，可在高级整理工具中查看。');
-    });
+    task('正在提交演员扫描任务…', () => submitBackground(state.project, 'face_cluster', {
+      input_dir: state.project.input, output_dir: join(state.project.output, 'clusters')}));
   };
 
   document.querySelectorAll('[data-view]').forEach(button => { button.onclick = () => setView(button.dataset.view); });

@@ -27,6 +27,18 @@ def gallery_hashes(root):
             if path.is_file() and path.suffix.lower() in ('.jpg', '.jpeg', '.png')}
 
 
+def face_database_images(root):
+    """All supported gallery images, including files outside actor directories."""
+    from core_modules.tools.image_io import IMAGE_EXTENSIONS
+    paths = []
+    for path in sorted(Path(root).rglob('*')):
+        if path.is_symlink() and (path.is_dir() or path.suffix.lower() in IMAGE_EXTENSIONS):
+            raise ValueError('face_gallery_symlink')
+        if path.is_file() and path.suffix.lower() in IMAGE_EXTENSIONS:
+            paths.append(path)
+    return paths
+
+
 def atomic_json(path, value):
     path = Path(path)
     if any(parent.is_symlink() for parent in path.parents):

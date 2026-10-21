@@ -202,6 +202,23 @@ class TaskTests(unittest.TestCase):
         self.release.set()
         wait_for(queue, second['task_id'])
 
+    def test_multiple_output_roots_remain_reserved_after_restart(self):
+        queue = self.queue()
+        first, _ = queue.submit('test', {'block': True}, [{'image': 'a'}], output=['/gallery', '/reports'])
+        self.assertTrue(self.started.wait(5))
+        with self.assertRaises(TaskConflict):
+            queue.submit('test', {}, [{'image': 'b'}], output='/reports/face_database')
+        # Shutdown at the item boundary leaves a durable interrupted task.
+        queue._stop.set()
+        self.release.set()
+        queue.close(10)
+        replacement = TaskQueue(self.root, {'test': self.handler})
+        self.addCleanup(replacement.close, 10)
+        with self.assertRaises(TaskConflict):
+            replacement.submit('test', {}, [{'image': 'b'}], output='/reports/face_database')
+        replacement.resume(first['task_id'])
+        self.assertEqual(wait_for(replacement, first['task_id'])['status'], 'completed')
+
 
 if __name__ == '__main__':
     unittest.main()

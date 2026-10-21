@@ -23,7 +23,12 @@ fs.mkdirSync(shots, {recursive: true});
   page.on('pageerror', error => errors.push(error.message));
   const idle = () => page.locator('body:not([aria-busy="true"])').waitFor({timeout: 45000});
   const clickView = async view => { await page.locator(`.nav-item[data-view="${view}"]`).click(); };
-  const noOverflow = async () => assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'page overflows horizontally');
+  const noOverflow = async () => {
+    const overflow = await page.evaluate(() => ({width: innerWidth, scroll: document.documentElement.scrollWidth,
+      elements: [...document.querySelectorAll('body *')].filter(element => element.getBoundingClientRect().right > innerWidth)
+        .map(element => element.id || element.className).slice(0, 8)}));
+    assert.ok(overflow.scroll <= overflow.width, `page overflows horizontally: ${JSON.stringify(overflow)}`);
+  };
   const post = async (url, form) => {
     const response = await context.request.post(base + url, {form});
     assert.equal(response.status(), 200, await response.text());
@@ -211,13 +216,27 @@ fs.mkdirSync(shots, {recursive: true});
 
     // Exercise the actual cluster response schema and reversible ignore/restore UI.
     await clickView('actors');
-    let clusterStatus = 'pending', assignedTo = null, scanFails = false;
-    await page.route('**/api/organize/face_cluster/scan', route => route.fulfill({json: {code: 200, data: {task_id: 'browser-cluster'}}}));
-    await page.route('**/api/progress/browser-cluster', route => route.fulfill({json: scanFails ? {progress: 20, status: 'failed', error: '扫描失败测试', message: '扫描失败测试'} : {progress: 100}}));
-    await page.route('**/api/organize/face_cluster/result?*', route => route.fulfill({json: {code: 200, data: {clusters: [{id: 'cluster-01', size: 5, cohesion: .8, status: clusterStatus, assigned_to: assignedTo, suggest_manual: false, preview: path.join(root, 'data/sample_images/2.jpg')}]}}}));
+    let clusterStatus = 'pending', assignedTo = null, scanFails = false, scanState = 'running', scanSubmissions = 0;
+    await page.route('**/api/organize/tasks', async route => {
+      assert.equal(route.request().postDataJSON().kind, 'face_cluster'); scanSubmissions++;
+      await route.fulfill({json: {code: 200, data: {task_id: 'browser-cluster'}}});
+    });
+    await page.route('**/api/organize/tasks/browser-cluster', route => route.fulfill({json: {code: 200, data: {
+      status: scanFails ? 'failed' : scanState, error: scanFails ? '扫描失败测试' : null,
+      succeeded: 2, failed: 0, pending: scanState === 'completed' ? 0 : 1,
+      result: scanState === 'completed' ? {n_images: total, n_faces: 5, n_clusters: 1, failed: 0} : null}}}));
+    await page.route('**/api/organize/tasks/browser-cluster/cancel', async route => { scanState = 'cancelled'; await route.fulfill({json: {code: 200, data: {status: scanState}}}); });
+    await page.route('**/api/organize/tasks/browser-cluster/resume', async route => { scanState = 'completed'; await route.fulfill({json: {code: 200, data: {status: scanState}}}); });
+    await page.route('**/api/organize/face_cluster/result?*', route => route.fulfill({json: {code: 200, data: scanState === 'completed' ? {clusters: [{id: 'cluster-01', size: 5, cohesion: .8, status: clusterStatus, assigned_to: assignedTo, suggest_manual: false, preview: path.join(root, 'data/sample_images/2.jpg')}]} : {progress: 20}}}));
     await page.route('**/api/organize/face_cluster/ignore', async route => { clusterStatus = clusterStatus === 'ignored' ? 'pending' : 'ignored'; await route.fulfill({json: {code: 200, data: {}}}); });
     await page.route('**/api/organize/face_cluster/assign', async route => { clusterStatus = 'assigned'; assignedTo = '陈少云（饰颍考叔）'; await route.fulfill({json: {code: 200, data: {}}}); });
     await page.locator('#cluster-button').click(); await idle();
+    await page.locator('#analysis-cancel').waitFor();
+    await page.reload(); await idle(); await clickView('actors');
+    await page.locator('#analysis-cancel').waitFor();
+    assert.equal(scanSubmissions, 1, 'cluster refresh reuses task without resubmission');
+    await page.locator('#analysis-cancel').click(); await page.locator('#analysis-resume').waitFor();
+    await page.locator('#analysis-resume').click(); await page.locator('.cluster-card').waitFor(); await idle();
     assert.equal(await page.locator('.cluster-card').count(), 1);
     await page.locator('[data-ignore]').click(); await idle();
     assert.match(await page.locator('[data-ignore]').textContent(), /恢复/);
@@ -228,10 +247,60 @@ fs.mkdirSync(shots, {recursive: true});
     assert.match(await page.locator('.cluster-card').textContent(), /已入库：陈少云/);
     scanFails = true;
     await page.locator('#cluster-button').click(); await idle();
-    assert.match(await page.locator('#notice').textContent(), /扫描失败测试/);
+    await page.waitForFunction(() => document.querySelector('#analysis-task-message').textContent.includes('扫描失败测试'));
+    assert.match(await page.locator('#analysis-task-message').textContent(), /扫描失败测试/);
     assert.equal(await page.locator('#cluster-button').isEnabled(), true);
 
     await page.reload(); await idle();
+    assert.equal(await page.locator('.cluster-card').count(), 1, 'completed cluster decisions survive refresh');
+    await page.locator('#analysis-new').click(); await idle();
+    await page.unroute('**/api/organize/tasks');
+    let databaseState = 'running', databaseCreates = 0, databaseDry = true;
+    await page.route('**/api/organize/tasks', async route => {
+      const body = route.request().postDataJSON();
+      assert.equal(body.kind, 'face_database');
+      assert.equal(body.params.organized_dirs, photos);
+      assert.equal(body.params.output_dir, path.join(fixture, 'face_database'));
+      databaseDry = body.params.dry_run; databaseCreates++;
+      await route.fulfill({status: 202, json: {code: 200, data: {task_id: `browser-database-${databaseCreates}`}}});
+    });
+    await page.route('**/api/organize/tasks/browser-database-*', route => route.fulfill({json: {code: 200, data: {
+      status: databaseState, succeeded: 2, failed: databaseState === 'completed_with_errors' ? 1 : 0,
+      pending: databaseState === 'running' ? 3 : 0,
+      result: databaseState.startsWith('completed') ? {scanned: total, added: 2, failed: databaseState === 'completed_with_errors' ? 1 : 0,
+        dry_run: databaseDry, added_persons: ['陈少云（饰颍考叔）'], report_path: path.join(fixture, 'face_database/face_database_report.json')} : null}}}));
+    await page.route('**/api/organize/tasks/browser-database-*/cancel', async route => {
+      databaseState = 'cancelled'; await route.fulfill({json: {code: 200, data: {status: databaseState}}});
+    });
+    await page.route('**/api/organize/tasks/browser-database-*/resume', async route => {
+      databaseState = 'completed_with_errors'; await route.fulfill({json: {code: 200, data: {status: 'queued'}}});
+    });
+    await clickView('actors');
+    await page.locator('#actor-source').fill(photos); await page.locator('#actor-dry-run').check();
+    await page.locator('#actor-build-form button[type=submit]').click(); await idle();
+    await page.locator('#analysis-cancel').waitFor();
+    await page.reload(); await idle(); await clickView('actors');
+    await page.locator('#analysis-cancel').waitFor();
+    assert.equal(databaseCreates, 1, 'database refresh does not resubmit');
+    await page.locator('#analysis-cancel').click(); await page.locator('#analysis-resume').waitFor();
+    await page.locator('#analysis-resume').click();
+    await page.waitForFunction(() => document.querySelector('#actor-result').textContent.includes('照片检查完成'));
+    await idle();
+    assert.match(await page.locator('#actor-result').textContent(), /可用锚定照片/);
+    assert.match(await page.locator('#actor-result').textContent(), /部分图片处理失败/);
+    assert.equal(await page.getByRole('link', {name: '下载人脸建库报告 ↗'}).count(), 1);
+    await page.reload(); await idle(); await clickView('actors');
+    await page.locator('#actor-result').waitFor();
+    assert.match(await page.locator('#actor-result').textContent(), /照片检查完成/);
+    assert.equal(databaseCreates, 1, 'completed database report restores without resubmission');
+    databaseState = 'completed';
+    await page.locator('#actor-source').fill(photos); await page.locator('#actor-dry-run').uncheck();
+    await page.locator('#actor-build-form button[type=submit]').click();
+    await page.waitForFunction(() => document.querySelector('#actor-result').textContent.includes('演员库已更新'));
+    await idle();
+    assert.equal(databaseCreates, 2);
+    assert.match(await page.locator('#actor-result').textContent(), /新增锚定照片/);
+    await page.unroute('**/api/organize/tasks');
     assert.equal(Number(await page.locator('#metric-approved').textContent()), 2, 'human review persists after reload');
     assert.equal(await page.locator('#use-embedder').isChecked(), false, 'model choice persists after reload');
     await clickView('photos');
@@ -300,7 +369,7 @@ fs.mkdirSync(shots, {recursive: true});
     assert.notEqual(await page.locator('#output-dir').inputValue(), fixture);
     await page.keyboard.press('Escape');
     assert.equal(errors.length, 0, errors.join('\n'));
-    console.log(JSON.stringify({passed: true, realPhotos: total, checks: ['empty/error states', 'real photo previews', 'knowledge ingest', 'offline scene analysis', 'background analysis refresh reuses task without resubmission', 'review accept/modify/reject', 'draft survives selection/search/reload/failure', 'revision conflict refreshes record and preserves draft', 'successful decision clears draft', 'search/filter', 'label download', 'organize payload', 'background organize refresh/cancel/resume/partial failures', 'cluster assign/ignore/restore/error', 'refresh persistence', 'responsive 1440/1024/768/540/390', 'escaped evidence', '10000 record pagination and bounded DOM', 'decision updates one record without queue reload', 'independent project contexts'], screenshots: shots}, null, 2));
+    console.log(JSON.stringify({passed: true, realPhotos: total, checks: ['empty/error states', 'real photo previews', 'knowledge ingest', 'offline scene analysis', 'background analysis refresh reuses task without resubmission', 'review accept/modify/reject', 'draft survives selection/search/reload/failure', 'revision conflict refreshes record and preserves draft', 'successful decision clears draft', 'search/filter', 'label download', 'organize payload', 'background organize refresh/cancel/resume/partial failures', 'cluster refresh/cancel/resume and persistent assign/ignore/restore/error', 'face database refresh/cancel/resume/partial report and dry-run/build payload', 'refresh persistence', 'responsive 1440/1024/768/540/390', 'escaped evidence', '10000 record pagination and bounded DOM', 'decision updates one record without queue reload', 'independent project contexts'], screenshots: shots}, null, 2));
   } finally {
     await browser.close();
     fs.rmSync(fixture, {recursive: true, force: true});

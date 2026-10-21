@@ -119,6 +119,11 @@ class TaskQueue:
                     CREATE TABLE IF NOT EXISTS checkpoints (
                         task_id TEXT NOT NULL REFERENCES tasks(id), name TEXT NOT NULL,
                         payload TEXT NOT NULL, PRIMARY KEY(task_id, name));
+                    CREATE TABLE IF NOT EXISTS task_outputs (
+                        task_id TEXT NOT NULL REFERENCES tasks(id), path TEXT NOT NULL,
+                        PRIMARY KEY(task_id, path));
+                    INSERT OR IGNORE INTO task_outputs
+                        SELECT id, output FROM tasks WHERE output IS NOT NULL;
                 ''')
                 connection.execute("UPDATE tasks SET status='interrupted', updated=? "
                                    "WHERE status IN ('running','cancel_requested')", (time.time(),))
@@ -156,6 +161,8 @@ class TaskQueue:
         items = list(items)
         request = encode({'params': params, 'items': items})
         digest = hashlib.sha256((kind + '\n' + request).encode()).hexdigest()
+        outputs = list(dict.fromkeys(str(Path(path).resolve()) for path in
+                       (output if isinstance(output, (list, tuple)) else [output]) if path))
         with self._write() as connection:
             if idempotency_key:
                 old = connection.execute('SELECT id, request_hash FROM tasks WHERE idempotency_key=?',
@@ -165,11 +172,12 @@ class TaskQueue:
                         raise TaskConflict('同一幂等键对应不同输入，请使用新的幂等键。')
                     return self.get(old['id']), False
             self._check_capacity(connection)
-            self._check_output(connection, output)
+            self._check_output(connection, outputs)
             task_id = uuid.uuid4().hex
             now = time.time()
             connection.execute('INSERT INTO tasks VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL)',
-                               (task_id, kind, request, digest, idempotency_key, output, 'queued', now, now))
+                               (task_id, kind, request, digest, idempotency_key, outputs[0] if outputs else None, 'queued', now, now))
+            connection.executemany('INSERT INTO task_outputs VALUES (?, ?)', [(task_id, path) for path in outputs])
             connection.executemany('INSERT INTO items(task_id, position, input) VALUES (?, ?, ?)',
                                    [(task_id, i, encode(item)) for i, item in enumerate(items)])
         self._wake.set()
@@ -185,11 +193,12 @@ class TaskQueue:
     def _check_output(connection, output, task_id=None):
         if not output:
             return
-        destination = Path(output).resolve()
-        for row in connection.execute("SELECT id, output FROM tasks WHERE output IS NOT NULL "
-                "AND status IN ('queued','running','cancel_requested','interrupted')"):
-            other = Path(row['output']).resolve()
-            if row['id'] != task_id and (destination == other or destination in other.parents or other in destination.parents):
+        destinations = [Path(path).resolve() for path in (output if isinstance(output, (list, tuple)) else [output])]
+        for row in connection.execute("SELECT tasks.id, task_outputs.path FROM tasks JOIN task_outputs "
+                "ON tasks.id=task_outputs.task_id WHERE status IN ('queued','running','cancel_requested','interrupted')"):
+            other = Path(row['path']).resolve()
+            if row['id'] != task_id and any(destination == other or destination in other.parents or other in destination.parents
+                                           for destination in destinations):
                 raise TaskConflict('该输出位置已有未完成任务。')
 
     def get(self, task_id):
@@ -247,7 +256,8 @@ class TaskQueue:
             if row['status'] not in ('interrupted', 'cancelled', 'failed'):
                 raise TaskConflict('只能恢复已中断、已取消或执行失败的任务。')
             self._check_capacity(connection)
-            self._check_output(connection, row['output'], task_id)
+            outputs = [entry[0] for entry in connection.execute('SELECT path FROM task_outputs WHERE task_id=?', (task_id,))]
+            self._check_output(connection, outputs, task_id)
             connection.execute("UPDATE tasks SET status='queued', error=NULL, updated=? WHERE id=?", (time.time(), task_id))
         self._wake.set()
         return self.get(task_id)

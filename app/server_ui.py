@@ -516,9 +516,9 @@ LEGACY_ORGANIZE_HTML = r"""<!DOCTYPE html>
                 .then(r => r.json())
                 .then(d => {
                     const data = d.data || {};
-                    if (d.code !== 200 && data.error) {
+                    if (d.code !== 200 || ['failed', 'cancelled', 'interrupted'].includes(data.status)) {
                         clearInterval(clusterTimer);
-                        showError(document.getElementById('cluster-scan-result'), d);
+                        showError(document.getElementById('cluster-scan-result'), {message: d.message || data.message || data.status});
                         return;
                     }
                     if (data.progress !== undefined && data.progress < 100) {

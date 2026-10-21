@@ -14,6 +14,8 @@
 """
 import os
 import json
+import hashlib
+import tempfile
 import cv2
 import numpy as np
 from sklearn.cluster import AgglomerativeClustering
@@ -22,6 +24,7 @@ from core_modules.tools.image_io import list_images, resize_max_side
 from core_modules.tools.logger import get_app_logger
 from core_modules.face_recognition.face_recognition import FaceRecognitionSystem
 from config.base import FACE_DB_STANDARD_SIZE
+from core_modules.organize.task_artifacts import atomic_json, copy_verified, fingerprint
 
 logger = get_app_logger()
 
@@ -72,6 +75,88 @@ class FaceClusterBuilder:
 
     # ---------- 扫描 + 聚类 ----------
 
+    def scan_image(self, path, min_face_area=DEFAULT_MIN_FACE_AREA, check=None):
+        """Extract bounded batches for one image; retain no decoded face arrays."""
+        img = cv2.imread(path)
+        if img is None:
+            raise ValueError('image_read_failed')
+        if max(img.shape[:2]) > 1920:
+            img = resize_max_side(img, 1920)
+        faces = self.system.detector._detect_single(img)
+        members, aligned_batch, pending = [], [], []
+        limit = min(32, max(1, int(getattr(self.system.extractor, 'max_batch_size', 32))))
+        def flush():
+            if not pending:
+                return
+            if check:
+                check()
+            feats = self.system.extractor.extract_features(aligned_batch)
+            if len(feats) != len(pending):
+                raise ValueError('face_feature_count_mismatch')
+            feats = self.system.extractor.l2_normalize(feats)
+            for member, feat in zip(pending, feats):
+                feat = np.asarray(feat, dtype=float).reshape(-1)
+                if not feat.size or not np.isfinite(feat).all() or np.linalg.norm(feat) <= 0:
+                    raise ValueError('invalid_face_feature')
+                members.append(dict(member, feat=feat.tolist()))
+            aligned_batch.clear()
+            pending.clear()
+        for index, face in enumerate(faces):
+            if check:
+                check()
+            if face.width * face.height < min_face_area or face.landmark is None:
+                continue
+            aligned = self.system.extractor.align_face(img, face.landmark)
+            if aligned is None:
+                raise ValueError('face_alignment_failed')
+            if aligned.shape[:2] != (FACE_DB_STANDARD_SIZE, FACE_DB_STANDARD_SIZE):
+                aligned = cv2.resize(aligned, (FACE_DB_STANDARD_SIZE, FACE_DB_STANDARD_SIZE))
+            pending.append({'image': os.path.basename(path), 'img_path': os.path.abspath(path),
+                            'face_index': index, 'bbox': [int(face.x), int(face.y), int(face.r), int(face.b)],
+                            'landmark': np.asarray(face.landmark, dtype=float).tolist()})
+            aligned_batch.append(aligned)
+            if len(pending) == limit:
+                flush()
+        flush()
+        return members
+
+    @staticmethod
+    def cluster_members(members, dist_threshold=DEFAULT_DIST_THRESHOLD):
+        """Shared average-linkage grouping without preview decoding or writes."""
+        if len(members) < 2:
+            return []
+        feats = np.asarray([member['feat'] for member in members], dtype=np.float32)
+        clustering = AgglomerativeClustering(n_clusters=None, distance_threshold=dist_threshold,
+                                             metric='cosine', linkage='average')
+        labels = clustering.fit_predict(feats)
+        clusters = []
+        for label in sorted(set(labels)):
+            indices = np.flatnonzero(labels == label)
+            count = len(indices)
+            cfeats = feats[indices].astype(np.float64)
+            # Algebraically equivalent to sum of the similarity matrix, O(n*d).
+            total = cfeats.sum(axis=0)
+            cohesion = float((total @ total - np.square(cfeats).sum()) / (count * (count - 1))) if count > 1 else 1.0
+            cmembers = [members[index] for index in indices]
+            clusters.append({'id': f'cluster-{label + 1:02d}', 'size': count,
+                             'cohesion': round(cohesion, 3),
+                             'suggest_manual': count < MIN_FACES_OK or cohesion < COHESION_OK,
+                             'status': 'pending', 'assigned_to': None, 'preview': None,
+                             'sample_images': list(dict.fromkeys(member['image'] for member in cmembers))[:10],
+                             'members': [{key: value for key, value in member.items() if key != 'feat'} for member in cmembers]})
+        return sorted(clusters, key=lambda cluster: -cluster['size'])
+
+    def aligned_member(self, member):
+        img = cv2.imread(member['img_path'])
+        if img is None:
+            raise ValueError('image_read_failed')
+        if max(img.shape[:2]) > 1920:
+            img = resize_max_side(img, 1920)
+        aligned = self.system.extractor.align_face(img, np.asarray(member['landmark'], dtype=float))
+        if aligned is None:
+            raise ValueError('face_alignment_failed')
+        return cv2.resize(aligned, (FACE_DB_STANDARD_SIZE, FACE_DB_STANDARD_SIZE))
+
     def scan(self, input_dir, output_dir, dist_threshold=DEFAULT_DIST_THRESHOLD,
              min_face_area=DEFAULT_MIN_FACE_AREA, progress_cb=None):
         """扫描目录并聚类。
@@ -94,89 +179,23 @@ class FaceClusterBuilder:
         if progress_cb:
             progress_cb(0, total, f'开始扫描 {total} 张图片')
 
-        members = []          # 全部有效人脸
+        members, errors = [], []
         for i, name in enumerate(names):
-            img = cv2.imread(os.path.join(input_dir, name))
-            if img is None:
-                continue
-            if max(img.shape[:2]) > 1920:
-                img = resize_max_side(img, 1920)
             try:
-                faces = self.system.detector._detect_single(img)
-            except Exception as e:
-                logger.warning(f"检测失败 {name}: {e}")
-                continue
-            for f in faces:
-                if f.width * f.height < min_face_area or f.landmark is None:
-                    continue
-                aligned = self.system.extractor.align_face(img, f.landmark)
-                if aligned is None:
-                    continue
-                if aligned.shape[0] != FACE_DB_STANDARD_SIZE:
-                    aligned = cv2.resize(aligned, (FACE_DB_STANDARD_SIZE, FACE_DB_STANDARD_SIZE))
-                feats = self.system.extractor.extract_features([aligned])
-                if feats.shape[0] != 1:
-                    continue
-                fv = self.system.extractor.l2_normalize([feats[0]])[0]
-                members.append({
-                    'image': name, 'img_path': os.path.join(input_dir, name),
-                    'bbox': [int(f.x), int(f.y), int(f.r), int(f.b)],
-                    'landmark': np.asarray(f.landmark, dtype=float).tolist(),
-                    'feat': fv, 'aligned': aligned,
-                })
+                members.extend(self.scan_image(os.path.join(input_dir, name), min_face_area))
+            except Exception as exc:
+                errors.append({'image': name, 'error': str(exc)})
+                logger.warning(f'人脸提取失败 {name}: {exc}')
             if progress_cb:
                 progress_cb(i + 1, total, f'已处理 {i + 1}/{total}')
-
-        if len(members) < 2:
-            state = {'input_dir': input_dir, 'output_dir': output_dir,
-                     'n_images': total, 'n_faces': len(members), 'clusters': []}
-            self._save_state(output_dir, state)
-            if progress_cb:
-                progress_cb(total, total, '有效人脸不足，无簇生成')
-            return state
-
-        # ---------- 层次聚类 ----------
-        feats = np.array([m['feat'] for m in members])
-        clustering = AgglomerativeClustering(
-            n_clusters=None, distance_threshold=dist_threshold,
-            metric='cosine', linkage='average')
-        labels = clustering.fit_predict(feats)
-
-        # ---------- 组簇 ----------
-        clusters = []
-        for label in sorted(set(labels)):
-            idx = [i for i, l in enumerate(labels) if l == label]
-            cmembers = [members[i] for i in idx]
-            cfeats = feats[idx]
-            # 内聚度：簇内平均两两余弦
-            sim_mat = cfeats @ cfeats.T
-            n = len(idx)
-            cohesion = float((sim_mat.sum() - np.trace(sim_mat)) / (n * (n - 1))) if n > 1 else 1.0
-            suggest_manual = n < MIN_FACES_OK or cohesion < COHESION_OK
-
-            cid = f'cluster-{label + 1:02d}'
-            aligned_faces = [m['aligned'] for m in cmembers]
-            preview = _make_face_collage(
-                aligned_faces, os.path.join(preview_dir, f'{cid}.jpg'))
-            clusters.append({
-                'id': cid,
-                'size': n,
-                'cohesion': round(cohesion, 3),
-                'suggest_manual': suggest_manual,
-                'status': 'pending',           # pending / assigned / ignored
-                'assigned_to': None,
-                'preview': preview,
-                'sample_images': list(dict.fromkeys(m['image'] for m in cmembers))[:10],
-                'members': [{'image': m['image'], 'img_path': m['img_path'],
-                             'bbox': m['bbox'], 'landmark': m['landmark']}
-                            for m in cmembers],
-            })
-
-        clusters.sort(key=lambda c: -c['size'])
+        clusters = self.cluster_members(members, dist_threshold)
+        for cluster in clusters:
+            faces = [self.aligned_member(member) for member in cluster['members'][:CLUSTER_COLLAGE_MAX]]
+            cluster['preview'] = _make_face_collage(faces, os.path.join(preview_dir, cluster['id'] + '.jpg'))
         state = {'input_dir': input_dir, 'output_dir': output_dir,
                  'dist_threshold': dist_threshold, 'min_face_area': min_face_area,
                  'n_images': total, 'n_faces': len(members),
-                 'clusters': clusters}
+                 'clusters': clusters, 'failed': len(errors), 'errors': errors}
         self._save_state(output_dir, state)
         if progress_cb:
             n_manual = sum(1 for c in clusters if c['suggest_manual'])
@@ -204,16 +223,29 @@ class FaceClusterBuilder:
         if cluster is None:
             raise ValueError(f'cluster not found: {cluster_id}')
 
+        if not person_name or person_name in ('.', '..') or any(char in person_name for char in ('/', '\\', '\x00')):
+            raise ValueError('person_name must be a single directory name')
+        from core_modules.organize.task_versions import model_identity
+        from core_modules.organize.task_queue import encode
+        current_model = json.loads(encode(model_identity(self.system)))
+        if state.get('execution_contract') and state['execution_contract']['face'] != current_model:
+            raise ValueError('face_model_changed_since_scan')
+        hashes = state.get('input_hashes', {})
+        for member in cluster['members']:
+            if member['img_path'] in hashes and fingerprint(member['img_path']) != hashes[member['img_path']]:
+                raise ValueError('source_content_changed_since_scan')
+
         person_dir = os.path.join(db_root, person_name)
+        from pathlib import Path
+        if Path(person_dir).is_symlink() or any(parent.is_symlink() for parent in Path(person_dir).parents):
+            raise ValueError('output_directory_symlink')
         os.makedirs(person_dir, exist_ok=True)
 
         saved = skipped = 0
         for m in cluster['members']:
             stem = os.path.splitext(os.path.basename(m['image']))[0]
-            out_path = os.path.join(person_dir, f'{stem}_face.jpg')
-            if os.path.exists(out_path):
-                skipped += 1
-                continue
+            suffix = f"_{m['face_index']:02d}_face.jpg" if 'face_index' in m else '_face.jpg'
+            out_path = os.path.join(person_dir, stem + suffix)
             img = cv2.imread(m['img_path'])
             if img is None:
                 skipped += 1
@@ -228,8 +260,18 @@ class FaceClusterBuilder:
                 continue
             if aligned.shape[0] != FACE_DB_STANDARD_SIZE:
                 aligned = cv2.resize(aligned, (FACE_DB_STANDARD_SIZE, FACE_DB_STANDARD_SIZE))
-            cv2.imwrite(out_path, aligned)
-            saved += 1
+            if m['img_path'] in hashes and fingerprint(m['img_path']) != hashes[m['img_path']]:
+                raise ValueError('source_content_changed_during_assignment')
+            ok, encoded = cv2.imencode('.jpg', aligned)
+            if not ok:
+                raise ValueError('face_encoding_failed')
+            with tempfile.NamedTemporaryFile() as temporary:
+                data = encoded.tobytes()
+                temporary.write(data)
+                temporary.flush()
+                new = copy_verified(temporary.name, out_path, hashlib.sha256(data).hexdigest())
+            saved += int(new)
+            skipped += int(not new)
 
         cluster['status'] = 'assigned'
         cluster['assigned_to'] = person_name
@@ -257,8 +299,7 @@ class FaceClusterBuilder:
             {k: v for k, v in c.items() if k not in ('feat', 'aligned')}
             for c in state.get('clusters', [])
         ]
-        with open(os.path.join(output_dir, STATE_FILE), 'w', encoding='utf-8') as f:
-            json.dump(slim, f, ensure_ascii=False, indent=2)
+        atomic_json(os.path.join(output_dir, STATE_FILE), slim)
 
     @staticmethod
     def load_state(state_path):

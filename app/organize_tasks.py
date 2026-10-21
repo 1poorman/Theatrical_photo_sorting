@@ -10,12 +10,114 @@ from fastapi.responses import JSONResponse
 from core_modules.organize.review_store import atomic_rows
 from core_modules.organize.task_queue import TaskQueue, TaskConflict, TaskQueueFull, TaskUnavailable, BUSINESS_LOCK
 from core_modules.tools.image_io import list_images
-from core_modules.organize.task_artifacts import fingerprint, gallery_hashes, file_state
+from core_modules.organize.task_artifacts import fingerprint, gallery_hashes, file_state, face_database_images
 
 router = APIRouter(prefix='/api/organize/tasks')
 TASK_ROOT = Path(os.environ.get('TRANS_TASK_DIR', 'outputs/organize_tasks'))
 _manager = None
 _manager_lock = threading.Lock()
+
+
+def prepare_face_database(params, defer_hash=False):
+    if set(params) - {'organized_dirs', 'db_root', 'max_anchors', 'dry_run', 'output_dir'}:
+        raise ValueError('人脸建库参数含未知字段')
+    dirs = params.get('organized_dirs')
+    if isinstance(dirs, str):
+        dirs = [value.strip() for value in dirs.split(',') if value.strip()]
+    if not isinstance(dirs, list) or not dirs or any(not isinstance(path, str) or not os.path.isdir(path) for path in dirs):
+        raise ValueError('organized_dirs 必须包含现有照片目录')
+    if not isinstance(params.get('db_root'), str) or not params['db_root']:
+        raise ValueError('db_root 必须为人脸库目录')
+    if type(params.get('dry_run', False)) is not bool:
+        raise ValueError('dry_run 必须为布尔值')
+    maximum = params.get('max_anchors', 8)
+    if type(maximum) is not int or not 1 <= maximum <= 1000:
+        raise ValueError('max_anchors 必须为 1–1000 的整数')
+    root = Path(params['db_root']).resolve()
+    dirs = list(dict.fromkeys(str(Path(path).resolve()) for path in dirs))
+    if any(root == Path(path) or root in Path(path).parents or Path(path) in root.parents for path in dirs):
+        raise ValueError('人脸库必须位于照片目录之外')
+    output = params.get('output_dir')
+    if output is not None:
+        if not isinstance(output, str) or not output:
+            raise ValueError('output_dir 必须为独立报告目录')
+        output = str(Path(output).resolve())
+        if any(Path(output) == Path(path) or Path(output) in Path(path).parents or Path(path) in Path(output).parents
+               for path in dirs + [str(root)]):
+            raise ValueError('建库报告必须位于原图和人脸库目录之外')
+    if root.exists() and not root.is_dir():
+        raise ValueError('db_root 必须为目录')
+    items, counts, gallery = [], {}, []
+    if root.exists():
+        for path in face_database_images(root):
+            relative = path.relative_to(root)
+            gallery.append(str(path))
+            if len(relative.parts) == 2:
+                person = relative.parts[0]
+                if path.suffix.lower() in ('.jpg', '.jpeg', '.png'):
+                    counts[person] = counts.get(person, 0) + 1
+                items.append({'image': str(path), 'stage': 'gallery', 'person': person})
+            else:
+                # Legacy matching reads only direct actor images. Still bind
+                # other images to the manifest so changes are detected.
+                items.append({'image': str(path), 'stage': 'gallery_snapshot'})
+    photos = []
+    for directory in dirs:
+        for name in list_images(directory):
+            path = str(Path(directory, name).resolve())
+            if Path(directory) not in Path(path).parents:
+                raise ValueError('照片符号链接不能指向输入目录之外')
+            if path not in photos:
+                photos.append(path)
+                items.append({'image': path, 'stage': 'anchors', 'done_style': '整理完成' in directory})
+    if not photos:
+        raise ValueError('照片目录中没有图片')
+    for item in items:
+        item.update({'file_state': file_state(item['image'])} if defer_hash else {'sha256': fingerprint(item['image'])})
+    return dict(params, organized_dirs=dirs, db_root=str(root), max_anchors=maximum,
+                dry_run=params.get('dry_run', False), output_dir=output, photo_paths=photos,
+                gallery_paths=gallery, gallery_counts=counts,
+                input_hashes={item['image']: item.get('sha256') for item in items}), items
+
+
+def face_database_handler(params):
+    import main
+    from core_modules.organize.face_database_task import FaceDatabaseTask
+    if main.srv.face_recognition_model is None:
+        raise ValueError('Face recognition model not initialized')
+    return FaceDatabaseTask(params, main.srv.face_recognition_model)
+
+
+def prepare_face_cluster(params, defer_hash=False):
+    if set(params) - {'input_dir', 'output_dir', 'dist_threshold', 'min_face_area'}:
+        raise ValueError('聚类参数含未知字段')
+    if not isinstance(params.get('input_dir'), str) or not os.path.isdir(params['input_dir']):
+        raise ValueError('input_dir 必须为现有目录')
+    if not isinstance(params.get('output_dir'), str) or not params['output_dir']:
+        raise ValueError('output_dir 必须为独立输出目录')
+    threshold, area = params.get('dist_threshold', .5), params.get('min_face_area', 1600)
+    if type(threshold) not in (int, float) or not 0 < threshold <= 2:
+        raise ValueError('dist_threshold 必须在 (0, 2]')
+    if type(area) is not int or not 1 <= area <= 100000000:
+        raise ValueError('min_face_area 必须为正整数')
+    source, output = Path(params['input_dir']).resolve(), Path(params['output_dir']).resolve()
+    if source == output or source in output.parents or output in source.parents:
+        raise ValueError('聚类输出必须位于原图目录之外')
+    images = [str((source / name).resolve()) for name in list_images(source)]
+    if not images:
+        raise ValueError('输入目录中没有图片')
+    items = [{'image': image, 'stage': 'faces',
+              **({'file_state': file_state(image)} if defer_hash else {'sha256': fingerprint(image)})} for image in images]
+    return dict(params, input_dir=str(source), output_dir=str(output), dist_threshold=threshold,
+                min_face_area=area, input_hashes={item['image']: item.get('sha256') for item in items}), items
+
+
+def face_cluster_handler(params):
+    import main
+    from core_modules.organize.face_cluster_task import FaceClusterTask
+    if main.srv.face_recognition_model is None:
+        raise ValueError('Face recognition model not initialized')
+    return FaceClusterTask(params, main.srv.face_recognition_model)
 
 
 def prepare_organize(params, defer_hash=False):
@@ -109,7 +211,8 @@ def execute_staged(kind, params):
     """Legacy sync routes share task handlers without starting a second worker."""
     from core_modules.organize.task_queue import encode
     preparer, factory = {'organize': (prepare_organize, organize_handler),
-                         'knowledge': (prepare_knowledge, knowledge_handler)}[kind]
+                         'knowledge': (prepare_knowledge, knowledge_handler),
+                         'face_database': (prepare_face_database, face_database_handler)}[kind]
     prepared, pending = preparer(params)
     class InlineContext:
         def __init__(self):
@@ -252,7 +355,8 @@ def execute_scene(params):
 
 def deferred_handler(kind, params):
     if '_manifest_items' not in params:
-        return {'scene_reason': scene_handler, 'organize': organize_handler, 'knowledge': knowledge_handler}[kind](params)
+        return {'scene_reason': scene_handler, 'organize': organize_handler, 'knowledge': knowledge_handler,
+                'face_cluster': face_cluster_handler, 'face_database': face_database_handler}[kind](params)
     return PreparedTask(kind, params)
 
 
@@ -271,7 +375,8 @@ class PreparedTask:
 
     def _rows(self):
         rows = []
-        stages = {'organize': 'quality', 'knowledge': 'media', 'scene_reason': None}
+        stages = {'organize': 'quality', 'knowledge': 'media', 'scene_reason': None,
+                  'face_cluster': 'faces', 'face_database': 'anchors'}
         for row in self.context.results():
             if row.get('stage') != 'fingerprint':
                 rows.append(row)
@@ -287,7 +392,8 @@ class PreparedTask:
         if plan is None:
             raise ValueError('input manifest not committed')
         prepared['input_hashes'] = plan['hashes']
-        factory = {'scene_reason': scene_handler, 'organize': organize_handler, 'knowledge': knowledge_handler}[self.kind]
+        factory = {'scene_reason': scene_handler, 'organize': organize_handler, 'knowledge': knowledge_handler,
+                   'face_cluster': face_cluster_handler, 'face_database': face_database_handler}[self.kind]
         self.delegate = factory(prepared)
         if hasattr(self.delegate, 'advance'):
             outer = self
@@ -333,7 +439,7 @@ def manager():
     with _manager_lock:
         if _manager is None:
             _manager = TaskQueue(TASK_ROOT, {kind: (lambda params, kind=kind: deferred_handler(kind, params))
-                                            for kind in ('scene_reason', 'organize', 'knowledge')},
+                                            for kind in ('scene_reason', 'organize', 'knowledge', 'face_cluster', 'face_database')},
                                  capacity=int(os.environ.get('TRANS_TASK_CAPACITY', '8')))
         return _manager
 
@@ -362,10 +468,11 @@ def response(operation, status=200):
 @router.post('')
 def create_task(body: dict = Body(...)):
     def create():
-        preparers = {'scene_reason': prepare_scene, 'organize': prepare_organize, 'knowledge': prepare_knowledge}
+        preparers = {'scene_reason': prepare_scene, 'organize': prepare_organize, 'knowledge': prepare_knowledge,
+                     'face_cluster': prepare_face_cluster, 'face_database': prepare_face_database}
         kind = body.get('kind')
         if set(body) - {'kind', 'params', 'idempotency_key'} or kind not in preparers:
-            raise ValueError('后台任务支持 scene_reason、organize、knowledge')
+            raise ValueError('后台任务支持 scene_reason、organize、knowledge、face_cluster、face_database')
         params = body.get('params')
         if not isinstance(params, dict):
             raise ValueError('params 必须为对象')
@@ -375,7 +482,8 @@ def create_task(body: dict = Body(...)):
         prepared, items = preparers[kind](params, defer_hash=True)
         prepared['_manifest_items'] = items
         items = [dict(item, stage='fingerprint') for item in items]
-        output = prepared.get('output_file') or prepared['output_dir']
+        output = ([prepared['db_root']] + ([prepared['output_dir']] if prepared.get('output_dir') else [])) \
+            if kind == 'face_database' else prepared.get('output_file') or prepared['output_dir']
         task, created = manager().submit(kind, prepared, items, key, output)
         return dict(task, created=created)
     return response(create, 202)

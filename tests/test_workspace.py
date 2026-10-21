@@ -191,6 +191,112 @@ class WorkspaceTest(unittest.TestCase):
         self.assertEqual(final['result']['failed'], 0)
         self.assertTrue(Path(final['result']['report_path']).is_file())
 
+    def test_durable_cluster_legacy_api_restart_and_human_actions(self):
+        from types import SimpleNamespace
+        face = SimpleNamespace(x=0, y=0, r=99, b=99, width=100, height=100, landmark=np.zeros((5, 2)))
+        system = SimpleNamespace(
+            detector=SimpleNamespace(model_signature='api-detector', _detect_single=lambda img: [face]),
+            extractor=SimpleNamespace(model_signature='api-extractor',
+                align_face=lambda img, landmark: np.full((160, 160, 3), img[0, 0], dtype=np.uint8),
+                extract_features=lambda faces: np.tile(np.array([1., 0.]), (len(faces), 1)),
+                l2_normalize=lambda values: np.asarray(values)))
+        with patch.object(main.srv, 'face_recognition_model', system):
+            response = self.client.post('/api/organize/face_cluster/scan', data={
+                'input_dir': str(self.photos), 'output_dir': str(self.root / 'cluster-output')})
+            self.assertEqual(response.status_code, 200, response.text)
+            task_id = response.json()['data']['task_id']
+            final = self.wait_task(task_id)
+            self.assertEqual(final['status'], 'completed')
+            self.assertNotIn(task_id, main.srv.progress_tracker)
+            organize_tasks.shutdown()
+            progress = self.client.get(f'/api/progress/{task_id}')
+            self.assertEqual(progress.json()['status'], 'completed')
+            result = self.client.get('/api/organize/face_cluster/result', params={'task_id': task_id}).json()['data']
+            cluster_id = result['clusters'][0]['id']
+            self.post('/api/organize/face_cluster/ignore', task_id=task_id, cluster_id=cluster_id)
+            restored = self.client.get('/api/organize/face_cluster/result', params={'task_id': task_id}).json()['data']
+            self.assertEqual(restored['clusters'][0]['status'], 'ignored')
+            self.post('/api/organize/face_cluster/ignore', task_id=task_id, cluster_id=cluster_id, ignored='false')
+            assigned = self.post('/api/organize/face_cluster/assign', task_id=task_id, cluster_id=cluster_id,
+                                 person='演员（饰角色）', db_root=self.root / 'gallery')
+            self.assertEqual(assigned['saved'], 3)
+        self.assertEqual(self.client.get('/api/progress/missing-task').status_code, 404)
+
+    def test_background_face_database_refresh_cancel_resume_and_legacy_dry_run(self):
+        from core_modules.organize.face_database_task import FaceDatabaseTask
+        from test_face_database_tasks import FaceDatabaseTasksTests
+        fixture = FaceDatabaseTasksTests()
+        fixture.setUp()
+        self.addCleanup(fixture.doCleanups)
+        entered, release = threading.Event(), threading.Event()
+        original = FaceDatabaseTask.process
+        calls = []
+        def process(handler, item):
+            result = original(handler, item)
+            calls.append(item['image'])
+            if len(calls) == 1:
+                entered.set()
+                release.wait(5)
+            return result
+        body = {'kind': 'face_database', 'params': {
+            'organized_dirs': str(fixture.photos), 'db_root': str(fixture.gallery),
+            'output_dir': str(fixture.report)}}
+        with patch.object(main.srv, 'face_recognition_model', fixture.system), patch.object(FaceDatabaseTask, 'process', process):
+            try:
+                response = self.client.post('/api/organize/tasks', json=body)
+                self.assertEqual(response.status_code, 202, response.text)
+                task_id = response.json()['data']['task_id']
+                self.assertTrue(entered.wait(5))
+                self.assertEqual(self.client.get('/api/health').status_code, 200)
+                self.assertEqual(self.client.get('/api/organize/tasks/' + task_id).json()['data']['kind'], 'face_database')
+                # A separate gallery must still conflict on the report root.
+                other = dict(body, params=dict(body['params'], db_root=str(self.root / 'other-gallery')))
+                self.assertEqual(self.client.post('/api/organize/tasks', json=other).status_code, 409)
+                self.client.post(f'/api/organize/tasks/{task_id}/cancel')
+            finally:
+                release.set()
+            self.assertEqual(self.wait_task(task_id)['status'], 'cancelled')
+            self.assertFalse(fixture.gallery.exists())
+            organize_tasks.shutdown()
+            self.assertEqual(self.client.post(f'/api/organize/tasks/{task_id}/resume').status_code, 202)
+            final = self.wait_task(task_id)
+            self.assertEqual(final['status'], 'completed', final)
+            self.assertEqual(final['result']['added'], 2)
+            self.assertEqual(len(calls), 3)
+            self.assertIsNotNone(final['execution_contract'])
+            downloaded = self.client.get('/api/workspace/artifact', params={
+                'output_dir': str(fixture.report), 'name': 'face_database_report.json'})
+            self.assertEqual(downloaded.status_code, 200)
+            self.assertEqual(downloaded.json()['added'], 2)
+            legacy = self.post('/api/organize/build_face_database', organized_dirs=fixture.photos,
+                               db_root=self.root / 'legacy-dry-gallery', dry_run='true')
+            self.assertEqual(legacy['added'], 2)
+            self.assertFalse((self.root / 'legacy-dry-gallery').exists())
+
+    def test_legacy_cluster_result_waits_for_publication_even_at_full_item_progress(self):
+        from core_modules.organize.face_cluster_task import FaceClusterTask
+        entered, release = threading.Event(), threading.Event()
+        original = FaceClusterTask.finish
+        def finish(handler, rows):
+            entered.set()
+            release.wait(5)
+            return original(handler, rows)
+        with patch.object(main.srv, 'face_recognition_model', object()), \
+                patch('core_modules.organize.face_cluster.FaceClusterBuilder.scan_image', return_value=[]), \
+                patch.object(FaceClusterTask, 'finish', finish):
+            try:
+                response = self.client.post('/api/organize/tasks', json={'kind': 'face_cluster', 'params': {
+                    'input_dir': str(self.photos), 'output_dir': str(self.root / 'waiting-cluster')}})
+                task_id = response.json()['data']['task_id']
+                self.assertTrue(entered.wait(5))
+                result = self.client.get('/api/organize/face_cluster/result', params={'task_id': task_id}).json()['data']
+                self.assertEqual(result['status'], 'running')
+                self.assertLess(result['progress'], 100)
+                self.assertNotIn('clusters', result)
+            finally:
+                release.set()
+            self.assertEqual(self.wait_task(task_id)['status'], 'completed')
+
     def test_listing_matches_pipeline_scope_and_handles_metadata(self):
         child = self.photos / 'nested'
         child.mkdir()
@@ -320,7 +426,7 @@ class WorkspaceTest(unittest.TestCase):
         response = self.client.get('/api/workspace/artifact', params={'output_dir': str(self.root), 'name': 'scene_labels.json'})
         self.assertEqual(response.status_code, 200)
         self.assertIn('attachment', response.headers['content-disposition'])
-        for name in ['.env', '../scene_labels.json', 'entities.json']:
+        for name in ['.env', '../scene_labels.json', 'entities.json', '../face_database_report.json']:
             self.assertEqual(self.client.get('/api/workspace/artifact', params={'output_dir': str(self.root), 'name': name}).status_code, 403)
         (self.photos / 'scene_labels.json').symlink_to(self.root / 'scene_labels.json')
         self.assertEqual(self.client.get('/api/workspace/artifact', params={'output_dir': str(self.photos), 'name': 'scene_labels.json'}).status_code, 403)

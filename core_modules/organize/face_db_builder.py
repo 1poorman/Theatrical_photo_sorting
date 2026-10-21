@@ -113,6 +113,33 @@ class FaceDBBuilder:
                     best_s, best_p = s, pdir
         return best_p, best_s
 
+    def propagation_choice(self, people, features, counts, library):
+        """Shared matching/elimination rule for legacy and checkpointed builds."""
+        if len(features) != len(people):
+            return None
+        person_dirs = [self._person_dir(actor, role) for actor, role in people
+                       if counts.get(self._person_dir(actor, role), 0) < self.max_anchors]
+        if not person_dirs:
+            return None
+        matched_persons, matched_faces = set(), set()
+        for index, feature in enumerate(features):
+            if feature is None:
+                continue
+            person, score = self._match_face(feature, library, allowed_persons=person_dirs)
+            if person is not None and score >= ANCHOR_MATCH_SIM and person not in matched_persons:
+                matched_persons.add(person)
+                matched_faces.add(index)
+        remaining = [person for person in person_dirs if person not in matched_persons]
+        faces = [index for index in range(len(features)) if index not in matched_faces]
+        if len(remaining) == len(faces) == 1 and features[faces[0]] is not None:
+            return faces[0], remaining[0]
+        return None
+
+    @staticmethod
+    def anchor_consistent(feature, person, library):
+        return not library.get(person) or max(float(np.dot(feature, old))
+                    for old, _ in library[person]) >= ANCHOR_CONSISTENCY_SIM
+
     # ---------- 第 1 轮：单人归属 ----------
 
     def _round_single(self, entries, counts, stats, dry_run):
@@ -185,29 +212,13 @@ class FaceDBBuilder:
                 if len(faces) != len(people):
                     continue
 
-                # 逐脸比对库
-                matched_persons = set()
-                matched_face_idx = set()
-                face_feats = []
-                for fi, f in enumerate(faces):
-                    feat, _ = self._face_feature(img, f)
-                    face_feats.append(feat)
-                    if feat is None:
-                        continue
-                    p, s = self._match_face(feat, library, allowed_persons=person_dirs)
-                    if p is not None and s >= ANCHOR_MATCH_SIM and p not in matched_persons:
-                        matched_persons.add(p)
-                        matched_face_idx.add(fi)
-
-                unmatched_persons = [p for p in person_dirs if p not in matched_persons]
-                unmatched_faces = [i for i in range(len(faces)) if i not in matched_face_idx]
-                # 唯一未匹配演员 + 唯一未匹配脸 → 直接归属
-                if len(unmatched_persons) == 1 and len(unmatched_faces) == 1:
-                    fi = unmatched_faces[0]
-                    if face_feats[fi] is not None:
-                        if self._save_anchor(img, faces[fi], unmatched_persons[0],
-                                             name, counts, stats, dry_run, library=library):
-                            propagated += 1
+                features = [self._face_feature(img, face)[0] for face in faces]
+                choice = self.propagation_choice(people, features, counts, library)
+                if choice is not None:
+                    index, person = choice
+                    if self._save_anchor(img, faces[index], person, name, counts, stats,
+                                         dry_run, library=library):
+                        propagated += 1
             logger.info(f"锚定传播第 {rnd + 1} 轮: 新增 {propagated} 张")
             if propagated == 0:
                 break

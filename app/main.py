@@ -135,11 +135,15 @@ async def serve_file(path: str):
 
 
 @app.get("/api/progress/{task_id}")
-async def get_progress(task_id: str):
+def get_progress(task_id: str):
     """查询任务进度"""
     if task_id in srv.progress_tracker:
         return JSONResponse(srv.progress_tracker[task_id])
-    else:
+    try:
+        from app.organize_tasks import manager
+        task = manager().get(task_id)
+        return JSONResponse(dict(task, message=task['error'] or task['status']))
+    except KeyError:
         return JSONResponse(status_code=404, content={"status": "not_found"})
 
 
@@ -559,10 +563,9 @@ def organize_build_face_database(organized_dirs: str = Form(...),
             if not os.path.exists(d):
                 return JSONResponse(status_code=400, content=srv.get_error(message=f"Directory does not exist: {d}"))
 
-        from core_modules.organize.face_db_builder import FaceDBBuilder
-        builder = FaceDBBuilder(srv.face_recognition_model, db_root,
-                                max_anchors_per_person=max_anchors)
-        stats = builder.build_from_organized(dirs, dry_run=dry_run)
+        from app.organize_tasks import execute_staged
+        stats = execute_staged('face_database', {'organized_dirs': dirs, 'db_root': db_root,
+                               'max_anchors': max_anchors, 'dry_run': dry_run})
         return JSONResponse({
             "code": 200,
             "message": "Face database built successfully",
@@ -649,7 +652,7 @@ def _run_face_cluster_scan(task_id, input_dir, output_dir,
 
 
 @app.post("/api/organize/face_cluster/scan")
-async def face_cluster_scan(input_dir: str = Form(...),
+def face_cluster_scan(input_dir: str = Form(...),
                             output_dir: str = Form(...),
                             dist_threshold: float = Form(0.5),
                             min_face_area: int = Form(1600)):
@@ -660,42 +663,47 @@ async def face_cluster_scan(input_dir: str = Form(...),
     - dist_threshold: 余弦距离阈值（默认 0.5，越大簇越少）
     - min_face_area: 参与聚类的最小人脸面积 px²（默认 1600，过滤远景龙套）
     """
-    import threading
-    import uuid
-    try:
-        if srv.face_recognition_model is None:
-            return JSONResponse(status_code=500, content=srv.get_error(message="Face recognition model not initialized"))
-        if not os.path.exists(input_dir):
-            return JSONResponse(status_code=400, content=srv.get_error(message=f"Input directory does not exist: {input_dir}"))
-        os.makedirs(output_dir, exist_ok=True)
+    from app.organize_tasks import create_task
+    response = create_task({'kind': 'face_cluster', 'params': {'input_dir': input_dir,
+                           'output_dir': output_dir, 'dist_threshold': dist_threshold,
+                           'min_face_area': min_face_area}})
+    if response.status_code == 202:
+        response.status_code = 200
+    return response
 
-        task_id = f"face_cluster_{uuid.uuid4().hex[:8]}"
-        srv.progress_tracker[task_id] = {"progress": 0, "message": "排队中",
-                                         "status": "running", "type": "face_cluster_scan"}
-        t = threading.Thread(
-            target=_run_face_cluster_scan,
-            args=(task_id, input_dir, output_dir, dist_threshold, min_face_area),
-            daemon=True)
-        t.start()
-        return JSONResponse({"code": 200, "message": "Scan started",
-                             "data": {"task_id": task_id}})
-    except Exception as e:
-        return JSONResponse(status_code=500, content=srv.get_error(message=f"Error starting face cluster scan: {str(e)}"))
+
+def _face_cluster_task(task_id):
+    """Read durable scans while preserving old process-local task results."""
+    task = srv.progress_tracker.get(task_id)
+    if task is not None:
+        return task
+    from app.organize_tasks import manager
+    try:
+        task = manager().get(task_id)
+    except KeyError:
+        return None
+    if task['kind'] != 'face_cluster':
+        return None
+    if task['status'] not in ('completed', 'completed_with_errors'):
+        task['result'] = None
+        task['progress'] = min(task['progress'], 99)
+    return task
 
 
 @app.get("/api/organize/face_cluster/result")
-async def face_cluster_result(task_id: str):
+def face_cluster_result(task_id: str):
     """聚类结果（扫描完成后调用；按簇大小降序，含预览路径与分诊标记）"""
     try:
-        task = srv.progress_tracker.get(task_id)
+        task = _face_cluster_task(task_id)
         if task is None:
             return JSONResponse(status_code=404, content=srv.get_error(message="Task not found"))
         if task.get("error"):
             return JSONResponse(status_code=500, content=srv.get_error(message=task["error"]))
-        if task.get("progress", 0) < 100 or "result" not in task:
+        if not task.get('result'):
             return JSONResponse({"code": 200, "message": "Scan in progress",
                                  "data": {"progress": task.get("progress"),
-                                          "message": task.get("message")}})
+                                          "message": task.get("message") or task.get('status'),
+                                          "status": task.get('status')}})
         from core_modules.organize.face_cluster import FaceClusterBuilder
         state = FaceClusterBuilder.load_state(task["result"]["state_path"])
         clusters = [{
@@ -711,6 +719,7 @@ async def face_cluster_result(task_id: str):
                 "task_id": task_id, "input_dir": state["input_dir"],
                 "state_path": task["result"]["state_path"],
                 "n_images": state["n_images"], "n_faces": state["n_faces"],
+                "failed": state.get('failed', 0), "errors": state.get('errors', []),
                 "n_suggest_manual": sum(1 for c in clusters if c["suggest_manual"]),
                 "clusters": clusters,
             },
@@ -720,7 +729,8 @@ async def face_cluster_result(task_id: str):
 
 
 @app.post("/api/organize/face_cluster/assign")
-async def face_cluster_assign(task_id: str = Form(...),
+@serialized
+def face_cluster_assign(task_id: str = Form(...),
                               cluster_id: str = Form(...),
                               person: str = Form(...),
                               db_root: str = Form(srv.FACE_DATABASE_ROOT)):
@@ -732,8 +742,8 @@ async def face_cluster_assign(task_id: str = Form(...),
     - db_root: 人脸库根目录（默认 data/face_database）
     """
     try:
-        task = srv.progress_tracker.get(task_id)
-        if task is None or "result" not in task:
+        task = _face_cluster_task(task_id)
+        if task is None or not task.get('result'):
             return JSONResponse(status_code=404, content=srv.get_error(message="Scan task not found or not finished"))
         person = person.strip()
         if not person:
@@ -751,13 +761,14 @@ async def face_cluster_assign(task_id: str = Form(...),
 
 
 @app.post("/api/organize/face_cluster/ignore")
-async def face_cluster_ignore(task_id: str = Form(...),
+@serialized
+def face_cluster_ignore(task_id: str = Form(...),
                               cluster_id: str = Form(...),
                               ignored: bool = Form(True)):
     """忽略/恢复簇（误聚类或龙套簇可忽略，不参与建库）"""
     try:
-        task = srv.progress_tracker.get(task_id)
-        if task is None or "result" not in task:
+        task = _face_cluster_task(task_id)
+        if task is None or not task.get('result'):
             return JSONResponse(status_code=404, content=srv.get_error(message="Scan task not found or not finished"))
         from core_modules.organize.face_cluster import FaceClusterBuilder
         builder = FaceClusterBuilder(srv.face_recognition_model)

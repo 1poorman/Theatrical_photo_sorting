@@ -33,6 +33,8 @@ tests/*
 !tests/test_review_store.py
 !tests/test_core_upgrade_tasks.py
 !tests/test_organize_tasks.py
+!tests/test_face_cluster_tasks.py
+!tests/test_face_database_tasks.py
 
 
 .env 
