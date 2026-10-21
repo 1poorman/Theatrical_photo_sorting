@@ -29,6 +29,8 @@ from fastapi.responses import JSONResponse, FileResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 import server as srv
+from config.base import FEATURE_CACHE_DIR
+from core_modules.organize.task_queue import serialized
 
 from core_modules.tools.logger import get_app_logger, StepTimer, log_key_action
 from core_modules.image_search import (
@@ -45,6 +47,13 @@ app = FastAPI(
 
 from app.workspace_api import router as workspace_router
 app.include_router(workspace_router)
+from app.organize_tasks import router as task_router, shutdown as shutdown_tasks
+app.include_router(task_router)
+
+
+@app.on_event('shutdown')
+def stop_organize_tasks():
+    shutdown_tasks()
 
 # CORS 中间件
 app.add_middleware(
@@ -758,7 +767,8 @@ async def face_cluster_ignore(task_id: str = Form(...),
     except Exception as e:
         return JSONResponse(status_code=500, content=srv.get_error(message=f"Error ignoring cluster: {str(e)}"))
 @app.post("/api/organize/run")
-async def organize_run(input_dir: str = Form(...),
+@serialized
+def organize_run(input_dir: str = Form(...),
                        output_dir: str = Form(...),
                        keep_per_bucket: int = Form(2),
                        gap_seconds: int = Form(300),
@@ -784,12 +794,14 @@ async def organize_run(input_dir: str = Form(...),
         if not os.path.exists(db_root):
             return JSONResponse(status_code=400, content=srv.get_error(message=f"Face database root does not exist: {db_root}"))
 
-        embedder, role_clf = _get_organize_models(classify_role)
+        role_clf = _get_organize_models(True)[1] if classify_role else None
+        embedder = _get_scene_embedder()
         from core_modules.organize.smart_organizer import SmartOrganizer
         organizer = SmartOrganizer(srv.face_recognition_model,
                                    db_root,
                                    shot_classifier=srv.pose_model,
-                                   embedder=embedder, role_classifier=role_clf)
+                                   embedder=embedder, role_classifier=role_clf,
+                                   feature_cache_dir=FEATURE_CACHE_DIR)
         report = organizer.organize(input_dir, output_dir,
                                     keep_per_bucket=keep_per_bucket,
                                     gap_seconds=gap_seconds,
@@ -825,7 +837,7 @@ def _read_scene_evidence(path):
 
 
 @app.post("/api/organize/scene/review/seed")
-async def scene_review_seed(review_dir: str = Form(...),
+def scene_review_seed(review_dir: str = Form(...),
                             evidence_file: str = Form(...)):
     """将场景判定结果并入复核队列；已人工确认的记录不被覆盖。"""
     try:
@@ -843,32 +855,41 @@ async def scene_review_seed(review_dir: str = Form(...),
 
 
 @app.get("/api/organize/scene/review")
-async def scene_review_list(review_dir: str, status: str = '',
-                            limit: int = 50, offset: int = 0):
+def scene_review_list(review_dir: str, status: str = '',
+                            limit: int = 50, offset: int = 0, image: str = ''):
     """分页获取待审核记录。"""
     try:
         from core_modules.organize.review_queue import ReviewQueue
         queue = ReviewQueue(review_dir)
-        rows = queue.list_pending(status or None, limit=limit, offset=offset)
+        if image:
+            return JSONResponse({"code": 200, "data": {"record": queue.record(image), "summary": queue.summary()}})
         return JSONResponse({"code": 200, "message": "OK",
-                             "data": {"records": rows, "summary": queue.summary()}})
+                             "data": queue.page(status or None, limit=limit, offset=offset)})
+    except ValueError as e:
+        return JSONResponse(status_code=400, content=srv.get_error(message=str(e)))
+    except KeyError as e:
+        return JSONResponse(status_code=404, content=srv.get_error(message=str(e)))
     except Exception as e:
         return JSONResponse(status_code=500, content=srv.get_error(message=f"Error listing review queue: {str(e)}"))
 
 
 @app.post("/api/organize/scene/review")
-async def scene_review_decide(review_dir: str = Form(...), image: str = Form(...),
+def scene_review_decide(review_dir: str = Form(...), image: str = Form(...),
                               action: str = Form(...), scene_id: str = Form(''),
                               label: str = Form(''), reviewer: str = Form('human'),
-                              note: str = Form('')):
+                              note: str = Form(''), expected_revision: Optional[int] = Form(None)):
     """接受/修改/拒绝一条场景标签，写入不可变修订日志。"""
     try:
         from core_modules.organize.review_queue import ReviewQueue
+        from core_modules.organize.review_store import ReviewConflict
         queue = ReviewQueue(review_dir)
         record = queue.decide(image, action, scene_id=scene_id or None,
-                              label=label or None, reviewer=reviewer, note=note)
+                              label=label or None, reviewer=reviewer, note=note,
+                              expected_revision=expected_revision)
         return JSONResponse({"code": 200, "message": "Review decision saved",
                              "data": {"record": record, "summary": queue.summary()}})
+    except ReviewConflict as e:
+        return JSONResponse(status_code=409, content=srv.get_error(message=str(e)))
     except ValueError as e:
         return JSONResponse(status_code=400, content=srv.get_error(message=str(e)))
     except KeyError as e:
@@ -878,7 +899,7 @@ async def scene_review_decide(review_dir: str = Form(...), image: str = Form(...
 
 
 @app.post("/api/organize/scene/review/export")
-async def scene_review_export(review_dir: str = Form(...), output_file: str = Form('')):
+def scene_review_export(review_dir: str = Form(...), output_file: str = Form('')):
     """导出人工已确认的最终标签（scene_labels.json）。"""
     try:
         from core_modules.organize.review_queue import ReviewQueue
@@ -936,7 +957,8 @@ async def play_source_register(info_path: str = Form(...), output_dir: str = For
 
 
 @app.post("/api/organize/play/ingest")
-async def play_knowledge_ingest(info_path: str = Form(...), play_root: str = Form(...),
+@serialized
+def play_knowledge_ingest(info_path: str = Form(...), play_root: str = Form(...),
                                 output_dir: str = Form('')):
     """从剧目信息与本地剧组/剧照构建知识库（离线可跑）。"""
     try:
@@ -982,7 +1004,8 @@ async def play_knowledge_query(output_dir: str):
 # ---------- 场景候选推理（多模态扩展） ----------
 
 @app.post("/api/organize/scene/reason")
-async def scene_reason(input_dir: str = Form(...), knowledge_dir: str = Form(...),
+@serialized
+def scene_reason(input_dir: str = Form(...), knowledge_dir: str = Form(...),
                        output_file: str = Form(''), top_k: int = Form(5),
                        use_llm: bool = Form(False), use_embedder: bool = Form(False)):
     """对目录生成候选场景与证据报告；默认离线规则/检索，启用 use_llm 时接本地端点。"""
@@ -991,36 +1014,11 @@ async def scene_reason(input_dir: str = Form(...), knowledge_dir: str = Form(...
             return JSONResponse(status_code=400, content=srv.get_error(message=f"Input directory does not exist: {input_dir}"))
         if not os.path.isdir(knowledge_dir):
             return JSONResponse(status_code=400, content=srv.get_error(message=f"Knowledge dir does not exist: {knowledge_dir}"))
-        from core_modules.tools.image_io import list_images
-        from core_modules.organize.scene_reasoner import reason_batch
-        knowledge = _load_knowledge_from_dir(knowledge_dir)
-        images = [os.path.abspath(os.path.join(input_dir, name)) for name in list_images(input_dir)]
-        if not images:
-            return JSONResponse(status_code=400, content=srv.get_error(message=f"No images found in: {input_dir}"))
-        client = vision_client = None
-        if use_llm:
-            from core_modules.organize.llm_client import client_from_env, vision_client_from_env
-            vision_client = vision_client_from_env()
-            client = vision_client or client_from_env()
-        embedder = None
-        if use_embedder:
-            from core_modules.organize.multimodal_evidence import MultimodalRetriever
-            base_embedder = _get_scene_embedder()
-            embedder = MultimodalRetriever(
-                embedder=base_embedder, cache_dir=os.path.join(knowledge_dir, 'embeddings'))
-        out = output_file or os.path.join(input_dir, 'scene_evidence.jsonl')
-        rows = reason_batch(images, knowledge, client=client, output_path=out,
-                            top_k=top_k, embedder=embedder, vision_client=vision_client)
-        if embedder is not None and hasattr(embedder, 'save'):
-            embedder.save()
-        labels = [r['label'] for r in rows]
-        return JSONResponse({"code": 200, "message": "Scene reason completed",
-                             "data": {"n_images": len(rows), "output_file": out,
-                                      "n_unknown": labels.count('unknown'),
-                                      "labels": labels,
-                                      "n_visual": sum(r.get('retrieval_mode') == 'visual' for r in rows),
-                                      "llm": client is not None,
-                                      "visual": embedder is not None}})
+        from app.organize_tasks import execute_scene
+        result = execute_scene({'input_dir': input_dir, 'knowledge_dir': knowledge_dir,
+                                'output_file': output_file, 'top_k': top_k,
+                                'use_llm': use_llm, 'use_embedder': use_embedder})
+        return JSONResponse({"code": 200, "message": "Scene reason completed", "data": result})
     except Exception as e:
         return JSONResponse(status_code=500, content=srv.get_error(message=f"Error reasoning scenes: {str(e)}"))
 
@@ -1028,7 +1026,7 @@ async def scene_reason(input_dir: str = Form(...), knowledge_dir: str = Form(...
 # ---------- 受限智能体（多模态扩展） ----------
 
 @app.post("/api/organize/agent/run")
-async def agent_run(tool: str = Form('scene_reason'), params_json: str = Form('{}')):
+def agent_run(tool: str = Form('scene_reason'), params_json: str = Form('{}')):
     """执行受限智能体任务（工具白名单，返回 task_id 与状态）。"""
     try:
         from core_modules.organize.agent_runtime import AgentRuntime, ToolNotAllowed
@@ -1047,32 +1045,13 @@ async def agent_run(tool: str = Form('scene_reason'), params_json: str = Form('{
         return JSONResponse(status_code=500, content=srv.get_error(message=f"Error running agent: {str(e)}"))
 
 
+@serialized
 def _agent_scene_reason(input_dir, knowledge_dir, output_file='', top_k=5,
                         use_llm=False, use_embedder=False):
-    from core_modules.tools.image_io import list_images
-    from core_modules.organize.scene_reasoner import reason_batch
-    knowledge = _load_knowledge_from_dir(knowledge_dir)
-    images = [os.path.abspath(os.path.join(input_dir, name)) for name in list_images(input_dir)]
-    out = output_file or os.path.join(input_dir, 'scene_evidence.jsonl')
-    client = vision_client = None
-    if use_llm:
-        from core_modules.organize.llm_client import client_from_env, vision_client_from_env
-        vision_client = vision_client_from_env()
-        client = vision_client or client_from_env()
-    embedder = None
-    if use_embedder:
-        from core_modules.organize.multimodal_evidence import MultimodalRetriever
-        base_embedder = _get_scene_embedder()
-        embedder = MultimodalRetriever(
-            embedder=base_embedder,
-            cache_dir=os.path.join(knowledge_dir, 'embeddings'))
-    rows = reason_batch(images, knowledge, client=client, output_path=out,
-                        top_k=int(top_k), embedder=embedder, vision_client=vision_client)
-    if embedder is not None:
-        embedder.save()
-    return {'n_images': len(rows), 'output_file': out,
-            'n_unknown': sum(1 for r in rows if r['label'] == 'unknown'),
-            'llm': client is not None, 'visual': embedder is not None}
+    from app.organize_tasks import execute_scene
+    return execute_scene({'input_dir': input_dir, 'knowledge_dir': knowledge_dir,
+                          'output_file': output_file, 'top_k': int(top_k),
+                          'use_llm': use_llm, 'use_embedder': use_embedder})
 
 
 def _agent_knowledge_summary(knowledge_dir):
@@ -1201,14 +1180,16 @@ async def agent_tools():
     return JSONResponse({"code": 200, "message": "OK", "data": {"tools": agent.tools()}})
 
 
+@serialized
 def _agent_organize_photos(input_dir, output_dir, db_root, keep_per_bucket=2,
                            gap_seconds=300, scene_evidence_file=''):
     if srv.face_recognition_model is None:
         raise ValueError('人脸模型未初始化，请在视觉服务环境启动主 API')
     from core_modules.organize.smart_organizer import SmartOrganizer
-    embedder, _ = _get_organize_models(False)
+    embedder = _get_scene_embedder()
     organizer = SmartOrganizer(srv.face_recognition_model, db_root,
-                               shot_classifier=srv.pose_model, embedder=embedder)
+                               shot_classifier=srv.pose_model, embedder=embedder,
+                               feature_cache_dir=FEATURE_CACHE_DIR)
     report = organizer.organize(
         input_dir, output_dir, keep_per_bucket=keep_per_bucket,
         gap_seconds=gap_seconds, classify_role=False,

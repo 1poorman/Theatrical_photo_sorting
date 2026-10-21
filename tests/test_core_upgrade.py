@@ -78,8 +78,8 @@ class CoreUpgradeTests(unittest.TestCase):
     def test_organizer_keeps_processing_after_one_feature_failure(self):
         photos = self.root / 'photos'
         photos.mkdir()
-        for name in ('a.jpg', 'b.jpg'):
-            Image.new('RGB', (20, 20)).save(photos / name)
+        for name, color in (('a.jpg', 'red'), ('b.jpg', 'green')):
+            Image.new('RGB', (20, 20), color).save(photos / name)
         def encode(path):
             if Path(path).name == 'a.jpg':
                 raise ValueError('bad feature')
@@ -123,7 +123,7 @@ class CoreUpgradeTests(unittest.TestCase):
     def test_batch_prefill_cache_rerun_and_bad_image_isolation(self):
         paths = [str(self.root / name) for name in ('good.jpg', 'bad.jpg')]
         for path in paths:
-            Path(path).touch()
+            Path(path).write_bytes(Path(path).name.encode())
         calls = []
         class Model:
             model_signature = 'batch-test'

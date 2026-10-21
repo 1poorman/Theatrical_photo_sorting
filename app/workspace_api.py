@@ -1,17 +1,22 @@
 """Read-only photo browsing for the organize workspace; no model initialization."""
-from io import BytesIO
+import os
 from pathlib import Path
 import re
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import FileResponse, Response
-from PIL import Image, ImageOps, UnidentifiedImageError
+from PIL import Image, UnidentifiedImageError
 
 from core_modules.organize.filename_parser import parse_filename
+from core_modules.organize.thumbnail_cache import ThumbnailCache
 
 router = APIRouter(prefix='/api/workspace', tags=['整理工作台'])
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.bmp', '.tiff'}
+thumbnail_cache = ThumbnailCache(
+    os.environ.get('TRANS_THUMBNAIL_CACHE_DIR', str(PROJECT_ROOT / 'outputs/thumbnail_cache')),
+    max_bytes=int(os.environ.get('TRANS_THUMBNAIL_CACHE_MAX_BYTES', 256 * 1024 * 1024)),
+    max_entries=int(os.environ.get('TRANS_THUMBNAIL_CACHE_MAX_ENTRIES', 4096)))
 
 
 def directory(value):
@@ -45,7 +50,7 @@ def photos(input_dir: str, limit: int = Query(10000, ge=1, le=10000)):
 
 
 @router.get('/thumbnail')
-def thumbnail(input_dir: str, name: str, size: int = Query(640, ge=160, le=1920)):
+def thumbnail(request: Request, input_dir: str, name: str, size: int = Query(640, ge=160, le=1920)):
     root = directory(input_dir)
     path = (root / name).resolve()
     if not path.is_relative_to(root) or path.suffix.lower() not in IMAGE_EXTENSIONS:
@@ -53,14 +58,14 @@ def thumbnail(input_dir: str, name: str, size: int = Query(640, ge=160, le=1920)
     if not path.is_file():
         raise HTTPException(404, '照片已移动或不存在。')
     try:
-        with Image.open(path) as source:
-            source.draft('RGB', (size, size))
-            picture = ImageOps.exif_transpose(source)
-            picture.thumbnail((size, size))
-            buffer = BytesIO()
-            picture.convert('RGB').save(buffer, format='JPEG', quality=85)
-        return Response(buffer.getvalue(), media_type='image/jpeg',
-                        headers={'Cache-Control': 'private, max-age=300'})
+        jpeg, key = thumbnail_cache.preview(path, size)
+        headers = {'Cache-Control': 'private, no-cache', 'ETag': '"' + key + '"'}
+        tags = request.headers.get('if-none-match', '').split(',')
+        if any(tag.strip().removeprefix('W/') in (headers['ETag'], '*') for tag in tags):
+            return Response(status_code=304, headers=headers)
+        return Response(jpeg, media_type='image/jpeg', headers=headers)
+    except ValueError:
+        raise HTTPException(409, '照片正在更新，请稍后重试。')
     except (OSError, UnidentifiedImageError, Image.DecompressionBombError):
         raise HTTPException(422, '无法解码这张图片。')
 

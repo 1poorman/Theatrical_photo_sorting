@@ -76,8 +76,29 @@ fs.mkdirSync(shots, {recursive: true});
     await idle();
     assert.equal(await page.locator('.knowledge-scene').count(), 5);
     await page.locator('#use-embedder').uncheck();
+    let releaseTaskView = false, taskCreates = 0;
+    page.on('request', request => { if (request.url() === base + '/api/organize/tasks' && request.method() === 'POST') taskCreates++; });
+    await page.route('**/api/organize/tasks/*', async route => {
+      const response = await route.fetch();
+      const body = await response.json();
+      if (!releaseTaskView && body.data) {
+        body.data = {...body.data, status: 'running', result: null, succeeded: 0, failed: 0, pending: total};
+      }
+      await route.fulfill({response, json: body});
+    });
     await page.locator('#knowledge-analyze').click();
     await idle();
+    await page.locator('#analysis-task').waitFor();
+    const analysisId = await page.evaluate(() => JSON.parse(localStorage.getItem('theatre-workspace-v1')).analysisTask);
+    assert.ok(analysisId);
+    await page.reload(); await idle();
+    await page.locator('#analysis-cancel').waitFor();
+    assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('theatre-workspace-v1')).analysisTask), analysisId);
+    assert.equal(taskCreates, 1, 'refresh must query the existing task without submitting again');
+    releaseTaskView = true;
+    await page.waitForFunction(() => Number(document.querySelector('#metric-pending').textContent) > 0, null, {timeout: 45000});
+    await idle();
+    await page.unroute('**/api/organize/tasks/*');
     assert.equal(await page.locator('#breadcrumb-view').textContent(), '场景复核');
     assert.ok(Number(await page.locator('#metric-pending').textContent()) > 0);
     assert.ok(await page.locator('.evidence-item').count() > 0);
@@ -88,11 +109,45 @@ fs.mkdirSync(shots, {recursive: true});
     await noOverflow();
 
     const pending = Number(await page.locator('#metric-pending').textContent());
+    const firstPhoto = await page.locator('.photo-card.selected').getAttribute('data-photo');
+    await page.locator('#review-label').fill('草稿：待核对幕次');
+    await page.locator('#review-note').fill('切图和刷新后保留的备注');
+    await page.locator('.photo-card').nth(1).click();
+    await page.locator(`.photo-card[data-photo="${firstPhoto}"]`).click();
+    assert.equal(await page.locator('#review-label').inputValue(), '草稿：待核对幕次');
+    assert.equal(await page.locator('#review-note').inputValue(), '切图和刷新后保留的备注');
+    await page.locator('#photo-search').fill('不可能命中的搜索词');
+    await page.locator('#photo-search').fill('');
+    assert.equal(await page.locator('#review-label').inputValue(), '草稿：待核对幕次');
+    await page.reload();
+    await idle();
+    assert.equal(await page.locator('#review-label').inputValue(), '草稿：待核对幕次');
+    assert.equal(await page.locator('#review-note').inputValue(), '切图和刷新后保留的备注');
+    assert.equal(Number(await page.locator('#metric-approved').textContent()), 0);
+    assert.equal(await page.locator('#review-draft-status').isVisible(), true);
+    await page.route('**/api/organize/scene/review', route => route.fulfill({status: 500, json: {detail: '保存失败测试'}}));
+    await page.locator('#review-decision-form button[type=submit]').click(); await idle();
+    assert.equal(await page.locator('#review-label').inputValue(), '草稿：待核对幕次');
+    assert.equal(await page.locator('#review-note').inputValue(), '切图和刷新后保留的备注');
+    assert.equal(Number(await page.locator('#metric-approved').textContent()), 0);
+    await page.unroute('**/api/organize/scene/review');
+    const concurrentRecord = await (await context.request.get(base + '/api/organize/scene/review?' +
+      new URLSearchParams({review_dir: path.join(fixture, 'review'), image: firstPhoto}))).json();
+    await post('/api/organize/scene/review', {review_dir: path.join(fixture, 'review'), image: firstPhoto,
+      action: 'modify', label: '另一位复核者的标签', expected_revision: concurrentRecord.data.record.review_revision});
+    await page.locator('#review-decision-form button[type=submit]').click(); await idle();
+    assert.match(await page.locator('#notice').textContent(), /已被更新/);
+    assert.equal(await page.locator('#review-label').inputValue(), '草稿：待核对幕次');
+    assert.equal(await page.locator('#review-note').inputValue(), '切图和刷新后保留的备注');
+    assert.match(await page.locator('.scene-choice').textContent(), /另一位复核者的标签/);
+    assert.equal(Number(await page.locator('#metric-approved').textContent()), 1);
     if (await page.locator('#accept-review').isEnabled()) await page.locator('#accept-review').click();
     else { await page.locator('#review-label').fill('第1幕克段'); await page.locator('#review-decision-form button[type=submit]').click(); }
     await idle();
     assert.equal(Number(await page.locator('#metric-approved').textContent()), 1);
     assert.equal(Number(await page.locator('#metric-pending').textContent()), pending - 1);
+    assert.equal(await page.evaluate(photo => Object.keys(localStorage).some(key =>
+      key.startsWith('theatre-review-draft-v1:') && JSON.parse(key.slice('theatre-review-draft-v1:'.length))[2] === photo), firstPhoto), false);
     await page.locator('#review-label').fill('第2幕庆功');
     await page.locator('#review-note').fill('浏览器验收：对照剧情修订');
     await page.locator('#review-decision-form button[type=submit]').click();
@@ -173,37 +228,52 @@ fs.mkdirSync(shots, {recursive: true});
 
     // User/record text must never become markup or executable attributes.
     const malicious = '<img src=x onerror="window.workspaceXss=1">';
-    const reviewFile = path.join(fixture, 'review/review_queue.jsonl');
-    const rows = fs.readFileSync(reviewFile, 'utf8').trim().split('\n').map(JSON.parse);
+    const rows = (await (await context.request.get(base + '/api/organize/scene/review?' +
+      new URLSearchParams({review_dir: path.join(fixture, 'review'), limit: 100}))).json()).data.records;
     await post('/api/organize/scene/review', {review_dir: path.join(fixture, 'review'), image: rows[0].image, action: 'modify', label: malicious});
     await page.reload(); await idle(); await clickView('photos'); await page.locator('.photo-card').first().click();
     assert.equal(await page.evaluate(() => window.workspaceXss), undefined);
     assert.equal(await page.locator('#inspector img').count(), 1);
 
     // A queue larger than the API's page size must not lose off-screen records.
-    const longPhotos = Array.from({length: 205}, (_, index) => ({name: `photo-${String(index).padStart(3, '0')}.jpg`, path: `${photos}/photo-${String(index).padStart(3, '0')}.jpg`, size: 100, metadata: {people: []}}));
+    const longPhotos = Array.from({length: 10000}, (_, index) => ({name: `photo-${String(index).padStart(3, '0')}.jpg`, path: `${photos}/photo-${String(index).padStart(3, '0')}.jpg`, size: 100, metadata: {people: []}}));
     const longRecords = longPhotos.map(photo => ({image: photo.path, label: '第1幕克段', scene_id: 'act-01', review: {status: 'pending'}}));
     const offsets = [];
-    await page.route('**/api/workspace/photos?*', route => route.fulfill({json: {code: 200, data: {input_dir: photos, photos: longPhotos, total: 205, truncated: false}}}));
+    await page.route('**/api/workspace/photos?*', route => route.fulfill({json: {code: 200, data: {input_dir: photos, photos: longPhotos, total: 10000, truncated: false}}}));
     await page.route('**/api/organize/scene/review?*', route => {
       const offset = Number(new URL(route.request().url()).searchParams.get('offset'));
       offsets.push(offset);
-      return route.fulfill({json: {code: 200, data: {records: longRecords.slice(offset, offset + 200), summary: {pending: 205, approved: 0, rejected: 0}}}});
+      return route.fulfill({json: {code: 200, data: {records: longRecords.slice(offset, offset + 200), summary: {pending: 10000, approved: 0, rejected: 0}}}});
     });
     await page.reload(); await idle(); await clickView('photos');
-    assert.equal(Number(await page.locator('#metric-pending').textContent()), 205);
-    assert.deepEqual(offsets, [0, 200]);
+    assert.equal(Number(await page.locator('#metric-pending').textContent()), 10000);
+    assert.deepEqual(offsets, Array.from({length: 51}, (_, index) => index * 200));
     assert.equal(await page.locator('.photo-card').count(), 36);
     await page.locator('#next-page').click();
-    assert.equal(await page.locator('#page-number').textContent(), '2 / 6');
-    await page.locator('#photo-search').fill('photo-204');
+    assert.equal(await page.locator('#page-number').textContent(), '2 / 278');
+    await page.locator('#photo-search').fill('photo-9999');
+    assert.equal(await page.locator('.photo-card').count(), 1);
+    await page.locator('.photo-card').click();
+    const queriesBeforeDecision = offsets.length;
+    let decisionPosts = 0;
+    await page.route('**/api/organize/scene/review', route => {
+      decisionPosts++;
+      return route.fulfill({json: {code: 200, data: {
+        record: {...longRecords[9999], review: {status: 'approved'}},
+        summary: {pending: 9999, approved: 1, rejected: 0}}}});
+    });
+    await page.locator('#accept-review').click(); await idle();
+    assert.equal(decisionPosts, 1);
+    assert.equal(offsets.length, queriesBeforeDecision, 'a review decision must not download the queue again');
+    assert.equal(Number(await page.locator('#metric-pending').textContent()), 9999);
+    assert.equal(Number(await page.locator('#metric-approved').textContent()), 1);
     assert.equal(await page.locator('.photo-card').count(), 1);
     await page.locator('#import-button').click();
     assert.equal(await page.locator('#input-dir').inputValue(), '', 'switching projects starts with fresh context');
     assert.notEqual(await page.locator('#output-dir').inputValue(), fixture);
     await page.keyboard.press('Escape');
     assert.equal(errors.length, 0, errors.join('\n'));
-    console.log(JSON.stringify({passed: true, realPhotos: total, checks: ['empty/error states', 'real photo previews', 'knowledge ingest', 'offline scene analysis', 'review accept/modify/reject', 'search/filter', 'label download', 'organize payload', 'cluster assign/ignore/restore/error', 'refresh persistence', 'responsive 1440/1024/768/540/390', 'escaped evidence', '205 record pagination', 'independent project contexts'], screenshots: shots}, null, 2));
+    console.log(JSON.stringify({passed: true, realPhotos: total, checks: ['empty/error states', 'real photo previews', 'knowledge ingest', 'offline scene analysis', 'background analysis refresh reuses task without resubmission', 'review accept/modify/reject', 'draft survives selection/search/reload/failure', 'revision conflict refreshes record and preserves draft', 'successful decision clears draft', 'search/filter', 'label download', 'organize payload', 'cluster assign/ignore/restore/error', 'refresh persistence', 'responsive 1440/1024/768/540/390', 'escaped evidence', '10000 record pagination and bounded DOM', 'decision updates one record without queue reload', 'independent project contexts'], screenshots: shots}, null, 2));
   } finally {
     await browser.close();
     fs.rmSync(fixture, {recursive: true, force: true});

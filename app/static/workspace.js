@@ -27,6 +27,47 @@
   const join = (root, name) => `${root.replace(/\/+$/, '')}/${name}`;
   const basename = name => String(name || '').split('/').pop();
   const projectKey = 'theatre-workspace-v1';
+  const drafts = new Map();
+  let draftStorageWarning = false;
+  function draftKey(photo) {
+    return 'theatre-review-draft-v1:' + JSON.stringify([state.project.input, state.project.review, photo.path]);
+  }
+  function readDraft(photo) {
+    const key = draftKey(photo);
+    if (drafts.has(key)) return drafts.get(key);
+    try {
+      const draft = JSON.parse(localStorage.getItem(key));
+      if (draft && typeof draft.label === 'string' && typeof draft.note === 'string') {
+        drafts.set(key, draft); return draft;
+      }
+    } catch (_) { /* Keep the form available if browser storage is unavailable. */ }
+    return null;
+  }
+  function writeDraft(photo) {
+    const draft = {label: $('review-label').value, note: $('review-note').value};
+    const key = draftKey(photo);
+    drafts.set(key, draft);
+    $('review-draft-status').hidden = false;
+    try { localStorage.setItem(key, JSON.stringify(draft)); }
+    catch (_) {
+      if (!draftStorageWarning) notice('浏览器无法持久保存草稿；本页切图会保留输入，刷新前请保存修订。', true);
+      draftStorageWarning = true;
+    }
+  }
+  function clearDraft(photo) {
+    const key = draftKey(photo);
+    drafts.delete(key);
+    try { localStorage.removeItem(key); } catch (_) { /* Current-page state is still cleared. */ }
+  }
+  function mergeReview(previous, record) {
+    const updated = {...record, ...(previous.source_image ? {source_image: previous.source_image} : {})};
+    state.records.set(previous.image, updated);
+    const before = previous.review?.status || 'pending', after = updated.review?.status || 'pending';
+    if (before !== after) {
+      state.summary[before] = Math.max(0, (state.summary[before] || 0) - 1);
+      state.summary[after] = (state.summary[after] || 0) + 1;
+    }
+  }
   const state = {project: null, photos: [], records: new Map(), knowledge: null, summary: null,
     selected: null, view: 'photos', filter: 'all', query: '', page: 0, busy: false, taskId: null, generation: 0};
   const pageSize = 36;
@@ -66,7 +107,7 @@
     $('task-status').hidden = false;
     progress(message);
     document.body.setAttribute('aria-busy', 'true');
-    const controls = [...document.querySelectorAll('button:not([data-view]):not([data-filter]):not([data-photo]):not([data-close]), input, select')];
+    const controls = [...document.querySelectorAll('button:not([data-view]):not([data-filter]):not([data-photo]):not([data-close]):not([data-task-control]), input, select')];
     const previous = controls.map(el => el.disabled);
     controls.forEach(el => { el.disabled = true; });
     try { return await operation(); }
@@ -178,6 +219,7 @@
   const inspectorPlaceholder = $('inspector-body').innerHTML;
   function selectPhoto(path, scroll = false) {
     state.selected = path;
+    state.project.selected = path; saveProject();
     renderGallery();
     if (scroll && window.innerWidth <= 720) $('inspector').scrollIntoView({behavior: 'smooth', block: 'start'});
   }
@@ -199,7 +241,17 @@
       const options = state.knowledge?.scene_options || [];
       const confidence = Number.isFinite(record.confidence) ? `${Math.round(record.confidence * 100)}% 证据分` : '证据分未提供';
       body.insertAdjacentHTML('beforeend', `<div class="detail-section"><h4>场景判断 <span class="confidence">${esc(confidence)}</span></h4><div class="scene-choice">${esc(knownLabel ? record.label : '尚不能确定幕次')}</div><p>${record.review?.status === 'approved' ? '此标签已经过人工确认。' : '候选结果需对照画面确认，证据分不是正确概率。'}</p><div>${(record.evidence_types || []).map(type => `<span class="tag">${esc(type === 'visual' && record.retrieval_mode !== 'visual' ? '候选文本匹配' : evidenceNames[type] || type)}</span>`).join('')}</div>${(record.alternatives || []).length ? '<h4>其他幕次候选</h4><div class="alternatives">' + record.alternatives.map((item, index) => `<button class="alternative-button" data-alternative="${index}" ${state.busy ? 'disabled' : ''}>${esc(item.label)}</button>`).join('') + '</div>' : ''}</div><details class="detail-section"><summary>判断依据 · ${(record.evidence || []).length} 条</summary>${(record.evidence || []).length ? record.evidence.map(item => `<div class="evidence-item"><strong>${esc(evidenceNames[item.type] || item.type || '参考依据')}</strong><p>${esc(item.quote || '未提供文本摘录')}</p><small>${esc(item.source_ref || item.ref || item.id || '')}</small></div>`).join('') : '<p>没有可引用的依据，请结合原图与剧情手动判断。</p>'}</details><form id="review-decision-form" class="detail-section"><h4>确认与修订</h4><label for="review-label">正确的场景标签</label><input id="review-label" list="scene-options" value="${esc(knownLabel ? record.label : '')}" placeholder="选择或输入幕次名称" ${state.busy ? 'disabled' : ''}><datalist id="scene-options">${options.map(item => `<option value="${esc(item.label)}"></option>`).join('')}</datalist><label for="review-note">复核备注（可选）</label><input id="review-note" placeholder="记录修改原因" ${state.busy ? 'disabled' : ''}><div class="review-actions"><button type="button" class="button primary" id="accept-review" ${!knownLabel || state.busy ? 'disabled' : ''}>确认当前标签</button><button type="submit" class="button secondary" ${state.busy ? 'disabled' : ''}>保存修订</button><button type="button" class="button subtle" id="reject-review" ${state.busy ? 'disabled' : ''}>拒绝此判断</button></div></form>`);
-      body.querySelectorAll('[data-alternative]').forEach(button => { button.onclick = () => { $('review-label').value = record.alternatives[Number(button.dataset.alternative)].label; }; });
+      $('review-decision-form').insertAdjacentHTML('afterbegin', '<p id="review-draft-status" hidden>未保存的修订草稿</p>');
+      const draft = readDraft(photo);
+      if (draft) {
+        $('review-label').value = draft.label; $('review-note').value = draft.note;
+        $('review-draft-status').hidden = false;
+      }
+      $('review-label').oninput = $('review-note').oninput = () => writeDraft(photo);
+      body.querySelectorAll('[data-alternative]').forEach(button => { button.onclick = () => {
+        $('review-label').value = record.alternatives[Number(button.dataset.alternative)].label;
+        writeDraft(photo);
+      }; });
       $('accept-review').onclick = () => decide(record, 'accept');
       $('reject-review').onclick = () => decide(record, 'reject');
       $('review-decision-form').onsubmit = event => { event.preventDefault(); decide(record, 'modify'); };
@@ -267,10 +319,14 @@
     $('use-llm').checked = project.useLLM === true;
   }
   async function activateProject(project, result) {
+    clearTimeout(analysisTimer);
+    analysisRunning = false;
+    $('analysis-task').hidden = true;
     state.generation++;
     state.project = {...project, input: result.input_dir};
     state.photos = result.photos; state.records = new Map(); state.knowledge = null; state.summary = null;
-    state.selected = null; state.query = ''; state.page = 0; state.taskId = null; state.queueMismatch = false;
+    state.selected = result.photos.some(photo => photo.path === project.selected) ? project.selected : null;
+    state.query = ''; state.page = 0; state.taskId = null; state.queueMismatch = false;
     $('photo-search').value = ''; $('actor-result').hidden = true; $('organize-result').hidden = true;
     $('labels-download').innerHTML = ''; $('cluster-grid').innerHTML = '';
     populateProject(); saveProject(); renderKnowledge(); renderHeader(); renderGallery();
@@ -278,6 +334,10 @@
     restored.forEach(result => { if (result.status === 'rejected') notice(`工作区已打开，部分资料暂未载入：${result.reason.message}`, true); });
     if (result.truncated) notice(`目录有 ${result.total} 张图片，当前显示前 ${result.photos.length} 张。请分成较小的目录整理。`, true);
     else if (!result.total) notice('这个目录中没有支持的照片；如果照片存放在子目录，请直接选择那个子目录。');
+    if (state.project.analysisTask) {
+      const activeProject = state.project;
+      analysisTimer = setTimeout(() => pollAnalysis(activeProject), 0);
+    }
   }
   function openProject(newProject = false) {
     if (state.busy) return;
@@ -301,7 +361,7 @@
       db: $('db-root').value.trim() || 'data/face_database',
       knowledge: $('project-knowledge').value.trim() || join(output, 'knowledge'),
       review: $('project-review').value.trim() || join(output, 'review')};
-    if (previous?.input === input && previous?.output === output) Object.assign(project, {info: previous.info, playRoot: previous.playRoot, evidence: previous.evidence, labels: previous.labels, useEmbedder: previous.useEmbedder, useLLM: previous.useLLM});
+    if (previous?.input === input && previous?.output === output) Object.assign(project, {info: previous.info, playRoot: previous.playRoot, evidence: previous.evidence, labels: previous.labels, useEmbedder: previous.useEmbedder, useLLM: previous.useLLM, selected: previous.selected});
     await task('正在读取剧照目录…', async () => {
       try {
         const result = await api(`/api/workspace/photos?${new URLSearchParams({input_dir: input})}`);
@@ -310,20 +370,86 @@
       } catch (error) { $('project-error').textContent = error.message; $('project-error').hidden = false; throw error; }
     });
   };
-  async function analyze() {
-    if (!needProject() || state.busy) return;
-    if (!state.knowledge?.scenes.length) { setView('knowledge'); notice('请先建立或载入包含幕次的剧目知识库。'); return; }
-    await task('正在结合影像和剧目资料分析场景，大批剧照可能需要几分钟…', async () => {
-      const project = state.project;
-      const result = await api('/api/organize/scene/reason', {input_dir: project.input, knowledge_dir: project.knowledge,
-        output_file: join(project.output, 'scene_evidence.jsonl'), use_embedder: $('use-embedder').checked, use_llm: $('use-llm').checked});
+  let analysisTimer = null;
+  let analysisRunning = false;
+  async function applyAnalysis(project, result) {
+    await task('分析完成，正在载入场景复核队列…', async () => {
       project.evidence = result.output_file; saveProject(); $('evidence-file').value = result.output_file;
-      progress('分析完成，正在载入场景复核队列…');
       await api('/api/organize/scene/review/seed', {review_dir: project.review, evidence_file: result.output_file});
       await loadReviews(); setView('review');
       const first = filteredPhotos()[0]; if (first) selectPhoto(first.path);
-      if (!state.queueMismatch) notice(`已分析 ${result.n_images} 张剧照，${result.n_unknown} 张幕次未确定。${result.n_visual ? `${result.n_visual} 张使用了图文匹配。` : '本次使用文件名与剧情线索；图文匹配未参与或不可用。'}${result.llm ? '已连接语言模型；实际调用及回退以证据记录为准。' : ''}已有复核记录保留原结果。`);
+      project.analysisApplied = project.analysisTask; saveProject();
+      if (!state.queueMismatch) notice(`已分析 ${result.n_images} 张剧照，${result.n_unknown} 张幕次未确定。${result.n_failed ? `${result.n_failed} 张处理失败，已保留错误记录供复核。` : ''}${result.n_visual ? `${result.n_visual} 张使用了图文匹配。` : '本次使用文件名与剧情线索；图文匹配未参与或不可用。'}${result.llm ? '已连接语言模型；实际调用及回退以证据记录为准。' : ''}已有复核记录保留原结果。`);
     });
+  }
+  async function pollAnalysis(project) {
+    clearTimeout(analysisTimer);
+    if (state.project !== project || !project.analysisTask) return;
+    try {
+      const status = await api(`/api/organize/tasks/${encodeURIComponent(project.analysisTask)}`);
+      if (state.project !== project) return;
+      analysisRunning = ['queued', 'running', 'cancel_requested'].includes(status.status);
+      const labels = {queued: '等待分析', running: '正在分析', cancel_requested: '等待当前图片结束后取消', cancelled: '分析已取消', interrupted: '分析已中断', failed: '分析执行失败', completed: '分析完成', completed_with_errors: '分析完成，部分图片失败'};
+      $('analysis-task').hidden = false;
+      $('analysis-task-message').textContent = `${labels[status.status] || status.status}：${status.succeeded} 张成功，${status.failed} 张失败，${status.pending} 张待处理。${status.error || ''}`;
+      $('analysis-cancel').hidden = !analysisRunning || status.status === 'cancel_requested';
+      $('analysis-resume').hidden = !['cancelled', 'interrupted', 'failed'].includes(status.status);
+      $('analysis-new').hidden = !['cancelled', 'interrupted', 'failed', 'completed_with_errors'].includes(status.status);
+      if (['completed', 'completed_with_errors'].includes(status.status) && project.analysisApplied !== project.analysisTask && !state.busy) {
+        await applyAnalysis(project, status.result);
+      }
+      if (analysisRunning || (status.result && project.analysisApplied !== project.analysisTask)) {
+        analysisTimer = setTimeout(() => pollAnalysis(project), 1000);
+      }
+    } catch (error) {
+      if (state.project !== project) return;
+      $('analysis-task').hidden = false;
+      $('analysis-task-message').textContent = `暂时无法查询分析任务：${error.message}。将自动重试。`;
+      analysisTimer = setTimeout(() => pollAnalysis(project), 3000);
+    }
+  }
+  $('analysis-cancel').onclick = async () => {
+    const project = state.project;
+    try { await api(`/api/organize/tasks/${encodeURIComponent(project.analysisTask)}/cancel`, {}); await pollAnalysis(project); }
+    catch (error) { notice(error.message, true); }
+  };
+  $('analysis-resume').onclick = async () => {
+    const project = state.project;
+    try { await api(`/api/organize/tasks/${encodeURIComponent(project.analysisTask)}/resume`, {}); await pollAnalysis(project); }
+    catch (error) { notice(error.message, true); }
+  };
+  $('analysis-new').onclick = async () => {
+    if (state.busy) return;
+    const project = state.project;
+    try {
+      await api(`/api/organize/tasks/${encodeURIComponent(project.analysisTask)}/cancel`, {});
+      clearTimeout(analysisTimer); analysisRunning = false;
+      project.analysisTask = ''; project.analysisApplied = ''; project.analysisKey = ''; saveProject();
+      await analyze();
+    } catch (error) { notice(error.message, true); }
+  };
+  async function analyze() {
+    if (!needProject() || state.busy) return;
+    if (analysisRunning) { notice('场景分析正在后台运行；可以继续看图复核或取消当前分析。'); return; }
+    if (state.project.analysisTask && state.project.analysisApplied !== state.project.analysisTask) { await pollAnalysis(state.project); notice('请先继续未完成图片或完成结果载入。'); return; }
+    if (!state.knowledge?.scenes.length) { setView('knowledge'); notice('请先建立或载入包含幕次的剧目知识库。'); return; }
+    await task('正在提交场景分析任务…', async () => {
+      const project = state.project;
+      if (!project.analysisKey) {
+        project.analysisKey = typeof crypto.randomUUID === 'function' ? crypto.randomUUID()
+          : Array.from(crypto.getRandomValues(new Uint8Array(16)), value => value.toString(16).padStart(2, '0')).join('');
+        saveProject();
+      }
+      const response = await fetch('/api/organize/tasks', {method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({kind: 'scene_reason', idempotency_key: project.analysisKey, params: {
+          input_dir: project.input, knowledge_dir: project.knowledge, output_file: join(project.output, 'scene_evidence.jsonl'),
+          use_embedder: $('use-embedder').checked, use_llm: $('use-llm').checked}})});
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.message || '无法创建分析任务');
+      project.analysisTask = body.data.task_id; project.analysisKey = ''; saveProject();
+      analysisRunning = true;
+    });
+    if (state.project.analysisTask) await pollAnalysis(state.project);
   }
   async function decide(record, action) {
     if (state.busy) return;
@@ -331,18 +457,32 @@
     if (action === 'modify' && (!label || label === 'unknown')) { notice('请选择或填写一个明确的幕次名称。', true); $('review-label').focus(); return; }
     const option = [...(state.knowledge?.scene_options || []), ...(record.alternatives || [])].find(item => item.label === label);
     const filtered = filteredPhotos(), index = filtered.findIndex(photo => photo.path === state.selected);
+    const photo = state.photos.find(photo => photo.path === state.selected);
     const next = filtered[index + 1] || filtered[index - 1];
     await task('正在保存复核决定…', async () => {
-      await api('/api/organize/scene/review', {review_dir: state.project.review, image: record.image, action,
-        label: action === 'modify' ? label : '', scene_id: action === 'modify' ? (option?.scene_id || '') : '', reviewer: 'workspace', note});
+      let result;
+      try {
+        result = await api('/api/organize/scene/review', {review_dir: state.project.review, image: record.image, action,
+          label: action === 'modify' ? label : '', scene_id: action === 'modify' ? (option?.scene_id || '') : '', reviewer: 'workspace', note,
+          expected_revision: record.review_revision});
+      } catch (error) {
+        if (error.status === 409) {
+          const latest = await api(`/api/organize/scene/review?${new URLSearchParams({review_dir: state.project.review, image: record.image})}`);
+          mergeReview(record, latest.record); renderHeader(); renderGallery();
+        }
+        throw error;
+      }
+      if (photo) clearDraft(photo);
+      mergeReview(record, result.record);
       // Existing label exports are now stale and will be regenerated before organizing.
       state.project.labels = ''; $('scene-evidence-file').value = ''; $('labels-download').innerHTML = ''; saveProject();
-      await loadReviews();
       if (state.filter === 'pending') {
         state.selected = next?.path || filteredPhotos()[0]?.path || null;
+        state.project.selected = state.selected; saveProject();
         const nextIndex = filteredPhotos().findIndex(photo => photo.path === state.selected);
-        state.page = Math.max(0, Math.floor(nextIndex / pageSize)); renderGallery();
+        state.page = Math.max(0, Math.floor(nextIndex / pageSize));
       }
+      renderHeader(); renderGallery();
       notice(action === 'reject' ? '已拒绝此判断，归档时保留场景编号。' : '复核已保存，将使用最新标签归档。');
     });
   }
@@ -399,7 +539,7 @@
         const input = join(project.output, 'organized');
         const result = await api(`/api/workspace/photos?${new URLSearchParams({input_dir: input})}`);
         // Browse results without reusing the source queue for a differently named collection.
-        await activateProject({...project, name: `${project.name} · 已归档`, input, output: join(project.output, 'next'), review: join(project.output, 'organized_review'), labels: ''}, result);
+        await activateProject({...project, name: `${project.name} · 已归档`, input, output: join(project.output, 'next'), review: join(project.output, 'organized_review'), labels: '', analysisTask: '', analysisApplied: '', analysisKey: ''}, result);
         setView('photos');
       });
       notice(`整理完成：保留 ${result.kept} 张，划分 ${result.n_scenes} 个场景。`);

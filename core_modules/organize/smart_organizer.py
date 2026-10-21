@@ -20,6 +20,7 @@ import os
 import re
 import json
 import shutil
+import time
 import cv2
 import numpy as np
 
@@ -28,7 +29,8 @@ from core_modules.organize.burst_dedup import BurstDeduplicator, image_quality
 from core_modules.organize.scene_split import split_scenes, apply_labels
 from core_modules.tools.image_io import list_images, resize_max_side
 from core_modules.tools.logger import get_app_logger
-from config.base import KNOWN_FACE_THRESHOLD, FACE_IMAGE_MAX_SIDE, FACE_AMBIGUOUS_MARGIN
+from config.base import (KNOWN_FACE_THRESHOLD, FACE_IMAGE_MAX_SIDE, FACE_AMBIGUOUS_MARGIN,
+                         FEATURE_BATCH_SIZE)
 
 logger = get_app_logger()
 
@@ -70,7 +72,8 @@ def apply_scene_evidence(scene_assignment, evidence):
 
 class SmartOrganizer:
     def __init__(self, recognition_system, face_db_root,
-                 shot_classifier=None, embedder=None, role_classifier=None):
+                 shot_classifier=None, embedder=None, role_classifier=None,
+                 feature_cache_dir=None, feature_batch_size=FEATURE_BATCH_SIZE):
         """
         Args:
             recognition_system: FaceRecognitionSystem（SCRFD+ArcFace）
@@ -84,6 +87,8 @@ class SmartOrganizer:
         self.shot_classifier = shot_classifier
         self.embedder = embedder
         self.role_classifier = role_classifier
+        self.feature_cache_dir = feature_cache_dir
+        self.feature_batch_size = feature_batch_size
         self._lib_matrix = None
         self._lib_persons = None
 
@@ -117,7 +122,11 @@ class SmartOrganizer:
             aligned_list.append(aligned)
         if not aligned_list:
             return {}, faces
-        feats = self.system.extractor.extract_features(aligned_list)
+        # TRT engines accept at most 32 faces; retain the existing alignment and
+        # normalization so batching alone does not change recognition semantics.
+        limit = min(32, max(1, int(getattr(self.system.extractor, 'max_batch_size', 32))))
+        feats = np.concatenate([self.system.extractor.extract_features(aligned_list[i:i + limit])
+                                for i in range(0, len(aligned_list), limit)])
         feats = self.system.extractor.l2_normalize(feats)
         hits = {}
         for fv in feats:
@@ -156,6 +165,8 @@ class SmartOrganizer:
         Returns:
             report dict
         """
+        started = time.perf_counter()
+        timings = {}
         threshold = threshold or KNOWN_FACE_THRESHOLD
         os.makedirs(output_dir, exist_ok=True)
         organized_dir = os.path.join(output_dir, 'organized')
@@ -169,21 +180,22 @@ class SmartOrganizer:
                                           save_discarded=save_discarded)
         kept_names = [os.path.basename(m['name']) for g in dedup_report['groups']
                       for m in g['members'] if m['kept']]
+        timings['dedup_seconds'] = time.perf_counter() - started
 
         # 2. 元数据 + 识别 + 行当
         records = []
         embeddings = None
+        feature_report = None
+        feature_started = time.perf_counter()
         if self.embedder is not None:
-            embeddings = {}
-            for name in kept_names:
-                path = os.path.join(input_dir, name)
-                try:
-                    f = self.embedder.extract_features(path)
-                except Exception as exc:
-                    logger.warning(f'场景特征提取失败 {name}: {type(exc).__name__}')
-                    continue
-                if f is not None:
-                    embeddings[path] = f
+            from core_modules.organize.feature_cache import FeatureService
+            features = FeatureService(self.embedder, cache_dir=self.feature_cache_dir,
+                                      batch_size=self.feature_batch_size)
+            embeddings = features.images([os.path.join(input_dir, name) for name in kept_names])
+            feature_report = features.report()
+            for path, reason in features.image_errors.items():
+                logger.warning(f'场景特征提取失败 {os.path.basename(path)}: {reason}')
+        timings['scene_features_seconds'] = time.perf_counter() - feature_started
 
         scene_assignment = split_scenes(
             [os.path.join(input_dir, n) for n in kept_names],
@@ -197,6 +209,7 @@ class SmartOrganizer:
             scene_assignment, evidence_stats = apply_scene_evidence(
                 scene_assignment, evidence)
 
+        recognition_started = time.perf_counter()
         for name in kept_names:
             path = os.path.join(input_dir, name)
             info = parse_filename(name, done_style='整理完成' in input_dir)
@@ -258,6 +271,8 @@ class SmartOrganizer:
             records.append(record)
             logger.info(f"[{seq}] {name[:36]} -> {new_name[:60]}")
 
+        timings['recognition_and_copy_seconds'] = time.perf_counter() - recognition_started
+        timings['before_report_seconds'] = time.perf_counter() - started
         report = {
             'input_dir': input_dir, 'output_dir': output_dir,
             'db_root': self.face_db_root,
@@ -265,6 +280,8 @@ class SmartOrganizer:
             'kept': len(kept_names), 'discarded': dedup_report['discarded'],
             'n_scenes': len(set(scene_assignment.values())),
             'scene_evidence': evidence_stats,
+            'scene_features': feature_report,
+            'timings': timings,
             'threshold': threshold,
             'burst': {k: dedup_report[k] for k in
                       ('n_groups', 'kept', 'discarded')},

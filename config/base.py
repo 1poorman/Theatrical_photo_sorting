@@ -23,6 +23,9 @@ UI_PORT = 8199
 # ---------- 输出产物 ----------
 OUTPUT_DIR = os.environ.get('TRANS_OUTPUT_DIR', os.path.join(PROJECT_ROOT, 'outputs'))
 TEMP_DIR = os.path.join(OUTPUT_DIR, 'temp')
+FEATURE_CACHE_DIR = os.environ.get('TRANS_FEATURE_CACHE_DIR', os.path.join(OUTPUT_DIR, 'feature_cache'))
+FEATURE_BATCH_SIZE = max(1, int(os.environ.get('TRANS_FEATURE_BATCH_SIZE', '8')))
+FEATURE_DECODE_WORKERS = max(1, int(os.environ.get('TRANS_FEATURE_DECODE_WORKERS', '2')))
 
 # ---------- 模型权重路径 ----------
 SCRFD_MODEL_PATH = os.path.join(WEIGHTS_DIR, 'scrfd', 'scrfd_10g_bnkps.onnx')

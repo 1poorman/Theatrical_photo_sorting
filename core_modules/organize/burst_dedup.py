@@ -37,12 +37,24 @@ def image_quality(img):
         return {'sharpness': 0.0, 'brightness': 0.0, 'contrast': 0.0, 'score': 0.0}
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if img.ndim == 3 else img
 
+    # The four-neighbour Laplacian of uint8 photos is an exact integer in
+    # [-1020, 1020]. int16 and OpenCV reductions avoid full-size float64 arrays
+    # and NumPy variance temporaries while retaining the quality formula.
+    if gray.dtype == np.uint8:
+        _, lap_std = cv2.meanStdDev(cv2.Laplacian(gray, cv2.CV_16S))
+        _, std = cv2.meanStdDev(gray)
+        lap_var = float(lap_std[0, 0]) ** 2
+        # Keep NumPy's mean: OpenCV's reciprocal multiplication can turn an
+        # exact boundary such as 200 into 200.00000000003 and change the bucket.
+        brightness, contrast = float(np.mean(gray)), float(std[0, 0])
+    else:
+        lap_var = cv2.Laplacian(gray, cv2.CV_64F).var()
+        brightness, contrast = float(np.mean(gray)), float(gray.std())
+
     # 清晰度：Laplacian 方差，用对数尺度归一（舞台照 var 常见 100~3000）
-    lap_var = cv2.Laplacian(gray, cv2.CV_64F).var()
     sharpness = min(1.0, np.log10(max(lap_var, 1.0)) / 3.5)  # var=3162 -> 1.0
 
     # 亮度：偏离合理区间惩罚（舞台照 30~235 可接受）
-    brightness = float(np.mean(gray))
     if 40 <= brightness <= 200:
         bright_score = 1.0
     elif 25 <= brightness <= 225:
@@ -51,7 +63,6 @@ def image_quality(img):
         bright_score = 0.3
 
     # 对比度
-    contrast = float(gray.std())
     contrast_score = min(1.0, contrast / 55.0)
 
     score = 0.5 * sharpness + 0.25 * bright_score + 0.25 * contrast_score

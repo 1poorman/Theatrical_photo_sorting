@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision import models, transforms
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 import numpy as np
 import faiss
 import os
@@ -11,6 +11,10 @@ import concurrent.futures
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import datetime
+import time
+import threading
+import weakref
+from importlib.metadata import version
 from typing import List, Dict, Optional, Tuple, Union
 from sklearn.cluster import KMeans
 
@@ -30,7 +34,8 @@ except ImportError:
     print("Nomic model components not available.")
 
 # SigLIP 2 本地权重根目录（config/base.py 统一管理，可用环境变量 TRANS_SIGLIP_WEIGHTS_ROOT 覆盖）
-from config.base import SIGLIP_WEIGHTS_ROOT, OUTPUT_DIR
+from config.base import SIGLIP_WEIGHTS_ROOT, OUTPUT_DIR, FEATURE_DECODE_WORKERS
+from core_modules.organize.feature_cache import signature, tensor_signature, tokenizer_signature
 
 # SigLIP 2 模型映射: 名称 -> (本地权重路径, 在线 model_id, 特征维度)
 SIGLIP_MODEL_MAP = {
@@ -62,33 +67,105 @@ class ImageEmbedder:
         self.model_name = model_name
         self.model, self.feature_dim, self.processor = self._load_model(model_name)
         self.preprocess = self._get_preprocess(model_name)
+        self.metrics = {}
+        self._weight_versions = None
+        self._decode_lock = threading.Lock()
+        self._decode_executor = None
+
+    def close(self):
+        """Release decoder threads when an encoder is explicitly retired."""
+        lock = getattr(self, '_decode_lock', None)
+        if lock is not None:
+            with lock:
+                if getattr(self, '_decode_executor', None) is not None:
+                    self._decode_finalizer()
+                    self._decode_executor = None
 
     @property
     def model_signature(self):
-        """向量缓存签名（与配置的模型名对应）。"""
-        return self.model_name
+        """Loaded weight bytes, including actual dtype and any fallback model."""
+        versions = tuple((name, tensor.data_ptr(), tensor._version, str(tensor.dtype), tuple(tensor.shape))
+                         for name, tensor in self.model.state_dict(keep_vars=True).items())
+        if versions != getattr(self, '_weight_versions', None):
+            self._weight_digest = tensor_signature(self.model)
+            self._weight_versions = versions
+        config = getattr(self.model, 'config', None)
+        return signature({'model': self.model_name, 'class': type(self.model).__name__,
+                          'config': config.to_dict() if hasattr(config, 'to_dict') else None,
+                          'weights_sha256': self._weight_digest})
+
+    @property
+    def preprocessing_signature(self):
+        image_processor = getattr(self.processor, 'image_processor', None)
+        tokenizer = getattr(self.processor, 'tokenizer', None)
+        tokenizer_backend = getattr(tokenizer, 'backend_tokenizer', None)
+        tokenizer_state = tokenizer_signature(tokenizer_backend) if tokenizer_backend else None
+        return signature({'adapter': 'image-search-v3', 'decode': 'pillow-exif-transpose-rgb',
+                          'image_processor': image_processor.to_dict() if image_processor else repr(self.preprocess),
+                          'tokenizer_sha256': tokenizer_state,
+                          'tokenizer_class': type(tokenizer).__name__,
+                          # Vocabulary, normalizer, postprocessor and added tokens
+                          # are already covered by the backend. init_kwargs duplicates
+                          # that vocabulary and describes construction, not runtime.
+                          'special_tokens': getattr(tokenizer, 'special_tokens_map', None),
+                          'text': {'padding': 'max_length', 'truncation': True,
+                                   'model_max_length': getattr(tokenizer, 'model_max_length', None),
+                                   'pad_token_id': getattr(tokenizer, 'pad_token_id', None),
+                                   'pad_token_type_id': getattr(tokenizer, 'pad_token_type_id', None),
+                                   'padding_side': getattr(tokenizer, 'padding_side', None),
+                                   'truncation_side': getattr(tokenizer, 'truncation_side', None)},
+                          'versions': {name: version(name) for name in ('torch', 'torchvision', 'transformers', 'Pillow')}})
+
+    def _metric(self, name, value):
+        if not hasattr(self, 'metrics'):
+            self.metrics = {}
+        self.metrics[name] = self.metrics.get(name, 0) + value
+
+    def _synchronize(self):
+        if str(self.device).startswith('cuda'):
+            torch.cuda.synchronize(self.device)
+
+    def _forward_timed(self, kind, call):
+        self._synchronize()
+        start = time.perf_counter()
+        self._metric(kind + '_forward_calls', 1)
+        try:
+            with torch.no_grad():
+                return call()
+        finally:
+            self._synchronize()
+            self._metric(kind + '_forward_seconds', time.perf_counter() - start)
 
     def encode_text(self, text):
         """SigLIP 文本编码，用于图文检索；非 SigLIP 模型返回 None。
 
         与 ``extract_features`` 的图像向量位于同一投影空间，可直接算余弦相似度。
         """
-        if not str(self.model_name).startswith('siglip') or self.processor is None:
-            return None
         try:
-            inputs = self.processor(text=[text], padding='max_length',
-                                    truncation=True, return_tensors='pt')
-            inputs = {k: v.to(self.device) for k, v in inputs.items()
-                      if hasattr(v, 'to')}
-            with torch.no_grad():
-                txt_emb = self.model.get_text_features(**inputs)
-                if hasattr(txt_emb, 'pooler_output'):
-                    txt_emb = txt_emb.pooler_output
-                txt_emb = F.normalize(txt_emb, p=2, dim=-1)
-            return txt_emb.cpu().numpy().flatten()
+            vectors = self.encode_text_batch([text])
+            return vectors[0] if vectors is not None else None
         except Exception as e:
             print(f"SigLIP text encoding failed: {e}")
             return None
+
+    def encode_text_batch(self, texts, batch_size=8):
+        if not str(self.model_name).startswith('siglip') or self.processor is None:
+            return None
+        batch_size = max(1, int(batch_size))
+        results = []
+        for start in range(0, len(texts), batch_size):
+            before = time.perf_counter()
+            inputs = self.processor(text=texts[start:start + batch_size], padding='max_length',
+                                    truncation=True, return_tensors='pt')
+            inputs = {k: v.to(self.device) for k, v in inputs.items() if hasattr(v, 'to')}
+            self._metric('text_preprocess_seconds', time.perf_counter() - before)
+            features = self._forward_timed('text', lambda: self.model.get_text_features(**inputs))
+            before = time.perf_counter()
+            if hasattr(features, 'pooler_output'):
+                features = features.pooler_output
+            results.append(F.normalize(features, p=2, dim=-1).cpu().numpy())
+            self._metric('text_postprocess_seconds', time.perf_counter() - before)
+        return np.vstack(results) if results else np.empty((0, self.feature_dim), dtype='float32')
 
     def _load_model(self, model_name):
         """Load pre-trained model based on model name"""
@@ -272,38 +349,60 @@ class ImageEmbedder:
                 )
             ])
     
-    def extract_features(self, image_path: str) -> Optional[np.ndarray]:
-        """Extract features from a single image"""
-        try:
-            image = Image.open(image_path).convert('RGB')
-            
+    def _prepare_image(self, path):
+        """Decode one image; retain only its small CPU tensor."""
+        before = time.perf_counter()
+        with Image.open(path) as source:
+            ImageOps.exif_transpose(source, in_place=True)
+            image = source if source.mode == 'RGB' else source.convert('RGB')
+            decoded = time.perf_counter()
+            try:
+                if self.model_name.startswith(('nomic', 'blip2', 'siglip')):
+                    inputs = dict(self.processor(images=image, return_tensors='pt'))
+                else:
+                    inputs = {'pixel_values': self.preprocess(image).unsqueeze(0)}
+            finally:
+                if image is not source:
+                    image.close()
+        return inputs, decoded - before, time.perf_counter() - decoded
+
+    def _encode_prepared(self, prepared):
+        before = time.perf_counter()
+        keys = prepared[0].keys()
+        if any(item.keys() != keys for item in prepared):
+            raise ValueError('inconsistent_processor_keys')
+        inputs = {key: torch.cat([item[key] for item in prepared]).to(self.device) for key in keys}
+        self._metric('image_transfer_seconds', time.perf_counter() - before)
+
+        def forward():
+            if self.model_name.startswith('siglip'):
+                output = self.model.get_image_features(**inputs)
+                return output.pooler_output if hasattr(output, 'pooler_output') else output
             if self.model_name.startswith('nomic'):
-                # Use local Nomic model for feature extraction
-                return self._extract_features_nomic_local(image)
-            elif self.model_name.startswith('blip2'):
-                # Use BLIP2 model for feature extraction
-                return self._extract_features_blip2(image)
-            elif self.model_name.startswith('siglip'):
-                # Use SigLIP model for feature extraction
-                return self._extract_features_siglip(image)
-            else:
-                # Use local model for feature extraction
-                input_tensor = self.preprocess(image).unsqueeze(0).to(self.device)
-                
-                with torch.no_grad():
-                    if self.model_name.startswith('dinov2'):
-                        # DINOv2 model feature extraction
-                        features = self.model(input_tensor)
-                    else:
-                        # ResNet model feature extraction
-                        features = self.model(input_tensor)
-                        features = features.squeeze(-1).squeeze(-1)
-                
-                return features.cpu().numpy().flatten()
-        except Exception as e:
-            print(f"Error processing {image_path}: {e}")
+                return self.model(**inputs).last_hidden_state[:, 0]
+            if self.model_name.startswith('blip2'):
+                return self.model.vision_model(**inputs).pooler_output
+            output = self.model(inputs['pixel_values'])
+            return output if self.model_name.startswith('dinov2') else output.squeeze(-1).squeeze(-1)
+
+        features = self._forward_timed('image', forward)
+        before = time.perf_counter()
+        if self.model_name.startswith(('nomic', 'blip2', 'siglip')):
+            features = F.normalize(features, p=2, dim=-1)
+        result = features.cpu().numpy()
+        self._metric('image_postprocess_seconds', time.perf_counter() - before)
+        return result
+
+    def extract_features(self, image_path: str) -> Optional[np.ndarray]:
+        try:
+            inputs, decode_time, preprocess_time = self._prepare_image(image_path)
+            self._metric('image_decode_seconds', decode_time)
+            self._metric('image_preprocess_seconds', preprocess_time)
+            return self._encode_prepared([inputs])[0]
+        except Exception as exc:
+            print(f"Error processing {image_path}: {type(exc).__name__}")
             return None
-    
+
     def _extract_features_nomic_local(self, image: Image.Image) -> Optional[np.ndarray]:
         """Extract features using local Nomic model"""
         try:
@@ -403,122 +502,62 @@ class ImageEmbedder:
         return image_embeds.cpu().numpy()
 
     def extract_features_batch(self, image_paths: List[str], sub_batch_size: int = 32) -> Tuple[np.ndarray, List[str]]:
-        """Batch feature extraction for efficiency (true batched forward passes)"""
-        # Processor-based models (SigLIP / Nomic / BLIP2).
-        # 实测瓶颈在 CPU 侧（JPEG 解码 ~180ms/张 + processor 预处理 ~130ms/张），
-        # GPU 前向仅 ~10ms/张。PIL 解码/预处理会释放 GIL，因此用线程池并行
-        # 解码+预处理，再做批量 GPU 前向，整体比逐张提取快约 3~4 倍。
-        if self.model_name.startswith(('nomic', 'blip2', 'siglip')):
-            sub = max(1, int(sub_batch_size))
-            max_workers = min(8, os.cpu_count() or 4)
+        """Bound memory to two tensor batches and a fixed number of decoders.
 
-            def _prep(path):
-                # 解码 + processor 预处理（线程内完成，失败返回 None）
+        Preprocess the next batch during GPU inference. Failed images are omitted
+        from valid paths, and failed forwards retry each path independently.
+        """
+        sub = max(1, int(sub_batch_size))
+        workers = min(FEATURE_DECODE_WORKERS, os.cpu_count() or 1)
+
+        def prepare(path):
+            try:
+                return self._prepare_image(path)
+            except Exception as exc:
+                print(f"Error processing {path}: {type(exc).__name__}")
+                return None
+
+        if not image_paths:
+            return np.array([]), []
+        # Recreating pools for every service batch leaves large thread-local
+        # allocator arenas behind. Keep one bounded pool for the encoder lifetime.
+        if not hasattr(self, '_decode_lock'):
+            self._decode_lock = threading.Lock()
+        features, valid_paths = [], []
+        with self._decode_lock:
+            if getattr(self, '_decode_executor', None) is None:
+                self._decode_executor = concurrent.futures.ThreadPoolExecutor(
+                    max_workers=workers, thread_name_prefix='theatre-decode')
+                self._decode_finalizer = weakref.finalize(self, self._decode_executor.shutdown)
+            executor = self._decode_executor
+            def submit(start):
+                return [(path, executor.submit(prepare, path)) for path in image_paths[start:start + sub]]
+
+            pending = submit(0)
+            for start in range(0, len(image_paths), sub):
+                pairs = []
+                for path, future in pending:
+                    item = future.result()
+                    if item is not None:
+                        inputs, decode_time, preprocess_time = item
+                        self._metric('image_decode_seconds', decode_time)
+                        self._metric('image_preprocess_seconds', preprocess_time)
+                        pairs.append((path, inputs))
+                pending = submit(start + sub)
+                if not pairs:
+                    continue
                 try:
-                    image = Image.open(path).convert('RGB')
-                    return self.processor(images=image, return_tensors="pt")["pixel_values"]
-                except Exception as e:
-                    print(f"Error processing {path}: {e}")
-                    return None
-
-            def _forward(batch):
-                with torch.no_grad():
-                    if self.model_name.startswith('nomic'):
-                        return self.model(pixel_values=batch).last_hidden_state[:, 0]
-                    elif self.model_name.startswith('blip2'):
-                        if not BLIP2_AVAILABLE:
-                            return None
-                        return self.model.vision_model(pixel_values=batch).pooler_output
-                    else:
-                        # 兼容两种返回类型：
-                        # - transformers 5.x 中 SiglipModel.get_image_features 返回带 pooler_output 的输出对象
-                        # - Siglip2Model.get_image_features 直接返回张量
-                        img_emb = self.model.get_image_features(pixel_values=batch)
-                        if hasattr(img_emb, 'pooler_output'):
-                            img_emb = img_emb.pooler_output
-                        return img_emb
-
-            all_feats = []
-            ok_paths = []
-            executor = concurrent.futures.ThreadPoolExecutor(max_workers=max_workers)
-            try:
-                for start in range(0, len(image_paths), sub):
-                    chunk_paths = image_paths[start:start + sub]
-                    prepped = list(executor.map(_prep, chunk_paths))
-                    pairs = [(t, p) for t, p in zip(prepped, chunk_paths) if t is not None]
-                    if not pairs:
-                        continue
-                    batch = torch.cat([t for t, _ in pairs]).to(self.device)
-                    try:
-                        feats = _forward(batch)
-                        if feats is None:
-                            raise RuntimeError("model unavailable")
-                        feats = F.normalize(feats, p=2, dim=-1).cpu().numpy()
-                        all_feats.append(feats)
-                        ok_paths.extend(p for _, p in pairs)
-                    except Exception as e:
-                        # One bad chunk should not kill the whole batch: fall back per-image
-                        print(f"Chunked batch extraction failed, retrying per-image: {e}")
-                        for _, p in pairs:
-                            try:
-                                feat = self.extract_features(p)
-                            except Exception:
-                                continue
-                            if feat is not None:
-                                all_feats.append(feat[None, :])
-                                ok_paths.append(p)
-            finally:
-                executor.shutdown()
-            if not all_feats:
-                return np.array([]), []
-            return np.vstack(all_feats), ok_paths
-
-        # Load all images first
-        images = []
-        valid_paths = []
-        for path in image_paths:
-            try:
-                image = Image.open(path).convert('RGB')
-                images.append(image)
-                valid_paths.append(path)
-            except Exception as e:
-                print(f"Error loading {path}: {e}")
-                continue
-
-        if not images:
-            return np.array([]), []
-        
-        # Batch processing for other models
-        images = []
-        valid_paths = []
-        
-        # Preprocess all images
-        for path in image_paths:
-            try:
-                image = Image.open(path).convert('RGB')
-                input_tensor = self.preprocess(image)
-                images.append(input_tensor)
-                valid_paths.append(path)
-            except Exception as e:
-                print(f"Error processing {path}: {e}")
-                continue
-        
-        if not images:
-            return np.array([]), []
-        
-        # Batch process
-        batch_tensor = torch.stack(images).to(self.device)
-        
-        with torch.no_grad():
-            if self.model_name.startswith('dinov2'):
-                # DINOv2 model feature extraction
-                features = self.model(batch_tensor)
-            else:
-                # ResNet model feature extraction
-                features = self.model(batch_tensor)
-                features = features.squeeze(-1).squeeze(-1)
-        
-        return features.cpu().numpy(), valid_paths
+                    vectors = self._encode_prepared([inputs for _, inputs in pairs])
+                    features.append(vectors)
+                    valid_paths.extend(path for path, _ in pairs)
+                except Exception as exc:
+                    print(f"Batch extraction failed, retrying paths: {type(exc).__name__}")
+                    for path, _ in pairs:
+                        vector = self.extract_features(path)
+                        if vector is not None:
+                            features.append(vector[None, :])
+                            valid_paths.append(path)
+        return (np.vstack(features), valid_paths) if features else (np.array([]), [])
 
 
 class VectorDatabase:

@@ -27,6 +27,11 @@ tests/*
 !tests/test_workspace_browser.cjs
 !tests/test_scene_review_ui.py
 !tests/test_core_upgrade.py
+!tests/test_feature_cache.py
+!tests/test_multimodal_evidence.py
+!tests/test_quality_statistics.py
+!tests/test_review_store.py
+!tests/test_core_upgrade_tasks.py
 
 
 .env 

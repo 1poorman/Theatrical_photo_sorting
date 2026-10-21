@@ -4,6 +4,8 @@ import json
 from pathlib import Path
 import sys
 import tempfile
+import threading
+import time
 import unittest
 from unittest.mock import patch
 
@@ -15,6 +17,9 @@ from PIL import Image
 import numpy as np
 import main
 import server_ui
+from app import workspace_api
+from app import organize_tasks
+from core_modules.organize.thumbnail_cache import ThumbnailCache
 
 
 class WorkspaceTest(unittest.TestCase):
@@ -23,14 +28,24 @@ class WorkspaceTest(unittest.TestCase):
         self.root = Path(self.temp.name)
         self.photos = self.root / 'photos'
         self.photos.mkdir()
+        task_root = patch.object(organize_tasks, 'TASK_ROOT', self.root / 'tasks')
+        task_root.start()
+        self.addCleanup(task_root.stop)
+        self.addCleanup(organize_tasks.shutdown)
+        cache = patch.object(main, 'FEATURE_CACHE_DIR', str(self.root / 'features'))
+        cache.start()
+        self.addCleanup(cache.stop)
+        thumbnails = patch.object(workspace_api, 'thumbnail_cache', ThumbnailCache(self.root / 'thumbnails'))
+        thumbnails.start()
+        self.addCleanup(thumbnails.stop)
         self.client = TestClient(server_ui.app)
         self.names = [
             '01-20140304-戏剧场-京剧《天下归心》彩排 第1幕克段-陈少云饰颍考叔-苏岩.jpg',
             '02-20140304-戏剧场-京剧《天下归心》彩排 第2幕庆功-孟广禄饰郑庄公-苏岩.jpg',
             '03-20140304-戏剧场-京剧《天下归心》彩排-苏岩.jpg',
         ]
-        for name in self.names:
-            Image.new('RGB', (800, 400), '#324233').save(self.photos / name)
+        for name, color in zip(self.names, ('#324233', '#744233', '#324277')):
+            Image.new('RGB', (800, 400), color).save(self.photos / name)
 
     def tearDown(self):
         self.temp.cleanup()
@@ -67,6 +82,88 @@ class WorkspaceTest(unittest.TestCase):
         for path in ['/tools', '/organize/advanced', '/static/workspace.js', '/static/workspace.css']:
             self.assertEqual(self.client.get(path).status_code, 200)
 
+    def wait_task(self, task_id):
+        deadline = time.monotonic() + 10
+        while time.monotonic() < deadline:
+            value = self.client.get('/api/organize/tasks/' + task_id).json()['data']
+            if value['status'] in ('completed', 'completed_with_errors', 'failed', 'cancelled'):
+                return value
+            time.sleep(0.01)
+        self.fail('task timeout')
+
+    def test_durable_analysis_api_idempotency_partial_failure_and_checkpoint_pages(self):
+        knowledge = self.knowledge()
+        output = self.root / 'task-evidence.jsonl'
+        body = {'kind': 'scene_reason', 'idempotency_key': 'api-test', 'params': {
+            'input_dir': str(self.photos), 'knowledge_dir': str(knowledge), 'output_file': str(output)}}
+        from core_modules.organize.scene_reasoner import SceneReasoner
+        original = SceneReasoner.reason
+        calls = []
+        def reason(reasoner, image):
+            calls.append(image)
+            if image.endswith(self.names[1]):
+                raise ValueError('test single image error')
+            return original(reasoner, image)
+        with patch.object(SceneReasoner, 'reason', reason):
+            response = self.client.post('/api/organize/tasks', json=body)
+            self.assertEqual(response.status_code, 202, response.text)
+            task_id = response.json()['data']['task_id']
+            final = self.wait_task(task_id)
+            duplicate = self.client.post('/api/organize/tasks', json=body).json()['data']
+            self.assertEqual(duplicate['task_id'], task_id)
+            self.assertFalse(duplicate['created'])
+        self.assertEqual(final['status'], 'completed_with_errors')
+        self.assertEqual((final['succeeded'], final['failed']), (2, 1))
+        self.assertEqual(len(calls), 3)
+        self.assertEqual(final['result']['n_failed'], 1)
+        rows = [json.loads(row) for row in output.read_text().splitlines()]
+        self.assertEqual(len(rows), 3)
+        self.assertEqual(rows[1]['decision'], 'error')
+        page = self.client.get(f'/api/organize/tasks/{task_id}/items?limit=2&offset=1').json()['data']['items']
+        self.assertEqual([row['position'] for row in page], [1, 2])
+        self.assertEqual(self.client.get(f'/api/organize/tasks/{task_id}/items?limit=201').status_code, 400)
+        changed = dict(body, params=dict(body['params'], top_k=2))
+        self.assertEqual(self.client.post('/api/organize/tasks', json=changed).status_code, 409)
+        self.assertEqual(self.client.post(f'/api/organize/tasks/{task_id}/resume').status_code, 409)
+        self.assertEqual(self.client.get('/api/organize/tasks/missing').status_code, 404)
+        seeded = self.post('/api/organize/scene/review/seed', review_dir=self.root / 'review', evidence_file=output)
+        self.assertEqual(seeded['total'], 3)
+
+    def test_background_cancel_keeps_health_responsive_and_detects_changed_source_on_resume(self):
+        knowledge = self.knowledge()
+        body = {'kind': 'scene_reason', 'params': {'input_dir': str(self.photos), 'knowledge_dir': str(knowledge),
+                                                'output_file': str(self.root / 'cancel.jsonl')}}
+        from core_modules.organize.scene_reasoner import SceneReasoner
+        original = SceneReasoner.reason
+        started, release = threading.Event(), threading.Event()
+        def reason(reasoner, image):
+            started.set()
+            if not release.wait(8):
+                raise TimeoutError('test worker release')
+            return original(reasoner, image)
+        with patch.object(SceneReasoner, 'reason', reason):
+            try:
+                response = self.client.post('/api/organize/tasks', json=body)
+                self.assertEqual(response.status_code, 202, response.text)
+                task_id = response.json()['data']['task_id']
+                self.assertTrue(started.wait(5))
+                start = time.monotonic()
+                self.assertEqual(self.client.get('/api/health').status_code, 200)
+                self.assertLess(time.monotonic() - start, 0.5)
+                cancelled = self.client.post(f'/api/organize/tasks/{task_id}/cancel').json()['data']
+                self.assertEqual(cancelled['status'], 'cancel_requested')
+            finally:
+                release.set()
+            final = self.wait_task(task_id)
+        self.assertEqual((final['succeeded'], final['pending']), (1, 2))
+        (self.photos / self.names[1]).write_bytes(b'changed source')
+        resumed = self.client.post(f'/api/organize/tasks/{task_id}/resume')
+        self.assertEqual(resumed.status_code, 202)
+        final = self.wait_task(task_id)
+        self.assertEqual((final['status'], final['succeeded'], final['failed']), ('completed_with_errors', 2, 1))
+        rows = self.client.get(f'/api/organize/tasks/{task_id}/items').json()['data']['items']
+        self.assertEqual(rows[1]['result']['error']['message'], 'source_content_changed')
+
     def test_listing_matches_pipeline_scope_and_handles_metadata(self):
         child = self.photos / 'nested'
         child.mkdir()
@@ -100,6 +197,96 @@ class WorkspaceTest(unittest.TestCase):
         im.save(self.photos / 'rotated.jpg', exif=exif)
         response = self.client.get('/api/workspace/thumbnail', params={'input_dir': str(self.photos), 'name': 'rotated.jpg', 'size': 160})
         self.assertEqual(Image.open(io.BytesIO(response.content)).size, (80, 160))
+
+    def test_thumbnail_cache_hits_revalidate_and_do_not_decode(self):
+        params = {'input_dir': str(self.photos), 'name': self.names[0], 'size': 160}
+        first = self.client.get('/api/workspace/thumbnail', params=params)
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(first.headers['cache-control'], 'private, no-cache')
+        with patch('core_modules.organize.thumbnail_cache.Image.open', side_effect=AssertionError('unexpected decode')):
+            cached = self.client.get('/api/workspace/thumbnail', params=params)
+            self.assertEqual(cached.content, first.content)
+            conditional = self.client.get('/api/workspace/thumbnail', params=params,
+                                          headers={'If-None-Match': first.headers['etag']})
+            self.assertEqual(conditional.status_code, 304)
+            self.assertEqual(conditional.content, b'')
+        self.assertEqual(len(list((self.root / 'thumbnails').glob('*.thumb'))), 1)
+
+    def test_thumbnail_content_rewrite_invalidates_etag_even_with_restored_mtime(self):
+        path = self.photos / 'mutable.bmp'
+        Image.new('RGB', (800, 400), 'red').save(path)
+        params = {'input_dir': str(self.photos), 'name': path.name, 'size': 160}
+        first = self.client.get('/api/workspace/thumbnail', params=params)
+        stat = path.stat()
+        Image.new('RGB', (800, 400), 'blue').save(path)
+        import os
+        os.utime(path, ns=(stat.st_atime_ns, stat.st_mtime_ns))
+        self.assertEqual(path.stat().st_size, stat.st_size)
+        second = self.client.get('/api/workspace/thumbnail', params=params,
+                                 headers={'If-None-Match': first.headers['etag']})
+        self.assertEqual(second.status_code, 200)
+        self.assertNotEqual(first.headers['etag'], second.headers['etag'])
+        self.assertNotEqual(first.content, second.content)
+        larger = self.client.get('/api/workspace/thumbnail', params={**params, 'size': 320})
+        self.assertNotEqual(larger.headers['etag'], second.headers['etag'])
+        self.assertEqual(Image.open(io.BytesIO(larger.content)).size, (320, 160))
+
+    def test_thumbnail_corruption_rebuilds_and_pruning_only_removes_cache_entries(self):
+        cache = workspace_api.thumbnail_cache
+        cache.max_entries = 1
+        params = {'input_dir': str(self.photos), 'name': self.names[0], 'size': 160}
+        first = self.client.get('/api/workspace/thumbnail', params=params)
+        entry = next(cache.root.glob('*.thumb'))
+        entry.write_bytes(b'broken')
+        self.assertEqual(self.client.get('/api/workspace/thumbnail', params=params).content, first.content)
+        unrelated = cache.root / 'keep.txt'
+        unrelated.write_text('keep')
+        outside = self.root / 'outside.thumb'
+        outside.write_text('keep outside')
+        (cache.root / ('f' * 64 + '.thumb')).symlink_to(outside)
+        second = self.client.get('/api/workspace/thumbnail', params={**params, 'name': self.names[1]})
+        self.assertEqual(second.status_code, 200)
+        regular = [p for p in cache.root.glob('*.thumb') if not p.is_symlink()]
+        self.assertEqual(len(regular), 1)
+        self.assertEqual(unrelated.read_text(), 'keep')
+        self.assertEqual(outside.read_text(), 'keep outside')
+        cache.max_bytes = regular[0].stat().st_size
+        self.client.get('/api/workspace/thumbnail', params={**params, 'name': self.names[2]})
+        self.assertLessEqual(sum(p.stat().st_size for p in cache.root.glob('*.thumb') if not p.is_symlink()), cache.max_bytes)
+
+    def test_thumbnail_changed_during_decode_is_not_cached(self):
+        cache = workspace_api.thumbnail_cache
+        path = self.photos / self.names[0]
+        original = cache._render
+        def mutate(source, size):
+            jpeg = original(source, size)
+            Image.new('RGB', (800, 400), 'red').save(path)
+            return jpeg
+        with patch.object(cache, '_render', side_effect=mutate):
+            response = self.client.get('/api/workspace/thumbnail', params={
+                'input_dir': str(self.photos), 'name': path.name, 'size': 160})
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(list(cache.root.glob('*.thumb')), [])
+
+    def test_thumbnail_copies_share_entries_and_concurrent_publication_stays_bounded(self):
+        from concurrent.futures import ThreadPoolExecutor
+        import shutil
+        cache = workspace_api.thumbnail_cache
+        original = self.photos / self.names[0]
+        clone = self.photos / 'renamed.jpg'
+        shutil.copyfile(original, clone)
+        first = cache.preview(original, 160)
+        with patch.object(cache, '_render', side_effect=AssertionError('copy should hit cache')):
+            self.assertEqual(cache.preview(clone, 160), first)
+        cache.max_entries = 2
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            previews = list(pool.map(lambda size: cache.preview(original, size), (320, 480, 640, 960)))
+        self.assertEqual(len({key for _, key in previews}), 4)
+        for jpeg, _ in previews:
+            with Image.open(io.BytesIO(jpeg)) as image:
+                image.verify()
+        self.assertLessEqual(len(list(cache.root.glob('*.thumb'))), 2)
+        self.assertEqual([p.name for p in cache.root.iterdir() if not p.name.endswith('.thumb')], ['.publication.lock'])
 
     def test_artifact_download_restrictions(self):
         (self.root / 'scene_labels.json').write_text('{}')
@@ -151,11 +338,40 @@ class WorkspaceTest(unittest.TestCase):
             def encode_text(self, text):
                 return np.array([1., 0., 0.])
 
-        with patch.object(main, '_get_organize_models', return_value=(Encoder(), None)):
+        with patch.object(main, '_get_scene_embedder', return_value=Encoder()):
             result = self.post('/api/organize/scene/reason', input_dir=self.photos, knowledge_dir=knowledge,
                                output_file=self.root / 'visual.jsonl', use_embedder='true')
         self.assertEqual(len(paths), 3)
         self.assertEqual(result['n_visual'], 3)
+
+    def test_duplicate_content_reuses_vectors_and_keeps_all_evidence_rows(self):
+        knowledge = self.knowledge()
+        data = (self.photos / self.names[0]).read_bytes()
+        for name in self.names[1:]:
+            (self.photos / name).write_bytes(data)
+        calls = {'image': 0, 'text': 0}
+
+        class Encoder:
+            model_signature = 'workspace-cache-test'
+
+            def extract_features(self, path):
+                calls['image'] += 1
+                return np.array([1., 0., 0.])
+
+            def encode_text(self, text):
+                calls['text'] += 1
+                return np.array([1., 0., 0.])
+
+        output = self.root / 'visual.jsonl'
+        with patch.object(main, '_get_scene_embedder', side_effect=[Encoder(), Encoder()]):
+            for _ in range(2):
+                result = self.post('/api/organize/scene/reason', input_dir=self.photos,
+                                   knowledge_dir=knowledge, output_file=output, use_embedder='true')
+                self.assertEqual(result['n_visual'], 3)
+                rows = [json.loads(line) for line in output.read_text().splitlines()]
+                self.assertEqual({row['image'] for row in rows},
+                                 {str(self.photos / name) for name in self.names})
+        self.assertEqual(calls, {'image': 1, 'text': 2})
 
     def test_cluster_failure_is_terminal_and_queryable(self):
         task_id = 'workspace-test-failure'
@@ -176,6 +392,27 @@ class WorkspaceTest(unittest.TestCase):
         queue.seed([{'image': str(self.photos / self.names[0]), 'scene_id': 'act-01', 'label': '第1幕克段'}])
         self.assertEqual(len(queue.records()), 1)
         self.assertEqual(queue.final_labels(), {self.names[0]: '第2幕庆功'})
+
+    def test_review_revision_conflict_returns_409_and_single_record_refresh(self):
+        from core_modules.organize.review_queue import ReviewQueue
+        queue = ReviewQueue(str(self.root / 'review'))
+        image = str(self.photos / self.names[0])
+        queue.seed([{'image': image, 'label': 'candidate'}])
+        params = {'review_dir': queue.root, 'image': image}
+        loaded = self.client.get('/api/organize/scene/review', params=params).json()['data']['record']
+        self.assertEqual(loaded['review_revision'], 0)
+        data = {**params, 'action': 'modify', 'label': 'first', 'expected_revision': 0}
+        first = self.client.post('/api/organize/scene/review', data=data)
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(first.json()['data']['record']['review_revision'], 1)
+        stale = self.client.post('/api/organize/scene/review', data={**data, 'label': 'stale'})
+        self.assertEqual(stale.status_code, 409)
+        latest = self.client.get('/api/organize/scene/review', params=params).json()['data']['record']
+        self.assertEqual(latest['label'], 'first')
+        self.assertEqual(latest['review_revision'], 1)
+        self.assertEqual(len(queue.revisions()), 1)
+        self.assertEqual(self.client.get('/api/organize/scene/review', params={**params, 'image': 'missing'}).status_code, 404)
+        self.assertEqual(self.client.get('/api/organize/scene/review', params={'review_dir': queue.root, 'limit': -1}).status_code, 400)
 
 
 if __name__ == '__main__':

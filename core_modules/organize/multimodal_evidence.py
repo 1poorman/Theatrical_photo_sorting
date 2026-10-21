@@ -5,13 +5,12 @@
 SigLIP2 图文向量余弦相似度，并对图片/文本向量做磁盘缓存，重跑不重复推理。
 该层只生成候选，不替代后续 scene_reasoner 的闭集判定。
 """
-import hashlib
 import json
 import os
 import re
-import tempfile
 
 from core_modules.organize.filename_parser import parse_filename
+from config.base import FEATURE_BATCH_SIZE
 
 try:
     import numpy as np
@@ -57,148 +56,46 @@ def _cosine(a, b):
 class MultimodalRetriever:
     """图文向量召回：图片经 ``embedder.extract_features``，文本经 ``text_encoder``。
 
-    向量按内容键缓存到 ``cache_dir/embeddings.npz``；命中缓存不调用模型，满足
-    “重跑不重复推理”。缺图或缺少文本编码器时自动降级为词法召回。
+    图文向量使用与整理流程相同的内容缓存。缺图或缺少文本编码器时降级
+    为词法召回；旧的路径缓存不满足签名契约，不迁入新缓存。
     """
 
     def __init__(self, embedder=None, text_encoder=None, cache_dir=None,
-                 model_signature=None):
+                 model_signature=None, feature_service=None):
         self.embedder = embedder
         if text_encoder is None and embedder is not None and hasattr(embedder, 'encode_text'):
             text_encoder = embedder.encode_text
         self.text_encoder = text_encoder
         self.cache_dir = cache_dir
-        self.model_signature = (model_signature
-                                or getattr(embedder, 'model_signature', None)
-                                or 'unknown')
-        self._cache = {}
         self.diagnostics = {}
-        self.calls = {'image': 0, 'text': 0}
-        self._load_cache()
-
-    # ---------- 缓存 ----------
-
-    def _cache_path(self):
-        if not self.cache_dir:
-            return None
-        return os.path.join(self.cache_dir,
-                            f'embeddings_{self.model_signature}.npz')
-
-    def _load_cache(self):
-        path = self._cache_path()
-        if not path or not os.path.exists(path) or np is None:
-            return
-        with np.load(path) as data:
-            self._cache = {k: data[k] for k in data.files}
+        self.features = feature_service
+        if self.features is None and np is not None:
+            from core_modules.organize.feature_cache import FeatureService
+            self.features = FeatureService(embedder, cache_dir=cache_dir,
+                                           model_signature=model_signature, text_encoder=text_encoder)
+        self.model_signature = self.features.model_signature if self.features else model_signature
+        self.calls = self.features.calls if self.features else {'image': 0, 'text': 0}
 
     def save(self):
-        path = self._cache_path()
-        if not path or np is None:
-            return None
-        os.makedirs(self.cache_dir, exist_ok=True)
-        with tempfile.NamedTemporaryFile(dir=self.cache_dir, suffix='.npz', delete=False) as f:
-            tmp = f.name
-        try:
-            np.savez(tmp, **self._cache)
-            os.replace(tmp, path)
-        finally:
-            if os.path.exists(tmp):
-                os.unlink(tmp)
-        return path
+        return self.features.save() if self.features else None
 
-    def _image_key(self, path):
-        path = os.path.abspath(path)
-        try:
-            stat = os.stat(path)
-            version = f'{stat.st_mtime_ns}:{stat.st_size}'
-        except OSError:
-            version = 'missing'
-        return f'image:{path}:{version}'
-
-    def _text_key(self, text):
-        return 'text:' + hashlib.sha256(text.encode('utf-8')).hexdigest()[:24]
-
-    # ---------- 向量 ----------
-
-    def prepare(self, image_paths, knowledge, batch_size=8):
+    def prepare(self, image_paths, knowledge, batch_size=FEATURE_BATCH_SIZE):
         """Bounded batch prefill; batch failures retry each item independently."""
-        if np is None:
+        if self.features is None:
             return
-        image_paths = list(dict.fromkeys(os.path.abspath(p) for p in image_paths))
-        missing = [p for p in image_paths if os.path.isfile(p) and self._image_key(p) not in self._cache]
-        batch = getattr(self.embedder, 'extract_features_batch', None)
-        if batch:
-            for start in range(0, len(missing), batch_size):
-                paths = missing[start:start + batch_size]
-                try:
-                    result = batch(paths)
-                    vectors, valid = result if isinstance(result, tuple) else (result, paths)
-                    if len(vectors) != len(valid) or not set(valid).issubset(paths):
-                        raise ValueError('批量特征路径不匹配')
-                    for path, vector in zip(valid, vectors):
-                        vector = np.asarray(vector, dtype='float32').reshape(-1)
-                        if not np.isfinite(vector).all() or np.linalg.norm(vector) == 0:
-                            continue
-                        self._cache[self._image_key(path)] = vector
-                        self.calls['image'] += 1
-                except Exception:
-                    pass
-                for path in paths:
-                    if self._image_key(path) not in self._cache:
-                        try:
-                            self.image_vector(path)
-                        except Exception:
-                            continue
+        self.features.clear_failures()
+        self.features.images(image_paths, batch_size=batch_size)
         texts = list(dict.fromkeys(s.get('label', '') + ' ' + s.get('text', '')
                                    for s in knowledge.get('scenes', [])))
-        missing_texts = [t for t in texts if self._text_key(t) not in self._cache]
-        batch_text = getattr(self.embedder, 'encode_text_batch', None)
-        if batch_text:
-            for start in range(0, len(missing_texts), batch_size):
-                chunk = missing_texts[start:start + batch_size]
-                try:
-                    vectors = batch_text(chunk)
-                    if len(vectors) != len(chunk):
-                        raise ValueError('批量文本特征数量不匹配')
-                    for value, vector in zip(chunk, vectors):
-                        vector = np.asarray(vector, dtype='float32').reshape(-1)
-                        if np.isfinite(vector).all() and np.linalg.norm(vector) > 0:
-                            self._cache[self._text_key(value)] = vector
-                            self.calls['text'] += 1
-                except Exception:
-                    continue
+        self.features.texts(texts, batch_size=batch_size)
 
     def image_vector(self, image_path):
-        if self.embedder is None or not os.path.exists(image_path):
-            return None
-        key = self._image_key(image_path)
-        if key in self._cache:
-            return self._cache[key]
-        vector = self.embedder.extract_features(image_path)
-        if vector is None:
-            return None
-        vector = np.asarray(vector, dtype='float32').reshape(-1)
-        if not np.isfinite(vector).all() or np.linalg.norm(vector) == 0:
-            return None
-        self.calls['image'] += 1
-        self._cache[key] = vector
-        return vector
+        return (self.features.images([image_path], use_batch=False).get(os.fspath(image_path))
+                if self.features is not None else None)
 
     def text_vector(self, text):
-        if self.text_encoder is None:
-            return None
-        key = self._text_key(text)
-        if key in self._cache:
-            return self._cache[key]
-        vector = self.text_encoder(text)
-        if vector is None:
-            return None
-        vector = np.asarray(vector, dtype='float32').reshape(-1)
-        if not np.isfinite(vector).all() or np.linalg.norm(vector) == 0:
-            return None
-        self.calls['text'] += 1
-        self._cache[key] = vector
-        return vector
+        return (self.features.texts([text], use_batch=False).get(text)
+                if self.features is not None else None)
 
     # ---------- 召回 ----------
 
@@ -212,7 +109,8 @@ class MultimodalRetriever:
             errors.append({'component': 'image_embedding', 'reason': type(exc).__name__})
         if image_vec is None:
             if not errors:
-                errors.append({'component': 'image_embedding', 'reason': 'unavailable'})
+                reason = self.features.image_errors.get(os.fspath(image_path)) if self.features else None
+                errors.append({'component': 'image_embedding', 'reason': reason or 'unavailable'})
             self.diagnostics[image_path] = errors
             return query, lexical[:top_k], 'lexical'
         merged = []
@@ -230,8 +128,9 @@ class MultimodalRetriever:
                 visual_score = min(1.0, max(0.0, _cosine(image_vec, vec)))
                 available += 1
             else:
+                reason = self.features.text_errors.get(scene.get('label', '') + ' ' + scene.get('text', '')) if self.features else None
                 errors.append({'component': 'text_embedding', 'scene_id': scene['scene_id'],
-                               'reason': error or ('dimension_mismatch' if vec is not None else 'unavailable')})
+                               'reason': error or reason or ('dimension_mismatch' if vec is not None else 'unavailable')})
             details = {'visual_score': visual_score, 'lexical_score': lexical_score}
             # Missing text features retain their lexical candidate. A single
             # failed encoding must not remove a scene from the candidate pool.

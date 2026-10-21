@@ -2,7 +2,7 @@
 """review_queue - 场景标签人工复核、修订日志与最终标签导出。
 
 约定：
-  - 队列与修订日志均为 JSONL，追加/原子写，任意时刻可回放。
+  - SQLite 事务保存队列与修订，JSONL 保留为兼容快照与导入/导出。
   - 人工已确认（accept/modify/reject）的记录标记锁定，重跑 seed 不得覆盖。
   - 未审核或 ``unknown`` 不进入最终标签，由 SmartOrganizer 保留占位。
 """
@@ -11,6 +11,7 @@ import os
 import hashlib
 import tempfile
 from datetime import datetime, timezone
+from .review_store import ReviewStore, ReviewConflict
 
 ACTIONS = ('accept', 'modify', 'reject')
 
@@ -49,7 +50,7 @@ def _atomic_write_jsonl(path, rows):
 
 def _candidate_version(record):
     machine = {k: v for k, v in record.items()
-               if k not in ('review', 'candidate_version', 'previous_candidate_version')}
+               if k not in ('review', 'candidate_version', 'previous_candidate_version', 'review_revision')}
     return hashlib.sha256(json.dumps(machine, sort_keys=True, ensure_ascii=False,
                                     allow_nan=False).encode('utf-8')).hexdigest()[:24]
 
@@ -66,11 +67,29 @@ class ReviewQueue:
         self.revisions_path = os.path.join(root, 'revisions.jsonl')
         self.final_path = os.path.join(root, 'scene_labels.json')
         self.bindings_path = os.path.join(root, 'image_bindings.jsonl')
+        self.store = ReviewStore(root)
 
     # ---------- 读取 ----------
 
     def records(self):
-        return {r['image']: r for r in _read_jsonl(self.queue_path)}
+        with self.store.session() as connection:
+            return self._records(connection)
+
+    @staticmethod
+    def _records(connection):
+        return {image: json.loads(payload) for image, payload in
+                connection.execute('SELECT image, payload FROM records ORDER BY image')}
+
+    @staticmethod
+    def _bindings(connection):
+        return dict(connection.execute('SELECT image, source_image FROM bindings'))
+
+    @staticmethod
+    def _put(connection, record):
+        connection.execute('''INSERT INTO records(image, payload, status) VALUES (?, ?, ?)
+            ON CONFLICT(image) DO UPDATE SET payload=excluded.payload,
+                status=excluded.status, revision=records.revision+1''',
+            (record['image'], ReviewStore.encode(record), (record.get('review') or {}).get('status', 'pending')))
 
     def is_locked(self, record):
         review = record.get('review') or {}
@@ -81,10 +100,14 @@ class ReviewQueue:
 
     def seed(self, reasoner_records):
         """并入候选记录；已人工确认的图片保持原样。返回统计。"""
-        existing = self.records()
+        with self.store.session(write=True) as connection:
+            return self._seed(connection, reasoner_records)
+
+    def _seed(self, connection, reasoner_records):
+        existing = self._records(connection)
         added = kept = skipped = updated = 0
         reasoner_records = list(reasoner_records)
-        bindings = _image_bindings(self.root)
+        bindings = self._bindings(connection)
         original_bindings = dict(bindings)
         images = list(existing) + [rec['image'] for rec in reasoner_records]
         # Persist the first unambiguous full path separately so locked records
@@ -113,6 +136,7 @@ class ReviewQueue:
                 kept += 1
                 continue
             rec = dict(rec)
+            rec.pop('review_revision', None)
             rec['image'] = image
             rec.setdefault('review', {'status': 'pending', 'reviewer': None,
                                       'updated_at': None})
@@ -127,36 +151,65 @@ class ReviewQueue:
                 kept += 1
                 continue
             existing[image] = rec
+            self._put(connection, rec)
             if previous:
                 updated += 1
             else:
                 added += 1
-        ordered = [existing[k] for k in sorted(existing)]
         if bindings != original_bindings:
-            _atomic_write_jsonl(self.bindings_path, [
-                {'image': key, 'source_image': value} for key, value in sorted(bindings.items())])
-        _atomic_write_jsonl(self.queue_path, ordered)
+            connection.executemany('INSERT OR REPLACE INTO bindings VALUES (?, ?)', sorted(bindings.items()))
         return {'added': added, 'kept': kept, 'skipped': skipped, 'updated': updated,
-                'total': len(ordered)}
+                'total': len(existing)}
 
     def list_pending(self, status=None, limit=50, offset=0):
-        rows = [r for r in self.records().values()
-                if status is None or (r.get('review') or {}).get('status') == status]
-        rows.sort(key=lambda r: r['image'])
-        bindings = _image_bindings(self.root)
-        return [dict(row, source_image=bindings[row['image']]) if row['image'] in bindings else row
-                for row in rows[offset:offset + limit]]
+        if not 1 <= limit <= 10000 or offset < 0:
+            raise ValueError('分页数量必须在 1–10000 之间，offset 不可为负')
+        with self.store.session() as connection:
+            return self._list(connection, status, limit, offset)
+
+    @staticmethod
+    def _list(connection, status, limit, offset):
+        where, values = (' WHERE status=?', [status]) if status else ('', [])
+        rows = connection.execute('SELECT r.payload, r.revision, b.source_image FROM '
+            '(SELECT * FROM records' + where + ' ORDER BY image LIMIT ? OFFSET ?) AS r '
+            'LEFT JOIN bindings b ON b.image=r.image ORDER BY r.image', values + [limit, offset])
+        return [dict(json.loads(payload), review_revision=revision,
+                     **({'source_image': source} if source else {})) for payload, revision, source in rows]
+
+    def page(self, status=None, limit=50, offset=0):
+        if not 1 <= limit <= 10000 or offset < 0:
+            raise ValueError('分页数量必须在 1–10000 之间，offset 不可为负')
+        with self.store.session() as connection:
+            return {'records': self._list(connection, status, limit, offset),
+                    'summary': self._summary(connection)}
+
+    def record(self, image):
+        with self.store.session() as connection:
+            row = connection.execute('SELECT r.payload, r.revision, b.source_image FROM records r '
+                'LEFT JOIN bindings b ON b.image=r.image WHERE r.image=?', (image,)).fetchone()
+            if row is None:
+                raise KeyError(f'待审核记录不存在: {image}')
+            payload, revision, source = row
+            return dict(json.loads(payload), review_revision=revision,
+                        **({'source_image': source} if source else {}))
 
     def decide(self, image, action, scene_id=None, label=None,
-               reviewer='human', note=''):
+               reviewer='human', note='', expected_revision=None):
         """接受/修改/拒绝一条记录，同时追加不可变修订日志。"""
+        with self.store.session(write=True) as connection:
+            return self._decide(connection, image, action, scene_id, label, reviewer, note, expected_revision)
+
+    def _decide(self, connection, image, action, scene_id, label, reviewer, note, expected_revision):
         if action not in ACTIONS:
             raise ValueError(f'未知动作: {action}（应为 {ACTIONS}）')
         reviewer = reviewer or 'human'
-        records = self.records()
-        if image not in records:
+        row = connection.execute('SELECT payload, revision FROM records WHERE image=?', (image,)).fetchone()
+        if row is None:
             raise KeyError(f'待审核记录不存在: {image}')
-        record = records[image]
+        payload, revision = row
+        if expected_revision is not None and expected_revision != revision:
+            raise ReviewConflict('这条记录已被更新，请核对最新结果后再保存；当前输入草稿已保留。')
+        record = json.loads(payload)
         before = {'scene_id': record.get('scene_id'), 'label': record.get('label'),
                   'review_status': (record.get('review') or {}).get('status')}
 
@@ -185,16 +238,13 @@ class ReviewQueue:
                                 'updated_at': _now(), 'action': action, 'note': note,
                                 'original_label': before['label']}
 
-        records[image] = record
-        _atomic_write_jsonl(self.queue_path, [records[k] for k in sorted(records)])
+        self._put(connection, record)
         after = {'scene_id': record.get('scene_id'), 'label': record.get('label'),
                  'review_status': record['review']['status']}
-        with open(self.revisions_path, 'a', encoding='utf-8') as f:
-            f.write(json.dumps({'at': _now(), 'image': image, 'action': action,
-                                'reviewer': reviewer, 'note': note,
-                                'before': before, 'after': after},
-                               ensure_ascii=False) + '\n')
-        return record
+        entry = {'at': _now(), 'image': image, 'action': action, 'reviewer': reviewer, 'note': note,
+                 'before': before, 'after': after, 'before_revision': revision, 'after_revision': revision + 1}
+        connection.execute('INSERT INTO revisions(payload) VALUES (?)', (ReviewStore.encode(entry),))
+        return dict(record, review_revision=revision + 1)
 
     # ---------- 导出 ----------
 
@@ -209,23 +259,40 @@ class ReviewQueue:
 
     def export_final(self, path=None):
         path = path or self.final_path
-        labels = self.final_labels()
-        bindings = _image_bindings(self.root)
-        labels = {bindings.get(image, image): label for image, label in labels.items()}
+        with self.store.session() as connection:
+            records = self._records(connection)
+            bindings = self._bindings(connection)
+            labels = {bindings.get(image, image): row['label'] for image, row in records.items()
+                      if (row.get('review') or {}).get('status') == 'approved'
+                      and row.get('label') not in (None, 'unknown')}
         os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
-        with open(path, 'w', encoding='utf-8') as f:
-            json.dump(labels, f, ensure_ascii=False, indent=2)
+        temporary = None
+        try:
+            with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8',
+                    dir=os.path.dirname(os.path.abspath(path)), delete=False) as stream:
+                temporary = stream.name
+                json.dump(labels, stream, ensure_ascii=False, indent=2)
+                stream.flush()
+                os.fsync(stream.fileno())
+            os.replace(temporary, path)
+        finally:
+            if temporary and os.path.exists(temporary):
+                os.unlink(temporary)
         return path, len(labels)
 
     def summary(self):
+        with self.store.session() as connection:
+            return self._summary(connection)
+
+    @staticmethod
+    def _summary(connection):
         counts = {'pending': 0, 'approved': 0, 'rejected': 0}
-        for record in self.records().values():
-            status = (record.get('review') or {}).get('status', 'pending')
-            counts[status] = counts.get(status, 0) + 1
+        counts.update(connection.execute('SELECT status, COUNT(*) FROM records GROUP BY status'))
         return counts
 
     def revisions(self):
-        return _read_jsonl(self.revisions_path)
+        with self.store.session() as connection:
+            return [json.loads(row[0]) for row in connection.execute('SELECT payload FROM revisions ORDER BY sequence')]
 
 
 def load_scene_evidence(path):
@@ -250,8 +317,16 @@ def load_scene_evidence(path):
     if not path or not os.path.exists(path):
         return result
     if path.endswith('.jsonl'):
-        bindings = _image_bindings(os.path.dirname(path))
-        for record in _read_jsonl(path):
+        root = os.path.dirname(path)
+        if os.path.basename(path) == 'review_queue.jsonl' and os.path.exists(os.path.join(root, 'review.sqlite3')):
+            queue = ReviewQueue(root)
+            with queue.store.session() as connection:
+                bindings = queue._bindings(connection)
+                rows = list(queue._records(connection).values())
+        else:
+            bindings = _image_bindings(root)
+            rows = _read_jsonl(path)
+        for record in rows:
             review = record.get('review')
             if not review or review.get('status') != 'approved':
                 continue
