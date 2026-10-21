@@ -285,16 +285,17 @@ _ANCHOR_CACHE = {}   # db_root 绝对路径 -> {'signature', 'matrix', 'persons'
 
 
 def _db_signature(db_root):
-    """库目录签名：全部锚定文件的（相对路径, mtime_ns, size）。增删/修改任一文件即失效。"""
+    """Full anchor bytes; restored mtime/size cannot preserve stale vectors."""
+    from core_modules.organize.feature_cache import ContentHasher
+    hasher = ContentHasher()
     sig = []
     for root, dirs, files in os.walk(db_root):
         for f in sorted(files):
             if f.lower().endswith(('.jpg', '.jpeg', '.png')):
                 fp = os.path.join(root, f)
-                st = os.stat(fp)
-                sig.append((os.path.relpath(fp, db_root), st.st_mtime_ns, st.st_size))
+                sig.append((os.path.relpath(fp, db_root), hasher.fingerprint(fp)[0]))
     sig.sort()
-    return hash(tuple(sig))
+    return tuple(sig)
 
 
 def get_cached_library_matrix(system, db_root):
@@ -311,13 +312,16 @@ def get_cached_library_matrix(system, db_root):
         (matrix (N,512), persons list[str], from_cache bool)
     """
     db_root = os.path.abspath(db_root)
-    sig = _db_signature(db_root)
+    from core_modules.organize.task_versions import model_identity
+    sig = (_db_signature(db_root), model_identity(getattr(system, 'extractor', system)))
     cached = _ANCHOR_CACHE.get(db_root)
     if cached and cached['signature'] == sig:
         return cached['matrix'], cached['persons'], True
 
     builder = FaceDBBuilder(system, db_root)
     library = builder._library_features()
+    if sig != (_db_signature(db_root), model_identity(getattr(system, 'extractor', system))):
+        raise ValueError('face_gallery_or_model_changed_during_encoding')
     feats, persons = [], []
     for pdir, fl in library.items():
         for f, _ in fl:

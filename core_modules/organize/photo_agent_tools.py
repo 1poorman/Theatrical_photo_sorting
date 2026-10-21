@@ -35,8 +35,8 @@ def inspect_photos(input_dir, limit=20):
 
 def knowledge_summary(knowledge_dir):
     root = _directory(knowledge_dir)
-    with (root / 'entities.json').open(encoding='utf-8') as stream:
-        data = json.load(stream)
+    from core_modules.organize.play_knowledge import read_knowledge
+    data = read_knowledge(root)['entities']
     return {'knowledge_dir': str(root), 'scenes': data.get('scenes', []),
             'roles': data.get('roles', []), 'role_aliases': data.get('role_aliases', {}),
             'auto_approved': True}

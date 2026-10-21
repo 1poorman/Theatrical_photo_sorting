@@ -373,6 +373,21 @@
   let analysisTimer = null;
   let analysisRunning = false;
   async function applyAnalysis(project, result) {
+    if (project.analysisKind === 'knowledge') {
+      await task('知识库构建完成，正在载入幕次…', async () => {
+        await loadKnowledge(); project.analysisApplied = project.analysisTask; saveProject();
+        notice(`剧目知识库已建立，识别到 ${state.knowledge.scenes.length} 个幕次。${result.failed ? `${result.failed} 个媒体条目失败，请查阅构建报告。` : ''}`);
+      });
+      return;
+    }
+    if (project.analysisKind === 'organize') {
+      await task('正在载入整理报告…', async () => {
+        showOrganizeResult(project, result, project.labels);
+        project.analysisApplied = project.analysisTask; saveProject();
+        notice(`整理完成：保留 ${result.kept} 张，划分 ${result.n_scenes} 个场景。${result.failed ? `${result.failed} 张处理失败，原图均保留。` : ''}`);
+      });
+      return;
+    }
     await task('分析完成，正在载入场景复核队列…', async () => {
       project.evidence = result.output_file; saveProject(); $('evidence-file').value = result.output_file;
       await api('/api/organize/scene/review/seed', {review_dir: project.review, evidence_file: result.output_file});
@@ -389,12 +404,15 @@
       const status = await api(`/api/organize/tasks/${encodeURIComponent(project.analysisTask)}`);
       if (state.project !== project) return;
       analysisRunning = ['queued', 'running', 'cancel_requested'].includes(status.status);
-      const labels = {queued: '等待分析', running: '正在分析', cancel_requested: '等待当前图片结束后取消', cancelled: '分析已取消', interrupted: '分析已中断', failed: '分析执行失败', completed: '分析完成', completed_with_errors: '分析完成，部分图片失败'};
+      const name = {knowledge: '知识库构建', organize: '整理', scene_reason: '场景分析'}[project.analysisKind || 'scene_reason'];
+      const labels = {queued: '排队中', running: '执行中', cancel_requested: '等待当前操作结束后取消', cancelled: '已取消', interrupted: '已中断', failed: '执行失败', completed: '完成', completed_with_errors: '完成，部分条目失败'};
       $('analysis-task').hidden = false;
-      $('analysis-task-message').textContent = `${labels[status.status] || status.status}：${status.succeeded} 张成功，${status.failed} 张失败，${status.pending} 张待处理。${status.error || ''}`;
+      $('analysis-task-message').textContent = `${name}${labels[status.status] || status.status}：${status.preparing ? `${status.preparing} 张图片待校验；` : ''}${status.succeeded} 项完成，${status.failed} 项失败，${status.pending} 项待处理。${status.error || ''}`;
+      $('analysis-cancel').textContent = `取消${name}`;
       $('analysis-cancel').hidden = !analysisRunning || status.status === 'cancel_requested';
       $('analysis-resume').hidden = !['cancelled', 'interrupted', 'failed'].includes(status.status);
       $('analysis-new').hidden = !['cancelled', 'interrupted', 'failed', 'completed_with_errors'].includes(status.status);
+      $('analysis-new').textContent = project.analysisKind && project.analysisKind !== 'scene_reason' ? '结束此任务，保留已有文件' : '按当前资料重新分析';
       if (['completed', 'completed_with_errors'].includes(status.status) && project.analysisApplied !== project.analysisTask && !state.busy) {
         await applyAnalysis(project, status.result);
       }
@@ -425,7 +443,8 @@
       await api(`/api/organize/tasks/${encodeURIComponent(project.analysisTask)}/cancel`, {});
       clearTimeout(analysisTimer); analysisRunning = false;
       project.analysisTask = ''; project.analysisApplied = ''; project.analysisKey = ''; saveProject();
-      await analyze();
+      if (!project.analysisKind || project.analysisKind === 'scene_reason') await analyze();
+      else { $('analysis-task').hidden = true; notice('已结束此任务，已生成文件保留。可以重新提交任务。'); }
     } catch (error) { notice(error.message, true); }
   };
   async function analyze() {
@@ -447,9 +466,26 @@
       const body = await response.json();
       if (!response.ok) throw new Error(body.message || '无法创建分析任务');
       project.analysisTask = body.data.task_id; project.analysisKey = ''; saveProject();
+      project.analysisKind = 'scene_reason'; saveProject();
       analysisRunning = true;
     });
     if (state.project.analysisTask) await pollAnalysis(state.project);
+  }
+  async function submitBackground(project, kind, params) {
+    if (analysisRunning || (project.analysisTask && project.analysisApplied !== project.analysisTask)) {
+      throw new Error('请先完成、取消或恢复当前后台任务。');
+    }
+    const key = `${kind}:${Date.now()}:${Array.from(crypto.getRandomValues(new Uint8Array(8))).join('-')}`;
+    // Keep the submission key across connection errors so retry is idempotent.
+    if (!project.backgroundSubmission || project.backgroundSubmission.kind !== kind || JSON.stringify(project.backgroundSubmission.params) !== JSON.stringify(params)) {
+      project.backgroundSubmission = {kind, params, idempotency_key: key}; saveProject();
+    }
+    const response = await fetch('/api/organize/tasks', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(project.backgroundSubmission)});
+    const body = await response.json();
+    if (!response.ok) throw new Error(body.message || '无法创建后台任务');
+    project.analysisTask = body.data.task_id; project.analysisKind = kind; project.backgroundSubmission = null;
+    analysisRunning = true; saveProject();
+    analysisTimer = setTimeout(() => pollAnalysis(project), 0);
   }
   async function decide(record, action) {
     if (state.busy) return;
@@ -500,9 +536,8 @@
     const info = $('info-path').value.trim(), playRoot = $('play-root').value.trim(), knowledge = $('knowledge-dir').value.trim();
     if (!info || !playRoot || !knowledge) return;
     task('正在读取剧情、幕次与角色资料…', async () => {
-      await api('/api/organize/play/ingest', {info_path: info, play_root: playRoot, output_dir: knowledge});
       Object.assign(project, {info, playRoot, knowledge}); saveProject();
-      await loadKnowledge(); notice(`剧目知识库已建立，识别到 ${state.knowledge.scenes.length} 个幕次。`);
+      await submitBackground(project, 'knowledge', {info_path: info, play_root: playRoot, output_dir: knowledge});
     });
   };
   $('load-knowledge').onclick = () => {
@@ -529,22 +564,22 @@
     task('正在准备最新的人工复核标签…', async () => {
       await loadReviews();
       const labels = await exportLabels();
-      progress('正在连拍选优、识别演员并生成规范档案，请等待服务返回结果…');
-      const result = await api('/api/organize/run', {input_dir: project.input, output_dir: project.output, db_root: project.db,
-        keep_per_bucket: $('keep-per-bucket').value, gap_seconds: $('gap-seconds').value,
+      await submitBackground(project, 'organize', {input_dir: project.input, output_dir: project.output, db_root: project.db,
+        keep_per_bucket: Number($('keep-per-bucket').value), gap_seconds: Number($('gap-seconds').value),
         classify_role: $('classify-role').checked, scene_evidence_file: labels.path});
+    });
+  };
+  function showOrganizeResult(project, result, labelsPath) {
       $('organize-result').hidden = false;
-      $('organize-result').innerHTML = `<h3>归档完成</h3><div class="result-stats"><div><strong>${esc(result.total_input)}</strong><span>输入剧照</span></div><div><strong>${esc(result.kept)}</strong><span>精选保留</span></div><div><strong>${esc(result.discarded)}</strong><span>未选用</span></div><div><strong>${esc(result.n_scenes)}</strong><span>场景分组</span></div></div><p>归档目录：${esc(join(project.output, 'organized'))}</p><div class="result-links"><a href="${esc(fileURL(result.report_path))}" download>下载整理报告 ↗</a><a href="${esc(fileURL(labels.path))}" download>下载场景标签 ↗</a><button class="text-button" id="browse-organized">浏览归档剧照 →</button></div>`;
+      $('organize-result').innerHTML = `<h3>${result.failed ? '归档完成，部分图片失败' : '归档完成'}</h3><div class="result-stats"><div><strong>${esc(result.total_input)}</strong><span>输入剧照</span></div><div><strong>${esc(result.kept)}</strong><span>精选保留</span></div><div><strong>${esc(result.discarded)}</strong><span>未选用</span></div><div><strong>${esc(result.n_scenes)}</strong><span>场景分组</span></div><div><strong>${esc(result.failed || 0)}</strong><span>处理失败</span></div></div><p>归档目录：${esc(join(project.output, 'organized'))}</p><div class="result-links"><a href="${esc(fileURL(result.report_path))}" download>下载整理报告 ↗</a>${labelsPath ? `<a href="${esc(fileURL(labelsPath))}" download>下载场景标签 ↗</a>` : ''}<button class="text-button" id="browse-organized">浏览归档剧照 →</button></div>`;
       $('browse-organized').onclick = () => task('正在载入归档剧照…', async () => {
         const input = join(project.output, 'organized');
         const result = await api(`/api/workspace/photos?${new URLSearchParams({input_dir: input})}`);
         // Browse results without reusing the source queue for a differently named collection.
-        await activateProject({...project, name: `${project.name} · 已归档`, input, output: join(project.output, 'next'), review: join(project.output, 'organized_review'), labels: '', analysisTask: '', analysisApplied: '', analysisKey: ''}, result);
+        await activateProject({...project, name: `${project.name} · 已归档`, input, output: join(project.output, 'next'), review: join(project.output, 'organized_review'), labels: '', analysisTask: '', analysisApplied: '', analysisKey: '', analysisKind: '', backgroundSubmission: null}, result);
         setView('photos');
       });
-      notice(`整理完成：保留 ${result.kept} 张，划分 ${result.n_scenes} 个场景。`);
-    });
-  };
+  }
 
   $('actor-build-form').onsubmit = event => {
     event.preventDefault(); if (!needProject()) return;

@@ -79,6 +79,8 @@ class ArcFaceFeatureExtractor:
         self.model_file = model_path
         if model_path is None or not osp.exists(model_path):
             raise FileNotFoundError(f"ArcFace model not found: {model_path}")
+        from core_modules.organize.feature_cache import ContentHasher
+        model_hash = ContentHasher().fingerprint(model_path)[0]
 
         # TensorRT 加速：device='tensorrt' 或 'tensorrt:N' 时走 trt_utils 统一封装
         if isinstance(device, str) and device.startswith('tensorrt'):
@@ -115,6 +117,9 @@ class ArcFaceFeatureExtractor:
         self.output_names = [o.name for o in outputs]
         self.output_shape = outputs[0].shape
         assert len(self.output_names) == 1, "ArcFace model should have single output"
+        if ContentHasher().fingerprint(model_path)[0] != model_hash:
+            raise ValueError('arcface_weights_changed_during_load')
+        self.model_signature = model_hash
         print(f"ArcFace loaded from {model_path} (input_size={self.input_size}, "
               f"mean={self.input_mean}, std={self.input_std}, "
               f"providers={self.session.get_providers()})")

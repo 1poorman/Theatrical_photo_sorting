@@ -13,7 +13,14 @@ class ShotTypeClassifier:
             pose_model_path (str): 姿态估计模型路径
         """
         # 初始化模型
+        from core_modules.organize.feature_cache import ContentHasher
+        model_hash = ContentHasher().fingerprint(pose_model_path)[0] if os.path.isfile(pose_model_path) else None
         self.yolo_pose_model = YOLO(pose_model_path)
+        resolved = getattr(self.yolo_pose_model, 'ckpt_path', None) or pose_model_path
+        loaded_hash = ContentHasher().fingerprint(resolved)[0]
+        if model_hash is not None and loaded_hash != model_hash:
+            raise ValueError('pose_weights_changed_during_load')
+        self.model_signature = loaded_hash
         # 记录模型路径，供服务端缓存判断使用，避免每次请求重复加载模型
         self.model_path = pose_model_path
         

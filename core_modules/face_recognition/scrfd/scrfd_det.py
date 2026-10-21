@@ -82,6 +82,8 @@ class SCRFDDetector:
 
         if model_path is None or not osp.exists(model_path):
             raise FileNotFoundError(f"SCRFD model not found: {model_path}")
+        from core_modules.organize.feature_cache import ContentHasher
+        model_hash = ContentHasher().fingerprint(model_path)[0]
 
         # TensorRT 加速：device='tensorrt' 或 'tensorrt:N' 时走 trt_utils 统一封装
         if isinstance(device, str) and device.startswith('tensorrt'):
@@ -91,6 +93,9 @@ class SCRFDDetector:
             providers = self._select_providers(device)
             self.session = onnxruntime.InferenceSession(model_path, providers=providers)
         self._init_vars()
+        if ContentHasher().fingerprint(model_path)[0] != model_hash:
+            raise ValueError('scrfd_weights_changed_during_load')
+        self.model_signature = model_hash
         print(f"SCRFD loaded from {model_path} (providers={self.session.get_providers()})")
 
     def _select_providers(self, device):

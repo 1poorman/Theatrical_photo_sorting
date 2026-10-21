@@ -1,5 +1,4 @@
 """Persistent scene analysis API; business functions are shared by old routes."""
-import hashlib
 import json
 import os
 from pathlib import Path
@@ -11,6 +10,7 @@ from fastapi.responses import JSONResponse
 from core_modules.organize.review_store import atomic_rows
 from core_modules.organize.task_queue import TaskQueue, TaskConflict, TaskQueueFull, TaskUnavailable, BUSINESS_LOCK
 from core_modules.tools.image_io import list_images
+from core_modules.organize.task_artifacts import fingerprint, gallery_hashes, file_state
 
 router = APIRouter(prefix='/api/organize/tasks')
 TASK_ROOT = Path(os.environ.get('TRANS_TASK_DIR', 'outputs/organize_tasks'))
@@ -18,15 +18,135 @@ _manager = None
 _manager_lock = threading.Lock()
 
 
-def fingerprint(path):
-    digest = hashlib.sha256()
-    with open(path, 'rb') as stream:
-        for block in iter(lambda: stream.read(1024 * 1024), b''):
-            digest.update(block)
-    return digest.hexdigest()
+def prepare_organize(params, defer_hash=False):
+    allowed = {'input_dir', 'output_dir', 'db_root', 'keep_per_bucket', 'gap_seconds',
+               'classify_role', 'scene_labels_file', 'scene_evidence_file'}
+    if set(params) - allowed:
+        raise ValueError('整理参数含未知字段')
+    for field in ('input_dir', 'db_root'):
+        if not isinstance(params.get(field), str) or not os.path.isdir(params[field]):
+            raise ValueError(f'{field} 必须为现有目录')
+    for field, default, lower, upper in (('keep_per_bucket', 2, 1, 1000), ('gap_seconds', 300, 1, 86400)):
+        if type(params.get(field, default)) is not int or not lower <= params.get(field, default) <= upper:
+            raise ValueError(f'{field} 必须为 {lower}–{upper} 的整数')
+    if type(params.get('classify_role', True)) is not bool:
+        raise ValueError('classify_role 必须为布尔值')
+    output = params.get('output_dir')
+    if not isinstance(output, str) or not output:
+        raise ValueError('output_dir 必须为独立输出目录')
+    output = str(Path(output).resolve())
+    source = str(Path(params['input_dir']).resolve())
+    if output == source or Path(source).is_relative_to(Path(output)):
+        raise ValueError('整理输出不可为原图目录或其父目录')
+    images = [str(Path(source, name).resolve()) for name in list_images(source)]
+    if not images:
+        raise ValueError('输入目录中没有图片')
+    items = [{'image': image, 'stage': 'quality',
+              **({'file_state': file_state(image)} if defer_hash else {'sha256': fingerprint(image)})} for image in images]
+    labels, evidence = None, None
+    if params.get('scene_labels_file'):
+        with open(params['scene_labels_file'], encoding='utf-8') as stream:
+            labels = json.load(stream)
+    if params.get('scene_evidence_file'):
+        from core_modules.organize.review_queue import load_scene_evidence
+        evidence = load_scene_evidence(params['scene_evidence_file'])
+    prepared = dict(params, input_dir=source, output_dir=output,
+                    db_root=str(Path(params['db_root']).resolve()),
+                    keep_per_bucket=params.get('keep_per_bucket', 2), gap_seconds=params.get('gap_seconds', 300),
+                    classify_role=params.get('classify_role', True), scene_labels=labels, scene_evidence=evidence,
+                    input_hashes={item['image']: item.get('sha256') for item in items})
+    # Gallery changes must not silently mix identity decisions across a resumed task.
+    prepared['gallery_hashes'] = gallery_hashes(prepared['db_root'])
+    return prepared, items
 
 
-def prepare_scene(params):
+def organize_handler(params):
+    import main
+    from core_modules.organize.organize_task import OrganizeTask
+    from core_modules.organize.smart_organizer import SmartOrganizer
+    if main.srv.face_recognition_model is None:
+        raise ValueError('Face recognition model not initialized')
+    if gallery_hashes(params['db_root']) != params['gallery_hashes']:
+        raise ValueError('face_gallery_content_changed; 请创建新任务')
+    role = main._get_organize_models(True)[1] if params['classify_role'] else None
+    organizer = SmartOrganizer(main.srv.face_recognition_model, params['db_root'],
+                               shot_classifier=main.srv.pose_model, embedder=main._get_scene_embedder(),
+                               role_classifier=role, feature_cache_dir=main.FEATURE_CACHE_DIR)
+    return OrganizeTask(params, organizer)
+
+
+def prepare_knowledge(params, defer_hash=False):
+    if set(params) - {'info_path', 'play_root', 'output_dir'}:
+        raise ValueError('知识库参数含未知字段')
+    for field in ('info_path', 'play_root', 'output_dir'):
+        if not isinstance(params.get(field), str) or not params[field]:
+            raise ValueError(f'{field} 必须为路径字符串')
+    if not os.path.isfile(params['info_path']) or not os.path.isdir(params['play_root']):
+        raise ValueError('剧情文件或剧目目录不存在')
+    from core_modules.organize.play_source import load_local_sources, extract_urls
+    from core_modules.organize.play_knowledge import _scenes_from_filenames
+    info_hash = fingerprint(params['info_path'])
+    sources = load_local_sources(params['info_path'], params['play_root'])
+    sources['urls'] = extract_urls(params['info_path'])
+    items = [{'image': str(Path(image).resolve()), 'stage': 'media',
+              **({'file_state': file_state(image)} if defer_hash else {'sha256': fingerprint(image)})}
+             for image in sources['image_paths']]
+    prepared = dict(params, output_dir=str(Path(params['output_dir']).resolve()),
+                    info_path=str(Path(params['info_path']).resolve()), play_root=str(Path(params['play_root']).resolve()),
+                    sources=sources, filename_scenes=_scenes_from_filenames(params['play_root']),
+                    info_sha256=info_hash, input_hashes={item['image']: item.get('sha256') for item in items})
+    if fingerprint(params['info_path']) != info_hash:
+        raise ValueError('plot_content_changed_during_submission')
+    return prepared, items
+
+
+def knowledge_handler(params):
+    from core_modules.organize.knowledge_task import KnowledgeTask
+    return KnowledgeTask(params)
+
+
+def execute_staged(kind, params):
+    """Legacy sync routes share task handlers without starting a second worker."""
+    from core_modules.organize.task_queue import encode
+    preparer, factory = {'organize': (prepare_organize, organize_handler),
+                         'knowledge': (prepare_knowledge, knowledge_handler)}[kind]
+    prepared, pending = preparer(params)
+    class InlineContext:
+        def __init__(self):
+            self.rows = []
+            self.plans = {}
+        def check(self):
+            pass
+        def checkpoint(self, key):
+            return self.plans.get(key)
+        def results(self):
+            return self.rows
+        def advance(self, key, value, items):
+            if key in self.plans:
+                return False
+            self.plans[key] = value
+            pending.extend(items)
+            return True
+    with BUSINESS_LOCK:
+        handler = factory(prepared)
+        context = InlineContext()
+        handler.context = context
+        while True:
+            for item in pending:
+                try:
+                    row = handler.process(item)
+                    # Match the persisted queue's JSON validation and round trip.
+                    row = json.loads(encode(row))
+                except Exception as exc:
+                    row = {'image': item['image'], 'stage': item['stage'],
+                           'error': {'type': type(exc).__name__, 'message': str(exc)}}
+                context.rows.append(row)
+            pending.clear()
+            if not handler.advance():
+                return handler.finish(context.rows)
+
+
+def prepare_scene(params, defer_hash=False):
     allowed = {'input_dir', 'knowledge_dir', 'output_file', 'top_k', 'use_llm', 'use_embedder'}
     if set(params) - allowed:
         raise ValueError('分析参数含未知字段')
@@ -41,8 +161,8 @@ def prepare_scene(params):
             raise ValueError(f'{field} 必须为布尔值')
     if not isinstance(params.get('output_file', ''), str):
         raise ValueError('output_file 必须为路径字符串')
-    with open(Path(params['knowledge_dir']) / 'entities.json', encoding='utf-8') as stream:
-        entities = json.load(stream)
+    from core_modules.organize.play_knowledge import read_knowledge
+    entities = read_knowledge(params['knowledge_dir'])['entities']
     knowledge = {key: entities.get(key, {} if key == 'role_aliases' else [])
                  for key in ('scenes', 'roles', 'role_aliases')}
     images = [str(Path(params['input_dir'], name).resolve()) for name in list_images(params['input_dir'])]
@@ -52,9 +172,9 @@ def prepare_scene(params):
     if output in images or not output.endswith('.jsonl'):
         raise ValueError('证据输出必须为独立的 .jsonl 文件')
     # Persist the exact knowledge snapshot and content identity used by this task.
-    items = [{'image': image, 'sha256': fingerprint(image)} for image in images]
+    items = [{'image': image, **({'file_state': file_state(image)} if defer_hash else {'sha256': fingerprint(image)})} for image in images]
     prepared = dict(params, knowledge=knowledge, output_file=output, top_k=top_k,
-                    input_hashes={item['image']: item['sha256'] for item in items})
+                    input_hashes={item['image']: item.get('sha256') for item in items})
     return prepared, items
 
 
@@ -98,7 +218,19 @@ def scene_handler(params):
                 'n_visual': sum(row.get('retrieval_mode') == 'visual' for row in rows),
                 'llm': client is not None, 'visual': embedder is not None}
 
-    return process, finish
+    from core_modules.organize.task_versions import VersionedHandler, execution_code, model_identity, client_identity
+    from config.base import VISION_IMAGE_MAX_SIDE, VISION_ENABLE_THINKING
+    code_version = execution_code([
+        'app/organize_tasks.py', 'core_modules/organize/scene_reasoner.py',
+        'core_modules/organize/multimodal_evidence.py', 'core_modules/organize/llm_client.py',
+        'core_modules/image_search.py', 'core_modules/organize/embedding_gemma.py',
+        'core_modules/organize/feature_cache.py', 'core_modules/organize/task_artifacts.py'])
+    def contract():
+        return {'code': code_version,
+                'embedding': model_identity(embedder.embedder) if embedder else None,
+                'client': client_identity(client), 'vision_client': client_identity(vision_client),
+                'vision_settings': [VISION_IMAGE_MAX_SIDE, VISION_ENABLE_THINKING]}
+    return VersionedHandler(process, finish, contract)
 
 
 def execute_scene(params):
@@ -118,11 +250,90 @@ def execute_scene(params):
         return finish(rows)
 
 
+def deferred_handler(kind, params):
+    if '_manifest_items' not in params:
+        return {'scene_reason': scene_handler, 'organize': organize_handler, 'knowledge': knowledge_handler}[kind](params)
+    return PreparedTask(kind, params)
+
+
+class PreparedTask:
+    """Hash manifest items off the request thread, then atomically add work."""
+    def __init__(self, kind, params):
+        self.kind, self.params = kind, params
+        self.context = None
+        self.delegate = None
+
+    def model_contract(self):
+        if self.context is None or self.context.checkpoint('input_fingerprints') is None:
+            return None
+        contract = getattr(self._delegate(), 'model_contract', None)
+        return contract() if contract else None
+
+    def _rows(self):
+        rows = []
+        stages = {'organize': 'quality', 'knowledge': 'media', 'scene_reason': None}
+        for row in self.context.results():
+            if row.get('stage') != 'fingerprint':
+                rows.append(row)
+            elif row.get('error'):
+                rows.append(dict(row, stage=stages[self.kind]))
+        return rows
+
+    def _delegate(self):
+        if self.delegate is not None:
+            return self.delegate
+        prepared = dict(self.params)
+        plan = self.context.checkpoint('input_fingerprints')
+        if plan is None:
+            raise ValueError('input manifest not committed')
+        prepared['input_hashes'] = plan['hashes']
+        factory = {'scene_reason': scene_handler, 'organize': organize_handler, 'knowledge': knowledge_handler}[self.kind]
+        self.delegate = factory(prepared)
+        if hasattr(self.delegate, 'advance'):
+            outer = self
+            class Context:
+                check = self.context.check
+                checkpoint = self.context.checkpoint
+                advance = self.context.advance
+                def results(self):
+                    return outer._rows()
+            self.delegate.context = Context()
+        return self.delegate
+
+    def process(self, item):
+        if item.get('stage') == 'fingerprint':
+            path = item['image']
+            if file_state(path) != item['file_state']:
+                raise ValueError('source_changed_before_manifest_hash')
+            digest = fingerprint(path, self.context.check)
+            if file_state(path) != item['file_state']:
+                raise ValueError('source_changed_during_manifest_hash')
+            return {'image': path, 'stage': 'fingerprint', 'sha256': digest}
+        delegate = self._delegate()
+        return delegate.process(item) if hasattr(delegate, 'advance') else delegate[0](item)
+
+    def advance(self):
+        if self.context.checkpoint('input_fingerprints') is None:
+            rows = {row['image']: row for row in self.context.results()}
+            hashes = {image: row.get('sha256') for image, row in rows.items()}
+            items = [dict(item, sha256=hashes[item['image']]) for item in self.params['_manifest_items']
+                     if hashes[item['image']] is not None]
+            self.context.advance('input_fingerprints', {'hashes': hashes}, items)
+            return True
+        delegate = self._delegate()
+        return delegate.advance() if hasattr(delegate, 'advance') else False
+
+    def finish(self, rows):
+        delegate = self._delegate()
+        return delegate.finish(self._rows()) if hasattr(delegate, 'advance') else delegate[1](self._rows())
+
+
 def manager():
     global _manager
     with _manager_lock:
         if _manager is None:
-            _manager = TaskQueue(TASK_ROOT, {'scene_reason': scene_handler},
+            _manager = TaskQueue(TASK_ROOT, {kind: (lambda params, kind=kind: deferred_handler(kind, params))
+                                            for kind in ('scene_reason', 'organize', 'knowledge')},
                                  capacity=int(os.environ.get('TRANS_TASK_CAPACITY', '8')))
         return _manager
 
@@ -151,16 +362,21 @@ def response(operation, status=200):
 @router.post('')
 def create_task(body: dict = Body(...)):
     def create():
-        if set(body) - {'kind', 'params', 'idempotency_key'} or body.get('kind') != 'scene_reason':
-            raise ValueError('当前后台任务支持 kind=scene_reason')
+        preparers = {'scene_reason': prepare_scene, 'organize': prepare_organize, 'knowledge': prepare_knowledge}
+        kind = body.get('kind')
+        if set(body) - {'kind', 'params', 'idempotency_key'} or kind not in preparers:
+            raise ValueError('后台任务支持 scene_reason、organize、knowledge')
         params = body.get('params')
         if not isinstance(params, dict):
             raise ValueError('params 必须为对象')
         key = body.get('idempotency_key')
         if key is not None and not isinstance(key, str):
             raise ValueError('idempotency_key 必须为字符串')
-        prepared, items = prepare_scene(params)
-        task, created = manager().submit('scene_reason', prepared, items, key, prepared['output_file'])
+        prepared, items = preparers[kind](params, defer_hash=True)
+        prepared['_manifest_items'] = items
+        items = [dict(item, stage='fingerprint') for item in items]
+        output = prepared.get('output_file') or prepared['output_dir']
+        task, created = manager().submit(kind, prepared, items, key, output)
         return dict(task, created=created)
     return response(create, 202)
 

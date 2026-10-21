@@ -32,6 +32,7 @@ tests/*
 !tests/test_quality_statistics.py
 !tests/test_review_store.py
 !tests/test_core_upgrade_tasks.py
+!tests/test_organize_tasks.py
 
 
 .env 

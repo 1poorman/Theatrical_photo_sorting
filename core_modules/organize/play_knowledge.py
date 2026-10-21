@@ -228,18 +228,18 @@ def _media_record(path, play_root, scenes):
             'roles': roles, 'content_hash': _hash_text(caption)}
 
 
-def build_knowledge(info_path, play_root, output_dir=None):
+def build_knowledge(info_path, play_root, output_dir=None, *, sources=None, media_records=None, filename_scenes=None):
     """构建剧目知识库；返回完整 dict，output_dir 非空时同时写 JSONL/JSON。
 
     正文无「第 N 幕」标记时（如《马可·波罗》），从整理完成目录文件名中
     抽取「第N幕：标题/序：标题」作为幕次来源，剧情正文整体挂在序幕之后。
     """
-    local = load_local_sources(info_path, play_root)
-    urls = extract_urls(info_path)
+    local = sources if sources is not None else load_local_sources(info_path, play_root)
+    urls = local.get('urls') if sources is not None else extract_urls(info_path)
     docs, scenes, roles = parse_plot_text(local['text'])
-    media = [_media_record(p, play_root, scenes) for p in local['image_paths']]
+    media = media_records if media_records is not None else [_media_record(p, play_root, scenes) for p in local['image_paths']]
     if not scenes:
-        scenes = _scenes_from_filenames(play_root, source_ref='local:整理完成')
+        scenes = filename_scenes if filename_scenes is not None else _scenes_from_filenames(play_root, source_ref='local:整理完成')
         if scenes:
             # 无幕次正文时，简介文档引用第一个场景锚点，便于语义检索兜底。
             for scene in scenes:
@@ -298,3 +298,25 @@ def write_knowledge(output_dir, knowledge):
               'stats': knowledge['stats']}
     with open(os.path.join(output_dir, 'knowledge_report.json'), 'w', encoding='utf-8') as f:
         json.dump(report, f, ensure_ascii=False, indent=2)
+    from core_modules.organize.task_artifacts import atomic_json
+    atomic_json(Path(output_dir) / 'knowledge_snapshot.json', {
+        'entities': {key: knowledge.get(key, {}) for key in ('scenes', 'roles', 'role_aliases')},
+        'report': report})
+
+
+def read_knowledge(output_dir):
+    """Read entities and report from one committed publication generation."""
+    root = Path(output_dir)
+    snapshot = root / 'knowledge_snapshot.json'
+    if snapshot.exists():
+        with snapshot.open(encoding='utf-8') as stream:
+            return json.load(stream)
+    if (root / '.knowledge_pending.json').exists():
+        raise FileNotFoundError('Knowledge publication has not committed')
+    with (root / 'entities.json').open(encoding='utf-8') as stream:
+        entities = json.load(stream)
+    report = {}
+    if (root / 'knowledge_report.json').exists():
+        with (root / 'knowledge_report.json').open(encoding='utf-8') as stream:
+            report = json.load(stream)
+    return {'entities': entities, 'report': report}

@@ -73,6 +73,7 @@ fs.mkdirSync(shots, {recursive: true});
     await page.locator('#info-path').fill(path.join(play, '剧目信息.txt'));
     await page.locator('#play-root').fill(play);
     await page.locator('#knowledge-form button[type=submit]').click();
+    await page.waitForFunction(() => document.querySelectorAll('.knowledge-scene').length === 5, null, {timeout: 45000});
     await idle();
     assert.equal(await page.locator('.knowledge-scene').count(), 5);
     await page.locator('#use-embedder').uncheck();
@@ -171,16 +172,42 @@ fs.mkdirSync(shots, {recursive: true});
 
     // Check an unchecked optional boolean reaches the actual endpoint as false.
     let organizePayload;
-    await page.route('**/api/organize/run', async route => {
-      organizePayload = route.request().postData();
-      await route.fulfill({json: {code: 200, data: {total_input: total, kept: 6, discarded: total - 6, n_scenes: 3, report_path: path.join(fixture, 'organize_report.json')}}});
+    await page.route('**/api/organize/tasks', async route => {
+      organizePayload = route.request().postDataJSON();
+      await route.fulfill({status: 202, json: {code: 200, data: {task_id: 'browser-organize', status: 'queued'}}});
     });
+    let organizeState = 'running', organizeResume = 0;
+    await page.route('**/api/organize/tasks/browser-organize/cancel', async route => {
+      organizeState = 'cancelled';
+      await route.fulfill({json: {code: 200, data: {status: 'cancel_requested'}}});
+    });
+    await page.route('**/api/organize/tasks/browser-organize/resume', async route => {
+      organizeState = 'completed_with_errors'; organizeResume++;
+      await route.fulfill({status: 202, json: {code: 200, data: {status: 'queued'}}});
+    });
+    await page.route('**/api/organize/tasks/browser-organize', route => route.fulfill({json: {code: 200, data: {
+      status: organizeState, succeeded: 6, failed: organizeState === 'completed_with_errors' ? 1 : 0,
+      pending: organizeState === 'completed_with_errors' ? 0 : total - 6,
+      result: organizeState === 'completed_with_errors' ? {total_input: total, kept: 6, discarded: total - 7, failed: 1, n_scenes: 3,
+        report_path: path.join(fixture, 'organize_report.json')} : null}}}));
     await page.locator('#organize-form button[type=submit]').click();
     await idle();
-    assert.match(organizePayload, /name="classify_role"\r\n\r\nfalse/);
-    assert.match(organizePayload, /scene_labels\.json/);
+    await page.locator('#analysis-cancel').waitFor();
+    await page.reload(); await idle();
+    await page.locator('#analysis-cancel').waitFor();
+    assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('theatre-workspace-v1')).analysisKind), 'organize');
+    await page.locator('#analysis-cancel').click();
+    await page.locator('#analysis-resume').waitFor();
+    await page.locator('#analysis-resume').click();
+    await page.locator('#organize-result').waitFor();
+    await idle();
+    assert.equal(organizePayload.kind, 'organize');
+    assert.equal(organizePayload.params.classify_role, false);
+    assert.match(organizePayload.params.scene_evidence_file, /scene_labels\.json/);
     assert.match(await page.locator('#organize-result').textContent(), /归档完成/);
-    await page.unroute('**/api/organize/run');
+    assert.match(await page.locator('#organize-result').textContent(), /部分图片失败/);
+    assert.equal(organizeResume, 1);
+    await page.unroute('**/api/organize/tasks');
 
     // Exercise the actual cluster response schema and reversible ignore/restore UI.
     await clickView('actors');
@@ -273,7 +300,7 @@ fs.mkdirSync(shots, {recursive: true});
     assert.notEqual(await page.locator('#output-dir').inputValue(), fixture);
     await page.keyboard.press('Escape');
     assert.equal(errors.length, 0, errors.join('\n'));
-    console.log(JSON.stringify({passed: true, realPhotos: total, checks: ['empty/error states', 'real photo previews', 'knowledge ingest', 'offline scene analysis', 'background analysis refresh reuses task without resubmission', 'review accept/modify/reject', 'draft survives selection/search/reload/failure', 'revision conflict refreshes record and preserves draft', 'successful decision clears draft', 'search/filter', 'label download', 'organize payload', 'cluster assign/ignore/restore/error', 'refresh persistence', 'responsive 1440/1024/768/540/390', 'escaped evidence', '10000 record pagination and bounded DOM', 'decision updates one record without queue reload', 'independent project contexts'], screenshots: shots}, null, 2));
+    console.log(JSON.stringify({passed: true, realPhotos: total, checks: ['empty/error states', 'real photo previews', 'knowledge ingest', 'offline scene analysis', 'background analysis refresh reuses task without resubmission', 'review accept/modify/reject', 'draft survives selection/search/reload/failure', 'revision conflict refreshes record and preserves draft', 'successful decision clears draft', 'search/filter', 'label download', 'organize payload', 'background organize refresh/cancel/resume/partial failures', 'cluster assign/ignore/restore/error', 'refresh persistence', 'responsive 1440/1024/768/540/390', 'escaped evidence', '10000 record pagination and bounded DOM', 'decision updates one record without queue reload', 'independent project contexts'], screenshots: shots}, null, 2));
   } finally {
     await browser.close();
     fs.rmSync(fixture, {recursive: true, force: true});

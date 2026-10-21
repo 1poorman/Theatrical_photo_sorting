@@ -7,8 +7,10 @@ import argparse
 import asyncio
 import hashlib
 import json
+import os
 from pathlib import Path
 import socket
+import shutil
 import subprocess
 import sys
 import time
@@ -17,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / 'app'), str(ROOT)]
 
 
-def worker(root, port):
+def worker(root, port, real=False):
     import uvicorn
     from fastapi import FastAPI
     from app import organize_tasks
@@ -32,18 +34,31 @@ def worker(root, port):
             return process(item)
         return slow, finish
     organize_tasks.scene_handler = slow_handler
-    app = FastAPI()
-    app.include_router(organize_tasks.router)
-    @app.get('/api/health')
-    def health():
-        return {'code': 200}
-    @app.get('/api/organize/scene/review')
-    def reviews(limit: int = 200, offset: int = 0):
-        return {'data': queue.page(limit=limit, offset=offset)}
-    @app.on_event('shutdown')
-    def shutdown():
-        organize_tasks.shutdown()
-    uvicorn.run(app, host='127.0.0.1', port=port, log_level='warning', access_log=False)
+    if real:
+        import main
+        from core_modules.image_search import ImageEmbedder
+        main.FEATURE_CACHE_DIR = str(root / 'features')
+        model = ImageEmbedder('siglip2_base', device='cuda:0')
+        main.srv.organize_models['embedder'] = model
+        # Explicitly bypass configuration backends for this SigLIP2 measurement.
+        main._get_scene_embedder = lambda: model
+        organize_tasks.scene_handler = original
+        app = main.app
+        (root / 'model.json').write_text(json.dumps({'model': 'siglip2_base', 'device': 'cuda:0',
+            'CUDA_VISIBLE_DEVICES': os.environ.get('CUDA_VISIBLE_DEVICES'), 'face_model': 'not_used'}))
+    else:
+        app = FastAPI()
+        app.include_router(organize_tasks.router)
+        @app.get('/api/health')
+        def health():
+            return {'code': 200}
+        @app.get('/api/organize/scene/review')
+        def reviews(limit: int = 200, offset: int = 0):
+            return {'data': queue.page(limit=limit, offset=offset)}
+        @app.on_event('shutdown')
+        def shutdown():
+            organize_tasks.shutdown()
+    uvicorn.run(app, host='127.0.0.1', port=port, log_level='warning', access_log=False, lifespan='off' if real else 'on')
 
 
 def percentile(values, q):
@@ -54,16 +69,16 @@ def percentile(values, q):
     return ordered[low] + (ordered[high] - ordered[low]) * (index - low)
 
 
-async def measure(root, port):
+async def measure(root, port, real=False):
     import httpx
     base = f'http://127.0.0.1:{port}'
     timings = {'health': [], 'page': [], 'create': [], 'cancel': []}
     errors = []
     body = {'kind': 'scene_reason', 'idempotency_key': 'responsiveness', 'params': {
         'input_dir': str(root / 'photos'), 'knowledge_dir': str(root / 'knowledge'),
-        'output_file': str(root / 'evidence.jsonl')}}
-    async with httpx.AsyncClient(base_url=base, timeout=5) as client:
-        for _ in range(100):
+        'output_file': str(root / 'evidence.jsonl'), 'use_embedder': real}}
+    async with httpx.AsyncClient(base_url=base, timeout=30) as client:
+        for _ in range(600):
             try:
                 if (await client.get('/api/health')).status_code == 200:
                     break
@@ -84,7 +99,7 @@ async def measure(root, port):
                 for index in range(60):
                     await asyncio.sleep(max(0, start_load + index + client_index * 0.2 - time.perf_counter()))
                     kind = 'health' if (index + client_index) % 2 == 0 else 'page'
-                    path = '/api/health' if kind == 'health' else f'/api/organize/scene/review?limit=200&offset={(index % 50) * 200}'
+                    path = '/api/health' if kind == 'health' else f'/api/organize/scene/review?limit=200&offset={(index % 50) * 200}&review_dir={root / "review"}'
                     started = time.perf_counter()
                     try:
                         response = await connection.get(path)
@@ -110,8 +125,8 @@ async def measure(root, port):
     measurements = {kind: {'count': len(values), 'median_seconds': percentile(values, .5),
                           'p95_seconds': percentile(values, .95), 'max_seconds': max(values)}
                     for kind, values in timings.items()}
-    return {'status': 'measured', 'clients': 5, 'duration_seconds': 60, 'requests_per_second': 5,
-            'records': 10000, 'image_items': 1000, 'measurements': measurements, 'errors': errors,
+    report = {'status': 'measured', 'clients': 5, 'duration_seconds': 60, 'requests_per_second': 5,
+            'records': 10000, 'image_items': len(list((root / 'photos').iterdir())), 'measurements': measurements, 'errors': errors,
             'task_before_cancel': before, 'cancel_acknowledgement': acknowledgement['status'],
             'cancel_final_seconds': cancellation_elapsed, 'task_final': final,
             'checks': {'query_p95': max(measurements['health']['p95_seconds'], measurements['page']['p95_seconds']) <= .5,
@@ -122,6 +137,12 @@ async def measure(root, port):
                             '1000 tiny generated JPEGs measure API scheduling, not realistic input hashing costs.',
                             'Five creation samples include four idempotent duplicates; not sustained unique task admission.',
                             'Isolated task/review routers; does not prove full production server latency.']}
+    if real:
+        report['limitations'] = ['Real SigLIP2 on isolated copies of original images; no face model or model quality evaluation.',
+                                'Full main API with logging middleware; unrelated production model startup disabled.',
+                                'Five creation samples include four idempotent duplicates.',
+                                'Other GPU processes can affect timings; model is warmed before requests.']
+    return report
 
 
 def main():
@@ -129,10 +150,11 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--worker', action='store_true')
     parser.add_argument('--port', type=int, default=0)
+    parser.add_argument('--real-manifest', type=Path)
     args = parser.parse_args()
     root = args.output.resolve()
     if args.worker:
-        worker(root, args.port)
+        worker(root, args.port, bool(args.real_manifest))
         return
     if root.exists() and any(root.iterdir()):
         raise ValueError('output must be empty')
@@ -141,20 +163,44 @@ def main():
     from core_modules.organize.review_queue import ReviewQueue
     (root / 'photos').mkdir()
     (root / 'knowledge').mkdir()
-    (root / 'knowledge' / 'entities.json').write_text('{"scenes":[],"roles":[]}')
-    for index in range(1000):
-        Image.new('RGB', (16, 16), (index % 256, 0, 0)).save(root / 'photos' / f'{index:04d}.jpg')
+    if args.real_manifest:
+        manifest = json.loads(args.real_manifest.read_text())
+        from core_modules.organize.task_artifacts import fingerprint
+        for index, row in enumerate(manifest['images']):
+            source = Path(row['path'])
+            destination = root / 'photos' / (f'{index:04d}' + source.suffix)
+            shutil.copy2(source, destination)
+            if fingerprint(destination) != row['content_hash']:
+                raise ValueError('manifest source content changed')
+        (root / 'input_manifest.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2))
+        from core_modules.organize.play_knowledge import build_knowledge
+        play = ROOT / 'data/ncpa_test/京剧《天下归心》'
+        build_knowledge(str(play / '剧目信息.txt'), str(play), str(root / 'knowledge'))
+    else:
+        (root / 'knowledge' / 'entities.json').write_text('{"scenes":[],"roles":[]}')
+        for index in range(1000):
+            Image.new('RGB', (16, 16), (index % 256, 0, 0)).save(root / 'photos' / f'{index:04d}.jpg')
     ReviewQueue(str(root / 'review')).seed([{'image': f'{index:05d}.jpg', 'label': 'candidate'} for index in range(10000)])
     with socket.socket() as listener:
         listener.bind(('127.0.0.1', 0))
         port = listener.getsockname()[1]
     with (root / 'server.log').open('w') as log:
-        process = subprocess.Popen([sys.executable, str(Path(__file__).resolve()), '--worker', '--output', str(root), '--port', str(port)], stdout=log, stderr=log)
+        command = [sys.executable, str(Path(__file__).resolve()), '--worker', '--output', str(root), '--port', str(port)]
+        if args.real_manifest:
+            command.extend(['--real-manifest', str(args.real_manifest.resolve())])
+        source_files = ('tools/benchmark_task_responsiveness.py', 'core_modules/organize/task_queue.py',
+                        'app/organize_tasks.py', 'app/main.py', 'core_modules/organize/review_store.py',
+                        'core_modules/organize/review_queue.py', 'core_modules/organize/task_artifacts.py',
+                        'core_modules/organize/task_versions.py', 'core_modules/organize/scene_reasoner.py',
+                        'core_modules/organize/multimodal_evidence.py', 'core_modules/organize/llm_client.py',
+                        'core_modules/image_search.py', 'core_modules/organize/feature_cache.py')
+        measured_sources = {name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest() for name in source_files}
+        process = subprocess.Popen(command, stdout=log, stderr=log)
         try:
-            report = asyncio.run(measure(root, port))
-            report['source_sha256'] = {name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest()
-                for name in ('tools/benchmark_task_responsiveness.py', 'core_modules/organize/task_queue.py',
-                             'app/organize_tasks.py', 'core_modules/organize/review_store.py', 'core_modules/organize/review_queue.py')}
+            report = asyncio.run(measure(root, port, bool(args.real_manifest)))
+            report['source_sha256'] = measured_sources
+            report['source_unchanged_during_measurement'] = all(hashlib.sha256((ROOT / name).read_bytes()).hexdigest() == digest
+                                                               for name, digest in measured_sources.items())
             (root / 'summary.json').write_text(json.dumps(report, ensure_ascii=False, indent=2))
             print(json.dumps({'checks': report['checks'], 'measurements': report['measurements'], 'output': str(root)}, indent=2), flush=True)
         finally:

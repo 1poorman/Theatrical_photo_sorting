@@ -162,7 +162,34 @@ class WorkspaceTest(unittest.TestCase):
         final = self.wait_task(task_id)
         self.assertEqual((final['status'], final['succeeded'], final['failed']), ('completed_with_errors', 2, 1))
         rows = self.client.get(f'/api/organize/tasks/{task_id}/items').json()['data']['items']
-        self.assertEqual(rows[1]['result']['error']['message'], 'source_content_changed')
+        changed = next(row for row in rows if row['input'].get('stage') != 'fingerprint' and row['input']['image'].endswith(self.names[1]))
+        self.assertEqual(changed['result']['error']['message'], 'source_content_changed')
+
+    def test_knowledge_and_organize_background_apis(self):
+        info = self.root / 'plot.txt'
+        info.write_text('京剧《天下归心》\n第1幕克段\n颍考叔劝谏郑庄公。')
+        response = self.client.post('/api/organize/tasks', json={'kind': 'knowledge', 'params': {
+            'info_path': str(info), 'play_root': str(self.photos), 'output_dir': str(self.root / 'task-knowledge')}})
+        self.assertEqual(response.status_code, 202, response.text)
+        final = self.wait_task(response.json()['data']['task_id'])
+        self.assertEqual(final['status'], 'completed')
+        self.assertTrue((self.root / 'task-knowledge/entities.json').is_file())
+        gallery = self.root / 'gallery'
+        gallery.mkdir()
+        from core_modules.organize.smart_organizer import SmartOrganizer
+        with patch.object(main.srv, 'face_recognition_model', object()), \
+                patch.object(main.srv, 'pose_model', None), \
+                patch.object(main, '_get_scene_embedder', return_value=None), \
+                patch.object(SmartOrganizer, '_recognize_image', return_value=({}, [])):
+            response = self.client.post('/api/organize/tasks', json={'kind': 'organize', 'params': {
+                'input_dir': str(self.photos), 'output_dir': str(self.root / 'task-organized'),
+                'db_root': str(gallery), 'classify_role': False}})
+            self.assertEqual(response.status_code, 202, response.text)
+            final = self.wait_task(response.json()['data']['task_id'])
+        self.assertEqual(final['status'], 'completed')
+        self.assertEqual(final['result']['total_input'], 3)
+        self.assertEqual(final['result']['failed'], 0)
+        self.assertTrue(Path(final['result']['report_path']).is_file())
 
     def test_listing_matches_pipeline_scope_and_handles_metadata(self):
         child = self.photos / 'nested'

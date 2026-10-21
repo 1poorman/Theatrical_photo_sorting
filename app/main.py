@@ -539,7 +539,8 @@ def _get_scene_embedder():
 
 
 @app.post("/api/organize/build_face_database")
-async def organize_build_face_database(organized_dirs: str = Form(...),
+@serialized
+def organize_build_face_database(organized_dirs: str = Form(...),
                                        db_root: str = Form(srv.FACE_DATABASE_ROOT),
                                        max_anchors: int = Form(8),
                                        dry_run: bool = Form(False)):
@@ -794,32 +795,13 @@ def organize_run(input_dir: str = Form(...),
         if not os.path.exists(db_root):
             return JSONResponse(status_code=400, content=srv.get_error(message=f"Face database root does not exist: {db_root}"))
 
-        role_clf = _get_organize_models(True)[1] if classify_role else None
-        embedder = _get_scene_embedder()
-        from core_modules.organize.smart_organizer import SmartOrganizer
-        organizer = SmartOrganizer(srv.face_recognition_model,
-                                   db_root,
-                                   shot_classifier=srv.pose_model,
-                                   embedder=embedder, role_classifier=role_clf,
-                                   feature_cache_dir=FEATURE_CACHE_DIR)
-        report = organizer.organize(input_dir, output_dir,
-                                    keep_per_bucket=keep_per_bucket,
-                                    gap_seconds=gap_seconds,
-                                    classify_role=classify_role,
-                                    scene_labels=scene_labels_file or None,
-                                    scene_evidence_file=scene_evidence_file or None)
-        return JSONResponse({
-            "code": 200,
-            "message": "Organize pipeline completed successfully",
-            "data": {
-                "total_input": report['total_input'],
-                "kept": report['kept'],
-                "discarded": report['discarded'],
-                "n_scenes": report['n_scenes'],
-                "db_root": report['db_root'],
-                "report_path": os.path.join(output_dir, 'organize_report.json'),
-            },
-        })
+        from app.organize_tasks import execute_staged
+        result = execute_staged('organize', {
+            'input_dir': input_dir, 'output_dir': output_dir, 'db_root': db_root,
+            'keep_per_bucket': keep_per_bucket, 'gap_seconds': gap_seconds,
+            'classify_role': classify_role, 'scene_labels_file': scene_labels_file,
+            'scene_evidence_file': scene_evidence_file})
+        return JSONResponse({'code': 200, 'message': 'Organize pipeline completed', 'data': result})
     except Exception as e:
         return JSONResponse(status_code=500, content=srv.get_error(message=f"Error running organize pipeline: {str(e)}"))
 
@@ -914,13 +896,9 @@ def scene_review_export(review_dir: str = Form(...), output_file: str = Form('')
 # ---------- 剧目知识库（多模态扩展） ----------
 
 def _load_knowledge_from_dir(knowledge_dir):
-    entities_path = os.path.join(knowledge_dir, 'entities.json')
-    if not os.path.exists(entities_path):
-        raise FileNotFoundError(f'entities.json not found in: {knowledge_dir}')
-    with open(entities_path, encoding='utf-8') as f:
-        entities = json.load(f)
-    return {'scenes': entities.get('scenes', []),
-            'roles': entities.get('roles', []),
+    from core_modules.organize.play_knowledge import read_knowledge
+    entities = read_knowledge(knowledge_dir)['entities']
+    return {'scenes': entities.get('scenes', []), 'roles': entities.get('roles', []),
             'role_aliases': entities.get('role_aliases', {})}
 
 
@@ -967,6 +945,10 @@ def play_knowledge_ingest(info_path: str = Form(...), play_root: str = Form(...)
         if not os.path.isdir(play_root):
             return JSONResponse(status_code=400, content=srv.get_error(message=f"Play root does not exist: {play_root}"))
         from core_modules.organize.play_knowledge import build_knowledge
+        if output_dir:
+            from app.organize_tasks import execute_staged
+            result = execute_staged('knowledge', {'info_path': info_path, 'play_root': play_root, 'output_dir': output_dir})
+            return JSONResponse({'code': 200, 'message': 'Knowledge built', 'data': result})
         knowledge = build_knowledge(info_path, play_root, output_dir or None)
         return JSONResponse({"code": 200, "message": "Knowledge built",
                              "data": {"stats": knowledge['stats'],
@@ -978,18 +960,16 @@ def play_knowledge_ingest(info_path: str = Form(...), play_root: str = Form(...)
 
 
 @app.get("/api/organize/play/knowledge")
-async def play_knowledge_query(output_dir: str):
+def play_knowledge_query(output_dir: str):
     """查询已构建的幕次、角色与统计。"""
     try:
-        report_path = os.path.join(output_dir, 'knowledge_report.json')
-        if not os.path.exists(report_path):
-            return JSONResponse(status_code=404, content=srv.get_error(message=f"Knowledge not found: {output_dir}"))
-        with open(report_path, encoding='utf-8') as f:
-            report = json.load(f)
+        from core_modules.organize.play_knowledge import read_knowledge
         try:
-            entities = _load_knowledge_from_dir(output_dir)
+            snapshot = read_knowledge(output_dir)
         except FileNotFoundError:
-            entities = {'scenes': [], 'roles': [], 'role_aliases': {}}
+            return JSONResponse(status_code=404, content=srv.get_error(message=f'Knowledge not found: {output_dir}'))
+        report = snapshot['report']
+        entities = snapshot['entities']
         return JSONResponse({"code": 200, "message": "OK",
                              "data": {"report": report,
                                       "scenes": [s.get('label') for s in entities['scenes']],
@@ -1056,12 +1036,9 @@ def _agent_scene_reason(input_dir, knowledge_dir, output_file='', top_k=5,
 
 def _agent_knowledge_summary(knowledge_dir):
     """读取已落盘知识库的场景、角色、来源和统计，不触发模型加载。"""
-    knowledge = _load_knowledge_from_dir(knowledge_dir)
-    report_path = os.path.join(knowledge_dir, 'knowledge_report.json')
-    report = {}
-    if os.path.exists(report_path):
-        with open(report_path, encoding='utf-8') as f:
-            report = json.load(f)
+    from core_modules.organize.play_knowledge import read_knowledge
+    snapshot = read_knowledge(knowledge_dir)
+    knowledge, report = snapshot['entities'], snapshot['report']
     return {
         'knowledge_dir': os.path.abspath(knowledge_dir),
         'scenes': [s.get('label') for s in knowledge.get('scenes', [])],
@@ -1185,20 +1162,11 @@ def _agent_organize_photos(input_dir, output_dir, db_root, keep_per_bucket=2,
                            gap_seconds=300, scene_evidence_file=''):
     if srv.face_recognition_model is None:
         raise ValueError('人脸模型未初始化，请在视觉服务环境启动主 API')
-    from core_modules.organize.smart_organizer import SmartOrganizer
-    embedder = _get_scene_embedder()
-    organizer = SmartOrganizer(srv.face_recognition_model, db_root,
-                               shot_classifier=srv.pose_model, embedder=embedder,
-                               feature_cache_dir=FEATURE_CACHE_DIR)
-    report = organizer.organize(
-        input_dir, output_dir, keep_per_bucket=keep_per_bucket,
-        gap_seconds=gap_seconds, classify_role=False,
-        scene_evidence_file=scene_evidence_file or None,
-    )
-    return {key: report[key] for key in ('total_input', 'kept', 'discarded', 'n_scenes')} | {
-        'report_path': os.path.join(output_dir, 'organize_report.json'),
-        'output_dir': output_dir,
-    }
+    from app.organize_tasks import execute_staged
+    return execute_staged('organize', {
+        'input_dir': input_dir, 'output_dir': output_dir, 'db_root': db_root,
+        'keep_per_bucket': keep_per_bucket, 'gap_seconds': gap_seconds,
+        'classify_role': False, 'scene_evidence_file': scene_evidence_file})
 
 
 @app.post('/api/organize/agent/advanced/chat')

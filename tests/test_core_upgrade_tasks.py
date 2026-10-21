@@ -188,6 +188,8 @@ class TaskTests(unittest.TestCase):
         self.assertTrue(self.started.wait(5))
         with self.assertRaises(TaskConflict):
             queue.submit('test', {}, [{'image': 'b'}], output='/result')
+        with self.assertRaises(TaskConflict):
+            queue.submit('test', {}, [{'image': 'b'}], output='/result/child.json')
         queue.cancel(first['task_id'])
         self.release.set()
         wait_for(queue, first['task_id'], {'cancelled'})

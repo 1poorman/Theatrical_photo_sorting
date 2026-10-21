@@ -40,6 +40,46 @@ class TaskUnavailable(RuntimeError):
     pass
 
 
+class TaskStopped(Exception):
+    """Cooperative cancellation or service shutdown at a stage boundary."""
+
+
+class TaskVersionConflict(ValueError):
+    """A resumed task must not mix execution versions."""
+
+
+class TaskContext:
+    def __init__(self, queue, task_id):
+        self.queue = queue
+        self.task_id = task_id
+
+    def check(self):
+        if not self.queue._boundary(self.task_id):
+            raise TaskStopped()
+
+    def results(self):
+        return self.queue.results(self.task_id)
+
+    def checkpoint(self, key):
+        with closing(self.queue._connect()) as connection:
+            row = connection.execute('SELECT payload FROM checkpoints WHERE task_id=? AND name=?',
+                                     (self.task_id, key)).fetchone()
+        return json.loads(row[0]) if row else None
+
+    def advance(self, key, payload, items):
+        """Commit a stage plan and its next items together, exactly once."""
+        with self.queue._write() as connection:
+            if connection.execute('SELECT 1 FROM checkpoints WHERE task_id=? AND name=?',
+                                  (self.task_id, key)).fetchone():
+                return False
+            position = connection.execute('SELECT COALESCE(MAX(position)+1, 0) FROM items WHERE task_id=?',
+                                          (self.task_id,)).fetchone()[0]
+            connection.execute('INSERT INTO checkpoints VALUES (?, ?, ?)', (self.task_id, key, encode(payload)))
+            connection.executemany('INSERT INTO items(task_id, position, input) VALUES (?, ?, ?)',
+                                   [(self.task_id, position + index, encode(item)) for index, item in enumerate(items)])
+        return True
+
+
 def encode(value):
     return json.dumps(value, ensure_ascii=False, sort_keys=True, allow_nan=False)
 
@@ -76,6 +116,9 @@ class TaskQueue:
                         PRIMARY KEY(task_id, position));
                     CREATE INDEX IF NOT EXISTS task_state ON tasks(status, created);
                     CREATE INDEX IF NOT EXISTS item_state ON items(task_id, status, position);
+                    CREATE TABLE IF NOT EXISTS checkpoints (
+                        task_id TEXT NOT NULL REFERENCES tasks(id), name TEXT NOT NULL,
+                        payload TEXT NOT NULL, PRIMARY KEY(task_id, name));
                 ''')
                 connection.execute("UPDATE tasks SET status='interrupted', updated=? "
                                    "WHERE status IN ('running','cancel_requested')", (time.time(),))
@@ -122,9 +165,7 @@ class TaskQueue:
                         raise TaskConflict('同一幂等键对应不同输入，请使用新的幂等键。')
                     return self.get(old['id']), False
             self._check_capacity(connection)
-            if output and connection.execute("SELECT 1 FROM tasks WHERE output=? AND "
-                    "status IN ('queued','running','cancel_requested','interrupted')", (output,)).fetchone():
-                raise TaskConflict('该输出文件已有未完成任务。')
+            self._check_output(connection, output)
             task_id = uuid.uuid4().hex
             now = time.time()
             connection.execute('INSERT INTO tasks VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL)',
@@ -140,19 +181,37 @@ class TaskQueue:
         if count >= self.capacity:
             raise TaskQueueFull('后台队列已满，请稍后提交。')
 
+    @staticmethod
+    def _check_output(connection, output, task_id=None):
+        if not output:
+            return
+        destination = Path(output).resolve()
+        for row in connection.execute("SELECT id, output FROM tasks WHERE output IS NOT NULL "
+                "AND status IN ('queued','running','cancel_requested','interrupted')"):
+            other = Path(row['output']).resolve()
+            if row['id'] != task_id and (destination == other or destination in other.parents or other in destination.parents):
+                raise TaskConflict('该输出位置已有未完成任务。')
+
     def get(self, task_id):
         with closing(self._connect()) as connection:
             connection.execute('BEGIN')
             row = connection.execute('SELECT * FROM tasks WHERE id=?', (task_id,)).fetchone()
             if row is None:
                 raise KeyError('任务不存在')
-            counts = dict(connection.execute('SELECT status, COUNT(*) FROM items WHERE task_id=? GROUP BY status',
-                                             (task_id,)).fetchall())
+            counts = dict(connection.execute("SELECT status, COUNT(*) FROM items WHERE task_id=? "
+                "AND (COALESCE(json_extract(input, '$.stage'), '') <> 'fingerprint' OR status='failed') GROUP BY status",
+                (task_id,)).fetchall())
+            preparing = connection.execute("SELECT COUNT(*) FROM items WHERE task_id=? AND status='pending' "
+                                           "AND json_extract(input, '$.stage')='fingerprint'", (task_id,)).fetchone()[0]
+            contract = connection.execute("SELECT payload FROM checkpoints WHERE task_id=? AND name='execution_contract'",
+                                          (task_id,)).fetchone()
         total = sum(counts.values())
         return {'task_id': row['id'], 'kind': row['kind'], 'status': row['status'],
                 'created_at': row['created'], 'updated_at': row['updated'],
                 'total': total, 'succeeded': counts.get('succeeded', 0), 'failed': counts.get('failed', 0),
                 'pending': counts.get('pending', 0),
+                'preparing': preparing,
+                'execution_contract': json.loads(contract[0]) if contract else None,
                 'progress': round(100 * (total - counts.get('pending', 0)) / total, 1) if total else 0,
                 'result': json.loads(row['result']) if row['result'] else None, 'error': row['error']}
 
@@ -188,10 +247,7 @@ class TaskQueue:
             if row['status'] not in ('interrupted', 'cancelled', 'failed'):
                 raise TaskConflict('只能恢复已中断、已取消或执行失败的任务。')
             self._check_capacity(connection)
-            if row['output'] and connection.execute("SELECT 1 FROM tasks WHERE output=? AND id<>? "
-                    "AND status IN ('queued','running','cancel_requested','interrupted')",
-                    (row['output'], task_id)).fetchone():
-                raise TaskConflict('输出文件已被另一未完成任务使用。')
+            self._check_output(connection, row['output'], task_id)
             connection.execute("UPDATE tasks SET status='queued', error=NULL, updated=? WHERE id=?", (time.time(), task_id))
         self._wake.set()
         return self.get(task_id)
@@ -226,15 +282,44 @@ class TaskQueue:
             with BUSINESS_LOCK:
                 if not self._boundary(task_id):
                     return
-                processor, finish = self.handlers[kind](request['params'])
+                handler = self.handlers[kind](request['params'])
+                context = TaskContext(self, task_id)
+                def verify_version():
+                    contract = getattr(handler, 'model_contract', None)
+                    if contract is None:
+                        return
+                    # JSON normalization gives tuples/lists the same durable form.
+                    contract_value = contract()
+                    if contract_value is None:
+                        return
+                    current = json.loads(encode(contract_value))
+                    saved = context.checkpoint('execution_contract')
+                    if saved is None:
+                        if any(row.get('stage') != 'fingerprint' for row in context.results()):
+                            raise TaskVersionConflict('execution_version_unbound; 请创建新任务')
+                        context.advance('execution_contract', current, [])
+                    elif saved != current:
+                        raise TaskVersionConflict('execution_version_changed; 请创建新任务')
+                verify_version()
+                staged = hasattr(handler, 'advance')
+                if staged:
+                    processor, finish = handler.process, handler.finish
+                    handler.context = context
+                else:
+                    processor, finish = handler
                 while self._boundary(task_id):
                     with closing(self._connect()) as connection:
                         item = connection.execute("SELECT position, input FROM items WHERE task_id=? "
                             "AND status='pending' ORDER BY position LIMIT 1", (task_id,)).fetchone()
                     if item is None:
+                        verify_version()
+                        if staged and handler.advance():
+                            continue
                         # finish must publish atomically and tolerate repetition
                         # if the process dies before the task's final commit.
+                        verify_version()
                         result = finish(self.results(task_id))
+                        verify_version()
                         with self._write() as connection:
                             current = connection.execute('SELECT status FROM tasks WHERE id=?', (task_id,)).fetchone()[0]
                             errors = connection.execute("SELECT COUNT(*) FROM items WHERE task_id=? AND status='failed'", (task_id,)).fetchone()[0]
@@ -244,20 +329,27 @@ class TaskQueue:
                                                (status, encode(result), time.time(), task_id))
                         return
                     value = json.loads(item['input'])
+                    verify_version()
                     try:
                         result = processor(value)
                         payload = encode(result)
                         status = 'succeeded'
                     except Exception as exc:
-                        payload = encode({'image': value.get('image'), 'label': 'unknown', 'scene_id': 'unknown',
+                        if isinstance(exc, TaskStopped):
+                            raise
+                        payload = encode({'image': value.get('image'), 'stage': value.get('stage'),
+                            'label': 'unknown', 'scene_id': 'unknown',
                             'decision': 'error', 'confidence': None,
                             'review': {'status': 'pending', 'reviewer': None, 'updated_at': None},
                             'error': {'type': type(exc).__name__, 'message': str(exc)}})
                         status = 'failed'
+                    verify_version()
                     with self._write() as connection:
                         connection.execute('UPDATE items SET status=?, result=? WHERE task_id=? AND position=?',
                                            (status, payload, task_id, item['position']))
                         connection.execute('UPDATE tasks SET updated=? WHERE id=?', (time.time(), task_id))
+        except TaskStopped:
+            return
         except Exception as exc:
             with self._write() as connection:
                 connection.execute("UPDATE tasks SET status='failed', error=?, updated=? WHERE id=?",

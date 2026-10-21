@@ -154,6 +154,71 @@ class SmartOrganizer:
         hits = {person: score for score, person in by_identity.values()}
         return hits, faces
 
+    def describe_image(self, path, threshold=None, classify_role=True, strict=False):
+        """Compute one photo's metadata and identity using the shared pipeline."""
+        name = os.path.basename(path)
+        input_dir = os.path.dirname(path)
+        threshold = threshold or KNOWN_FACE_THRESHOLD
+        info = parse_filename(name, done_style='整理完成' in input_dir)
+        img = cv2.imread(path)
+        record = {'source': name, 'date': info['date'], 'venue': info['venue'],
+                  'play': info['play'], 'event': info['event'],
+                  'photographer': info['photographer'], 'burst_seq': info['burst_seq']}
+        if img is None:
+            record['error'] = 'read_failed'
+            return record
+        if max(img.shape[:2]) > FACE_IMAGE_MAX_SIDE:
+            img = resize_max_side(img, FACE_IMAGE_MAX_SIDE)
+
+        # 人物识别
+        try:
+            hits, faces = self._recognize_image(img, threshold)
+        except Exception as e:
+            if strict:
+                raise
+            logger.warning(f"识别失败 {name}: {e}")
+            hits, faces = {}, []
+        persons_sorted = sorted(hits.items(), key=lambda kv: -kv[1])
+        record['recognized'] = {p: round(s, 4) for p, s in persons_sorted}
+        record['people_detected'] = len(faces)
+
+        # 行当分类（最大脸外扩区域，实验性）
+        if classify_role and self.role_classifier is not None and faces:
+            try:
+                f0 = max(faces, key=lambda f: f.width * f.height)
+                x1, y1, x2, y2 = int(f0.x), int(f0.y), int(f0.r), int(f0.b)
+                fw, fh = x2 - x1, y2 - y1
+                h, w = img.shape[:2]
+                box = [max(0, x1 - fw), max(0, y1 - fh * 0.6),
+                       min(w, x2 + fw), min(h, y2 + fh * 1.5)]
+                rc = self.role_classifier.classify_image(img, main_bbox=box)
+                record['role'] = rc
+            except Exception as e:
+                if strict:
+                    raise
+                logger.warning(f"行当分类失败 {name}: {e}")
+        return record
+
+    @staticmethod
+    def organized_name(path, scene, record, seq):
+        name = os.path.basename(path)
+        info = record
+        persons_sorted = sorted((record.get('recognized') or {}).items(), key=lambda kv: -kv[1])
+        people_str = '、'.join(p.replace('（饰', '饰').rstrip('）')
+                              for p, _ in persons_sorted[:MAX_PEOPLE_IN_NAME])
+        parts = [info['date'], info['venue'], info['play']]
+        if info['event']:
+            parts[-1] = parts[-1] + info['event']
+        stem = '-'.join([p for p in parts if p])
+        stem = f'{stem} {scene}' if scene else stem
+        if people_str:
+            stem += f'-{people_str}'
+        if info['photographer']:
+            stem += f"-{info['photographer']}"
+        stem = re.sub(r'[\\/:*?"<>|]', '', stem).strip()
+        new_name = f'{seq:02d}-{stem}{os.path.splitext(name)[1]}'
+        return new_name
+
     # ---------- 主流程 ----------
 
     def organize(self, input_dir, output_dir, keep_per_bucket=2,
@@ -212,59 +277,13 @@ class SmartOrganizer:
         recognition_started = time.perf_counter()
         for name in kept_names:
             path = os.path.join(input_dir, name)
-            info = parse_filename(name, done_style='整理完成' in input_dir)
-            img = cv2.imread(path)
-            record = {'source': name, 'date': info['date'], 'venue': info['venue'],
-                      'play': info['play'], 'event': info['event'],
-                      'photographer': info['photographer'], 'burst_seq': info['burst_seq']}
-            if img is None:
-                record['error'] = 'read_failed'
+            record = self.describe_image(path, threshold, classify_role)
+            if record.get('error'):
                 records.append(record)
                 continue
-            if max(img.shape[:2]) > FACE_IMAGE_MAX_SIDE:
-                img = resize_max_side(img, FACE_IMAGE_MAX_SIDE)
-
-            # 人物识别
-            try:
-                hits, faces = self._recognize_image(img, threshold)
-            except Exception as e:
-                logger.warning(f"识别失败 {name}: {e}")
-                hits, faces = {}, []
-            persons_sorted = sorted(hits.items(), key=lambda kv: -kv[1])
-            people_str = '、'.join(
-                p.replace('（饰', '饰').rstrip('）')
-                for p, _ in persons_sorted[:MAX_PEOPLE_IN_NAME])
-            record['recognized'] = {p: round(s, 4) for p, s in persons_sorted}
-            record['people_detected'] = len(faces)
-
-            # 行当分类（最大脸外扩区域，实验性）
-            if classify_role and self.role_classifier is not None and faces:
-                try:
-                    f0 = max(faces, key=lambda f: f.width * f.height)
-                    x1, y1, x2, y2 = int(f0.x), int(f0.y), int(f0.r), int(f0.b)
-                    fw, fh = x2 - x1, y2 - y1
-                    h, w = img.shape[:2]
-                    box = [max(0, x1 - fw), max(0, y1 - fh * 0.6),
-                           min(w, x2 + fw), min(h, y2 + fh * 1.5)]
-                    rc = self.role_classifier.classify_image(img, main_bbox=box)
-                    record['role'] = rc
-                except Exception as e:
-                    logger.warning(f"行当分类失败 {name}: {e}")
-
-            # 生成规范文件名：{seq}-{date}-{venue}-{play}{event} {scene}-{people}-{photographer}.ext
             scene = scene_assignment.get(path, 'scene-00')
-            parts = [info['date'], info['venue'], info['play']]
-            if info['event']:
-                parts[-1] = parts[-1] + info['event']
-            stem = '-'.join([p for p in parts if p])
-            stem = f'{stem} {scene}' if scene else stem
-            if people_str:
-                stem += f'-{people_str}'
-            if info['photographer']:
-                stem += f"-{info['photographer']}"
-            stem = re.sub(r'[\\/:*?"<>|]', '', stem).strip()
             seq = len(records) + 1
-            new_name = f'{seq:02d}-{stem}{os.path.splitext(name)[1]}'
+            new_name = self.organized_name(path, scene, record, seq)
 
             shutil.copy2(path, os.path.join(organized_dir, new_name))
             record['organized_name'] = new_name
