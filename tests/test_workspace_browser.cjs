@@ -195,6 +195,7 @@ fs.mkdirSync(shots, {recursive: true});
       pending: organizeState === 'completed_with_errors' ? 0 : total - 6,
       result: organizeState === 'completed_with_errors' ? {total_input: total, kept: 6, discarded: total - 7, failed: 1, n_scenes: 3,
         report_path: path.join(fixture, 'organize_report.json')} : null}}}));
+    await page.locator('#identity-registry-file').fill(path.join(fixture, 'identity_registry.json'));
     await page.locator('#organize-form button[type=submit]').click();
     await idle();
     await page.locator('#analysis-cancel').waitFor();
@@ -208,6 +209,8 @@ fs.mkdirSync(shots, {recursive: true});
     await idle();
     assert.equal(organizePayload.kind, 'organize');
     assert.equal(organizePayload.params.classify_role, false);
+    assert.equal(organizePayload.params.identity_registry_file, path.join(fixture, 'identity_registry.json'));
+    assert.equal(await page.locator('#identity-registry-file').inputValue(), path.join(fixture, 'identity_registry.json'));
     assert.match(organizePayload.params.scene_evidence_file, /scene_labels\.json/);
     assert.match(await page.locator('#organize-result').textContent(), /归档完成/);
     assert.match(await page.locator('#organize-result').textContent(), /部分图片失败/);

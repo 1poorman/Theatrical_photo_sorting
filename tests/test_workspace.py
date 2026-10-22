@@ -191,6 +191,70 @@ class WorkspaceTest(unittest.TestCase):
         self.assertEqual(final['result']['failed'], 0)
         self.assertTrue(Path(final['result']['report_path']).is_file())
 
+    def test_organize_identity_registry_reaches_background_and_legacy_handlers(self):
+        from core_modules.organize.smart_organizer import SmartOrganizer
+        from test_identity_registry import registry_data
+        gallery=self.root/'gallery'; gallery.mkdir()
+        identity_file=self.root/'cast.json'
+        identity_file.write_text(json.dumps(registry_data()))
+        observed=[]
+        def recognize(organizer,img,threshold):
+            observed.append((organizer.identity_registry_hash,threshold,organizer.face_margin))
+            return {'别名（饰旧角）':.9}, []
+        with patch.object(main.srv,'face_recognition_model',object()), \
+             patch.object(main.srv,'pose_model',None), \
+             patch.object(main,'_get_scene_embedder',return_value=None), \
+             patch.object(SmartOrganizer,'_recognize_image',recognize):
+            response=self.client.post('/api/organize/tasks',json={'kind':'organize','params':{
+                'input_dir':str(self.photos),'output_dir':str(self.root/'background-out'),
+                'db_root':str(gallery),'classify_role':False,'identity_registry_file':str(identity_file),
+                'face_threshold':.6,'face_margin':.12}})
+            self.assertEqual(response.status_code,202,response.text)
+            final=self.wait_task(response.json()['data']['task_id'])
+            self.assertEqual(final['status'],'completed')
+            report=json.loads(Path(final['result']['report_path']).read_text())
+            self.assertTrue(all(r['identities'][0]['identity_id']=='actor-a' for r in report['records']))
+            self.assertTrue(all(r['identities'][0]['role_name'] is None for r in report['records']))
+            self.assertTrue(all('旧角' not in r['organized_name'] for r in report['records']))
+            legacy=self.post('/api/organize/run',input_dir=self.photos,output_dir=self.root/'legacy-out',
+                             db_root=gallery,classify_role=False,identity_registry_file=identity_file,
+                             face_threshold=.6,face_margin=.12)
+            self.assertEqual(legacy['failed'],0)
+        self.assertTrue(observed)
+        self.assertTrue(all(h and t==.6 and m==.12 for h,t,m in observed))
+
+    def test_actor_album_api_uses_registry_filter_and_identity_margin(self):
+        from types import SimpleNamespace
+        from core_modules.organize.actor_view import ActorViewGenerator
+        from core_modules.organize.face_db_builder import FaceDBBuilder
+        from test_identity_registry import registry_data
+        gallery = self.root / 'gallery'
+        gallery.mkdir()
+        registry = self.root / 'cast.json'
+        registry.write_text(json.dumps(registry_data(), ensure_ascii=False))
+        system = SimpleNamespace(detector=SimpleNamespace(_detect_single=lambda img: [object()]))
+        library = {'别名（饰旧角）': [(np.array([.9, 0]), 'a')],
+                   '同名（饰第三角）': [(np.array([.7, 0]), 'b')]}
+        with patch.object(main.srv, 'face_recognition_model', system), \
+             patch.object(ActorViewGenerator, '_library_features', return_value=library), \
+             patch.object(FaceDBBuilder, '_face_feature', return_value=(np.array([1, 0]), None)):
+            for margin, expected in ((.3, 0), (.1, len(self.names))):
+                with self.subTest(margin=margin):
+                    output = self.root / f'albums-{margin}'
+                    data = self.post('/api/organize/actor_view', input_dir=self.photos,
+                                     output_dir=output, db_root=gallery, identity_registry_file=registry,
+                                     person='actor-a', threshold=.6, margin=margin, copy_images=False)
+                    self.assertEqual(sum(data['persons'].values()), expected)
+                    self.assertEqual(data['margin'], margin)
+                    self.assertTrue(data['identity_registry_sha256'])
+                    report = json.loads((output / 'actor_view_report.json').read_text())
+                    for row in report['images']:
+                        if expected:
+                            self.assertEqual(row['identities'][0]['identity_id'], 'actor-a')
+                            self.assertIsNone(row['identities'][0]['role_name'])
+                        else:
+                            self.assertEqual(row['face_decisions'][0]['reason'], 'ambiguous_identity')
+
     def test_durable_cluster_legacy_api_restart_and_human_actions(self):
         from types import SimpleNamespace
         face = SimpleNamespace(x=0, y=0, r=99, b=99, width=100, height=100, landmark=np.zeros((5, 2)))

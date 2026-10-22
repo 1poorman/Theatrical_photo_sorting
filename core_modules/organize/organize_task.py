@@ -19,6 +19,7 @@ class OrganizeTask:
         self.code_version = execution_code([
             'app/organize_tasks.py',
             'core_modules/organize/organize_task.py', 'core_modules/organize/smart_organizer.py',
+            'core_modules/organize/identity_registry.py',
             'core_modules/organize/burst_dedup.py', 'core_modules/organize/scene_split.py',
             'core_modules/organize/filename_parser.py', 'core_modules/organize/role_classifier.py',
             'core_modules/organize/face_db_builder.py', 'core_modules/shot_classify.py',
@@ -33,9 +34,17 @@ class OrganizeTask:
                 'shot': model_identity(self.organizer.shot_classifier),
                 'embedding': model_identity(self.organizer.embedder),
                 'role': model_identity(self.organizer.role_classifier) if self.params['classify_role'] else None,
-                'face_settings': [KNOWN_FACE_THRESHOLD, FACE_IMAGE_MAX_SIDE, FACE_AMBIGUOUS_MARGIN]}
+                'face_settings': [self.organizer.face_threshold, FACE_IMAGE_MAX_SIDE, self.organizer.face_margin],
+                'identity_registry': self.organizer.identity_registry_hash}
 
     def _verify(self, image):
+        from core_modules.organize.identity_registry import registry_digest
+        path = self.params.get('identity_registry_file')
+        if path and registry_digest(path) != self.params['identity_registry_sha256']:
+            raise ValueError('identity_registry_content_changed')
+        if path and self.organizer.identity_registry_hash != self.params['identity_registry_sha256']:
+            raise ValueError('identity_registry_execution_mismatch')
+        self.organizer.verify_identity_registry()
         if fingerprint(image) != self.params['input_hashes'][image]:
             raise ValueError('source_content_changed')
 
@@ -95,6 +104,9 @@ class OrganizeTask:
         return True
 
     def finish(self, rows):
+        self.organizer.verify_identity_registry()
+        if self.params['input_hashes']:
+            self._verify(next(iter(self.params['input_hashes'])))
         if gallery_hashes(self.params['db_root']) != self.params['gallery_hashes']:
             raise ValueError('face_gallery_content_changed')
         plan = self.context.checkpoint('selection')

@@ -35,6 +35,11 @@ tests/*
 !tests/test_organize_tasks.py
 !tests/test_face_cluster_tasks.py
 !tests/test_face_database_tasks.py
+!tests/test_identity_registry.py
+!tests/test_sourced_scene_candidates.py
+!tests/test_scene_text_blocks.py
+!tests/test_photo_partition_review.py
+!tests/test_verified_photo_label_import.py
 
 
 .env 

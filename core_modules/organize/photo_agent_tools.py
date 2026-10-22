@@ -129,4 +129,7 @@ def register_photo_tools(agent, organize=None):
                  {'input_dir': text, 'output_dir': text, 'db_root': text,
                   'keep_per_bucket': {'type': 'integer', 'minimum': 1, 'maximum': 20},
                   'gap_seconds': {'type': 'integer', 'minimum': 1},
-                  'scene_evidence_file': text}, ['input_dir', 'output_dir', 'db_root'])
+                  'scene_evidence_file': text, 'identity_registry_file': text,
+                  'face_threshold': {'type': 'number', 'minimum': 0, 'maximum': 1},
+                  'face_margin': {'type': 'number', 'minimum': 0, 'maximum': 2}},
+                 ['input_dir', 'output_dir', 'db_root'])

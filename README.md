@@ -22,8 +22,11 @@
 
 ## 文档导航
 
+- [工作状态与中断接续](WORK_STATE.md)：当前交接点、关键节点、提交范围、实验产物和协作接续步骤。
 - [文档中心](docs/README.md)：阅读顺序、现行说明与历史设计分类。
 - [工作台使用指南](docs/workspace_guide.md)：目录导入、图文分析、看图复核与归档。
+- [演员身份与角色表](docs/identity_registry_guide.md)：稳定身份 ID、剧目角色、同名演员专辑、JSON 格式与 API 参数。
+- [有出处的分幕候选](docs/sourced_scene_candidates_guide.md)：国家大剧院剧目资料、来源映射、固定候选池与扩池比较及复现。
 - [核心升级蓝图](docs/core_upgrade_blueprint.md)：正确性修复、批量性能与开源算法升级，U0–U8 分阶段验收；[执行进度](docs/core_upgrade_progress.md) 记录实际完成状态。
 - [项目说明](docs/PROJECT_GUIDE.md)：文件职责、部署配置、业务流程、数据产物、维护与排障。
 - [版本迭代记录](docs/CHANGELOG.md)：按日期和 Git 提交追溯；未发布改动单独记录，不虚构版本号。

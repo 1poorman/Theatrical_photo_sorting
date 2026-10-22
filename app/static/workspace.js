@@ -315,6 +315,7 @@
     $('evidence-file').value = project.evidence || join(project.output, 'scene_evidence.jsonl');
     $('actor-source').value = project.input;
     $('scene-evidence-file').value = project.labels || '';
+    $('identity-registry-file').value = project.identityRegistry || '';
     $('use-embedder').checked = project.useEmbedder !== false;
     $('use-llm').checked = project.useLLM === true;
   }
@@ -362,7 +363,7 @@
       db: $('db-root').value.trim() || 'data/face_database',
       knowledge: $('project-knowledge').value.trim() || join(output, 'knowledge'),
       review: $('project-review').value.trim() || join(output, 'review')};
-    if (previous?.input === input && previous?.output === output) Object.assign(project, {info: previous.info, playRoot: previous.playRoot, evidence: previous.evidence, labels: previous.labels, useEmbedder: previous.useEmbedder, useLLM: previous.useLLM, selected: previous.selected});
+    if (previous?.input === input && previous?.output === output) Object.assign(project, {info: previous.info, playRoot: previous.playRoot, evidence: previous.evidence, labels: previous.labels, useEmbedder: previous.useEmbedder, useLLM: previous.useLLM, selected: previous.selected, identityRegistry: previous.identityRegistry});
     await task('正在读取剧照目录…', async () => {
       try {
         const result = await api(`/api/workspace/photos?${new URLSearchParams({input_dir: input})}`);
@@ -578,6 +579,9 @@
     });
   };
   $('export-labels').onclick = () => { if (needProject()) task('正在导出已确认场景标签…', async () => { const result = await exportLabels(); notice(`已导出 ${result.n_labels} 条场景标签，整理时将自动引用。`); }); };
+  $('identity-registry-file').oninput = () => {
+    if (state.project) { state.project.identityRegistry = $('identity-registry-file').value.trim(); saveProject(); }
+  };
   $('organize-form').onsubmit = event => {
     event.preventDefault(); if (!needProject()) return;
     const project = state.project;
@@ -586,7 +590,8 @@
       const labels = await exportLabels();
       await submitBackground(project, 'organize', {input_dir: project.input, output_dir: project.output, db_root: project.db,
         keep_per_bucket: Number($('keep-per-bucket').value), gap_seconds: Number($('gap-seconds').value),
-        classify_role: $('classify-role').checked, scene_evidence_file: labels.path});
+        classify_role: $('classify-role').checked, scene_evidence_file: labels.path,
+        identity_registry_file: project.identityRegistry || ''});
     });
   };
   function showOrganizeResult(project, result, labelsPath) {
@@ -616,7 +621,8 @@
     event.preventDefault(); if (!needProject()) return;
     const person = $('actor-filter').value.trim().replace(/[、，]/g, ',');
     task('正在识别演员并生成照片专辑…', async () => {
-      const result = await api('/api/organize/actor_view', {input_dir: state.project.input, output_dir: join(state.project.output, 'actors'), db_root: state.project.db, person});
+      const result = await api('/api/organize/actor_view', {input_dir: state.project.input, output_dir: join(state.project.output, 'actors'), db_root: state.project.db, person,
+        identity_registry_file: state.project.identityRegistry || ''});
       $('actor-result').hidden = false;
       $('actor-result').innerHTML = `<h3>演员专辑已生成</h3><p>保存位置：${esc(join(state.project.output, 'actors/actor_views'))}</p><div class="role-tags">${Object.entries(result.persons || {}).map(([name, count]) => `<span class="tag">${esc(name)} · ${esc(count)} 张</span>`).join('') || '<p>未识别到库内演员，请补充清晰锚定照片后重试。</p>'}</div>`;
       notice('演员专辑生成完成。');

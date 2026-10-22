@@ -27,6 +27,8 @@ import numpy as np
 from core_modules.organize.filename_parser import parse_filename, parse_dirname
 from core_modules.organize.burst_dedup import BurstDeduplicator, image_quality
 from core_modules.organize.scene_split import split_scenes, apply_labels
+from core_modules.organize.identity_registry import (IdentityRegistry, registry_path, registry_digest,
+                                                      decide_identity, resolve_hits)
 from core_modules.tools.image_io import list_images, resize_max_side
 from core_modules.tools.logger import get_app_logger
 from config.base import (KNOWN_FACE_THRESHOLD, FACE_IMAGE_MAX_SIDE, FACE_AMBIGUOUS_MARGIN,
@@ -73,7 +75,8 @@ def apply_scene_evidence(scene_assignment, evidence):
 class SmartOrganizer:
     def __init__(self, recognition_system, face_db_root,
                  shot_classifier=None, embedder=None, role_classifier=None,
-                 feature_cache_dir=None, feature_batch_size=FEATURE_BATCH_SIZE):
+                 feature_cache_dir=None, feature_batch_size=FEATURE_BATCH_SIZE,
+                 identity_registry_file=None, face_threshold=None, face_margin=None):
         """
         Args:
             recognition_system: FaceRecognitionSystem（SCRFD+ArcFace）
@@ -91,6 +94,20 @@ class SmartOrganizer:
         self.feature_batch_size = feature_batch_size
         self._lib_matrix = None
         self._lib_persons = None
+        self.identity_registry_path = registry_path(face_db_root, identity_registry_file)
+        self.identity_registry_hash = registry_digest(self.identity_registry_path)
+        self.identities = IdentityRegistry.load(self.identity_registry_path)
+        self.verify_identity_registry()
+        self.face_threshold = KNOWN_FACE_THRESHOLD if face_threshold is None else face_threshold
+        self.face_margin = FACE_AMBIGUOUS_MARGIN if face_margin is None else face_margin
+        for value, upper in ((self.face_threshold, 1), (self.face_margin, 2)):
+            if type(value) not in (int, float) or not np.isfinite(value) or not 0 <= value <= upper:
+                raise ValueError('invalid_face_decision_threshold')
+        self._face_decisions = []
+
+    def verify_identity_registry(self):
+        if registry_digest(self.identity_registry_path) != self.identity_registry_hash:
+            raise ValueError('identity_registry_content_changed; 请创建新任务')
 
     # ---------- 人脸识别（本地锚定库） ----------
 
@@ -107,19 +124,26 @@ class SmartOrganizer:
 
     def _recognize_image(self, img, threshold):
         """返回 hits: {person_dir: max_sim}。"""
+        self.verify_identity_registry()
+        self._face_decisions = []
         self._load_library()
         faces = self.system.detector._detect_single(img)
         if self._lib_matrix.shape[0] == 0 or not faces:
+            self._face_decisions = [{'face_index': i, 'status': 'unknown', 'reason': 'empty_gallery'}
+                                    for i in range(len(faces))]
             return {}, faces
         # 对齐全部脸后批量提特征
-        aligned_list = []
-        for f in faces:
+        aligned_list, face_indices = [], []
+        for face_index, f in enumerate(faces):
             aligned = self.system.extractor.align_face(img, f.landmark)
             if aligned is None:
+                self._face_decisions.append({'face_index': face_index, 'status': 'unknown',
+                                             'reason': 'alignment_failed'})
                 continue
             if aligned.shape[0] != 160:
                 aligned = cv2.resize(aligned, (160, 160))
             aligned_list.append(aligned)
+            face_indices.append(face_index)
         if not aligned_list:
             return {}, faces
         # TRT engines accept at most 32 faces; retain the existing alignment and
@@ -129,26 +153,19 @@ class SmartOrganizer:
                                 for i in range(0, len(aligned_list), limit)])
         feats = self.system.extractor.l2_normalize(feats)
         hits = {}
-        for fv in feats:
+        if len(feats) != len(face_indices):
+            raise ValueError('face_feature_count_mismatch')
+        for face_index, fv in zip(face_indices, feats):
             sims = self._lib_matrix @ fv
-            person_max = {}
-            for i, s in enumerate(sims):
-                p = self._lib_persons[i]
-                # Several role directories may belong to the same actor.
-                identity = re.split(r'[（(]|饰', os.path.basename(p), maxsplit=1)[0].strip()
-                if np.isfinite(s) and s > person_max.get(identity, (-1, None))[0]:
-                    person_max[identity] = (float(s), p)
-            ranked = sorted(person_max.values(), reverse=True)
-            if not ranked or ranked[0][0] < threshold:
-                continue
-            if len(ranked) > 1 and ranked[0][0] - ranked[1][0] < FACE_AMBIGUOUS_MARGIN:
-                continue
-            score, person = ranked[0]
-            hits[person] = max(score, hits.get(person, -1))
+            decision = decide_identity(sims, self._lib_persons, self.identities, threshold, self.face_margin)
+            self._face_decisions.append(dict(decision, face_index=face_index))
+            if decision['status'] == 'recognized':
+                person, score = decision['anchor_dir'], decision['score']
+                hits[person] = max(score, hits.get(person, -1))
         # Merge identities appearing in several detected faces/role directories.
         by_identity = {}
         for person, score in hits.items():
-            identity = re.split(r'[（(]|饰', os.path.basename(person), maxsplit=1)[0].strip()
+            identity = self.identities.identity(person)['identity_id']
             if score > by_identity.get(identity, (-1, None))[0]:
                 by_identity[identity] = (score, person)
         hits = {person: score for score, person in by_identity.values()}
@@ -158,8 +175,10 @@ class SmartOrganizer:
         """Compute one photo's metadata and identity using the shared pipeline."""
         name = os.path.basename(path)
         input_dir = os.path.dirname(path)
-        threshold = threshold or KNOWN_FACE_THRESHOLD
+        threshold = self.face_threshold if threshold is None else threshold
         info = parse_filename(name, done_style='整理完成' in input_dir)
+        if not info['play']:
+            info['play'] = parse_dirname(input_dir)['play']
         img = cv2.imread(path)
         record = {'source': name, 'date': info['date'], 'venue': info['venue'],
                   'play': info['play'], 'event': info['event'],
@@ -171,6 +190,8 @@ class SmartOrganizer:
             img = resize_max_side(img, FACE_IMAGE_MAX_SIDE)
 
         # 人物识别
+        self.verify_identity_registry()
+        self._face_decisions = []
         try:
             hits, faces = self._recognize_image(img, threshold)
         except Exception as e:
@@ -178,8 +199,10 @@ class SmartOrganizer:
                 raise
             logger.warning(f"识别失败 {name}: {e}")
             hits, faces = {}, []
-        persons_sorted = sorted(hits.items(), key=lambda kv: -kv[1])
-        record['recognized'] = {p: round(s, 4) for p, s in persons_sorted}
+            record['recognition_error'] = type(e).__name__
+        self.verify_identity_registry()
+        record['recognized'], record['identities'] = resolve_hits(hits, self.identities, info['play'])
+        record['face_decisions'] = sorted(self._face_decisions, key=lambda row: row['face_index'])
         record['people_detected'] = len(faces)
 
         # 行当分类（最大脸外扩区域，实验性）
@@ -232,7 +255,7 @@ class SmartOrganizer:
         """
         started = time.perf_counter()
         timings = {}
-        threshold = threshold or KNOWN_FACE_THRESHOLD
+        threshold = self.face_threshold if threshold is None else threshold
         os.makedirs(output_dir, exist_ok=True)
         organized_dir = os.path.join(output_dir, 'organized')
         os.makedirs(organized_dir, exist_ok=True)

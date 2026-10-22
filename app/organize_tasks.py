@@ -122,7 +122,8 @@ def face_cluster_handler(params):
 
 def prepare_organize(params, defer_hash=False):
     allowed = {'input_dir', 'output_dir', 'db_root', 'keep_per_bucket', 'gap_seconds',
-               'classify_role', 'scene_labels_file', 'scene_evidence_file'}
+               'classify_role', 'scene_labels_file', 'scene_evidence_file',
+               'identity_registry_file', 'face_threshold', 'face_margin'}
     if set(params) - allowed:
         raise ValueError('整理参数含未知字段')
     for field in ('input_dir', 'db_root'):
@@ -133,6 +134,15 @@ def prepare_organize(params, defer_hash=False):
             raise ValueError(f'{field} 必须为 {lower}–{upper} 的整数')
     if type(params.get('classify_role', True)) is not bool:
         raise ValueError('classify_role 必须为布尔值')
+    import math
+    from config.base import KNOWN_FACE_THRESHOLD, FACE_AMBIGUOUS_MARGIN
+    for field, default, upper in (('face_threshold', KNOWN_FACE_THRESHOLD, 1),
+                                  ('face_margin', FACE_AMBIGUOUS_MARGIN, 2)):
+        value = params.get(field, default)
+        if type(value) not in (int, float) or not math.isfinite(value) or not 0 <= value <= upper:
+            raise ValueError(f'{field} 必须在 [0, {upper}]')
+    if params.get('identity_registry_file') is not None and not isinstance(params['identity_registry_file'], str):
+        raise ValueError('identity_registry_file 必须为路径字符串')
     output = params.get('output_dir')
     if not isinstance(output, str) or not output:
         raise ValueError('output_dir 必须为独立输出目录')
@@ -159,6 +169,15 @@ def prepare_organize(params, defer_hash=False):
                     input_hashes={item['image']: item.get('sha256') for item in items})
     # Gallery changes must not silently mix identity decisions across a resumed task.
     prepared['gallery_hashes'] = gallery_hashes(prepared['db_root'])
+    from core_modules.organize.identity_registry import registry_path, registry_digest, IdentityRegistry
+    identity_file = registry_path(prepared['db_root'], params.get('identity_registry_file'))
+    identity_hash = registry_digest(identity_file)
+    IdentityRegistry.load(identity_file)
+    if registry_digest(identity_file) != identity_hash:
+        raise ValueError('identity_registry_changed_during_submission')
+    prepared.update(identity_registry_file=str(identity_file), identity_registry_sha256=identity_hash,
+                    face_threshold=params.get('face_threshold', KNOWN_FACE_THRESHOLD),
+                    face_margin=params.get('face_margin', FACE_AMBIGUOUS_MARGIN))
     return prepared, items
 
 
@@ -170,10 +189,15 @@ def organize_handler(params):
         raise ValueError('Face recognition model not initialized')
     if gallery_hashes(params['db_root']) != params['gallery_hashes']:
         raise ValueError('face_gallery_content_changed; 请创建新任务')
+    from core_modules.organize.identity_registry import registry_digest
+    if registry_digest(params['identity_registry_file']) != params['identity_registry_sha256']:
+        raise ValueError('identity_registry_content_changed; 请创建新任务')
     role = main._get_organize_models(True)[1] if params['classify_role'] else None
     organizer = SmartOrganizer(main.srv.face_recognition_model, params['db_root'],
                                shot_classifier=main.srv.pose_model, embedder=main._get_scene_embedder(),
-                               role_classifier=role, feature_cache_dir=main.FEATURE_CACHE_DIR)
+                               role_classifier=role, feature_cache_dir=main.FEATURE_CACHE_DIR,
+                               identity_registry_file=params['identity_registry_file'] if params['identity_registry_sha256'] is not None else None,
+                               face_threshold=params['face_threshold'], face_margin=params['face_margin'])
     return OrganizeTask(params, organizer)
 
 

@@ -29,7 +29,7 @@ from fastapi.responses import JSONResponse, FileResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 import server as srv
-from config.base import FEATURE_CACHE_DIR
+from config.base import FEATURE_CACHE_DIR, KNOWN_FACE_THRESHOLD, FACE_AMBIGUOUS_MARGIN
 from core_modules.organize.task_queue import serialized
 
 from core_modules.tools.logger import get_app_logger, StepTimer, log_key_action
@@ -576,12 +576,15 @@ def organize_build_face_database(organized_dirs: str = Form(...),
 
 
 @app.post("/api/organize/actor_view")
-async def organize_actor_view(input_dir: str = Form(...),
+@serialized
+def organize_actor_view(input_dir: str = Form(...),
                               output_dir: str = Form(...),
                               db_root: str = Form(srv.FACE_DATABASE_ROOT),
                               threshold: float = Form(0.55),
                               copy_images: bool = Form(True),
-                              person: str = Form('')):
+                              person: str = Form(''),
+                              identity_registry_file: str = Form(''),
+                              margin: float = Form(FACE_AMBIGUOUS_MARGIN)):
     """按演员生成整理视图
     Form 参数:
     - input_dir: 目标照片目录
@@ -589,7 +592,9 @@ async def organize_actor_view(input_dir: str = Form(...),
     - db_root: 人脸锚定库根目录
     - threshold: 命中阈值（默认 0.55）
     - person: 限定演员（可选）。人名模糊匹配 / 库目录名 / 库子目录路径，
-              多人用逗号分隔（如 '陈少云,史依弘'）；留空为库内全部演员
+              也支持角色表演员名或精确 identity_id；多人用逗号分隔；留空为库内全部演员
+    - identity_registry_file: 演员与剧目角色表，留空读取人脸库内 identity_registry.json
+    - margin: 最佳与次佳身份分差下限（默认 FACE_AMBIGUOUS_MARGIN）
     """
     try:
         if srv.face_recognition_model is None:
@@ -598,9 +603,10 @@ async def organize_actor_view(input_dir: str = Form(...),
             return JSONResponse(status_code=400, content=srv.get_error(message=f"Input directory does not exist: {input_dir}"))
 
         from core_modules.organize.actor_view import ActorViewGenerator
-        gen = ActorViewGenerator(srv.face_recognition_model, db_root)
+        gen = ActorViewGenerator(srv.face_recognition_model, db_root,
+                                 identity_registry_file=identity_registry_file or None)
         report = gen.generate(input_dir, output_dir, threshold=threshold,
-                              copy_images=copy_images, person_filter=person or None)
+                              copy_images=copy_images, person_filter=person or None, margin=margin)
         if report.get('error') == 'person not found':
             return JSONResponse(status_code=400, content={
                 "code": -1,
@@ -613,6 +619,8 @@ async def organize_actor_view(input_dir: str = Form(...),
             "data": {
                 "input_dir": report.get('input_dir'),
                 "threshold": report.get('threshold'),
+                "margin": report.get('margin'),
+                "identity_registry_sha256": report.get('identity_registry_sha256'),
                 "person_filter": report.get('person_filter'),
                 "total_images": report.get('total_images'),
                 "persons": {p: v['count'] for p, v in report.get('persons', {}).items()},
@@ -787,6 +795,9 @@ def organize_run(input_dir: str = Form(...),
                        classify_role: bool = Form(True),
                        scene_labels_file: str = Form(''),
                        scene_evidence_file: str = Form(''),
+                       identity_registry_file: str = Form(''),
+                       face_threshold: float = Form(KNOWN_FACE_THRESHOLD),
+                       face_margin: float = Form(FACE_AMBIGUOUS_MARGIN),
                        db_root: str = Form(srv.FACE_DATABASE_ROOT)):
     """智能整理流水线（连拍去重 → 人脸识别 → 行当分类 → 场景划分 → 规范命名）
     Form 参数:
@@ -797,6 +808,8 @@ def organize_run(input_dir: str = Form(...),
     - classify_role: 是否行当分类（默认 true，实验性）
     - scene_labels_file: 场景人工标注映射文件（可选）
     - scene_evidence_file: 已审核场景证据文件（review_queue 导出，可选；未审核/unknown 保持占位）
+    - identity_registry_file: 演员身份/剧目角色映射（默认读取人脸库 identity_registry.json）
+    - face_threshold / face_margin: 身份阈值与前两名差值；需用独立标注校准
     """
     try:
         if srv.face_recognition_model is None:
@@ -811,7 +824,8 @@ def organize_run(input_dir: str = Form(...),
             'input_dir': input_dir, 'output_dir': output_dir, 'db_root': db_root,
             'keep_per_bucket': keep_per_bucket, 'gap_seconds': gap_seconds,
             'classify_role': classify_role, 'scene_labels_file': scene_labels_file,
-            'scene_evidence_file': scene_evidence_file})
+            'scene_evidence_file': scene_evidence_file, 'identity_registry_file': identity_registry_file,
+            'face_threshold': face_threshold, 'face_margin': face_margin})
         return JSONResponse({'code': 200, 'message': 'Organize pipeline completed', 'data': result})
     except Exception as e:
         return JSONResponse(status_code=500, content=srv.get_error(message=f"Error running organize pipeline: {str(e)}"))
@@ -1170,14 +1184,17 @@ async def agent_tools():
 
 @serialized
 def _agent_organize_photos(input_dir, output_dir, db_root, keep_per_bucket=2,
-                           gap_seconds=300, scene_evidence_file=''):
+                           gap_seconds=300, scene_evidence_file='', identity_registry_file='',
+                           face_threshold=KNOWN_FACE_THRESHOLD, face_margin=FACE_AMBIGUOUS_MARGIN):
     if srv.face_recognition_model is None:
         raise ValueError('人脸模型未初始化，请在视觉服务环境启动主 API')
     from app.organize_tasks import execute_staged
     return execute_staged('organize', {
         'input_dir': input_dir, 'output_dir': output_dir, 'db_root': db_root,
         'keep_per_bucket': keep_per_bucket, 'gap_seconds': gap_seconds,
-        'classify_role': False, 'scene_evidence_file': scene_evidence_file})
+        'classify_role': False, 'scene_evidence_file': scene_evidence_file,
+        'identity_registry_file': identity_registry_file, 'face_threshold': face_threshold,
+        'face_margin': face_margin})
 
 
 @app.post('/api/organize/agent/advanced/chat')

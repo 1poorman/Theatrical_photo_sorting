@@ -1,25 +1,89 @@
 # 核心升级执行进度
 
-> 更新：2026-10-21。C1–C4 已提交为 `fdc1fda`，U2 以此为 corrected baseline；U2 缓存/批量路径与 U3 首批改动已提交为 `3ebadf3`；整理/知识库后台阶段和执行版本校验已提交并推送为 `f7cb66a`。聚类、标注照片建库恢复、多输出占用及真实 HTTP 验证已提交并推送为 `961ffb7`。后续 200 图计划/发布恢复与预览优化对照已完成，裁剪阶段、工具和记录纳入本次提交。
+> 更新：2026-10-22。C1–C4、共享缓存及 U3 持久任务/裁剪已分批提交。新版 200 图 HTTP 与跨服务恢复已完成；当前实现另包含 U1 身份/角色契约、U0 标注导入与照片复核、U4 来源检索及短块评测工具。用户已授权本地提交，实际哈希和后续进度见 [工作状态与中断接续](../WORK_STATE.md)。
 > 验收定义见 [核心升级蓝图](core_upgrade_blueprint.md)。U0–U8 独立记录，不改变 M11–M16 的历史状态。
 
 ## 1. 当前状态
 
 已完成 C1–C4 的首轮修复及扩展回归，生成全目录清单和修复前后复现报告，接通本地 EmbeddingGemma 2 与现有 Qwen 视觉端点。U2 已接入共享内容特征缓存与整理批量路径，哈希及线程池改进后的 200 图 × 5 次复验内存、输出一致性通过，特征吞吐仍仅 1.151 倍。复核已使用 SQLite 事务与 revision 冲突校验。**U2 性能状态为 not_passed；完整 U0–U8 尚未完成，正式模型质量和整链路性能尚未验收。**
 
+2026-10-22 用户调整优先级：**暂停 U2 的提速、解码与 DALI 工作**，保留现有实现和 `not_passed` 结论。先推进 U1 身份/剧目角色契约与 U0 标注工具，再处理 U3 剩余可靠性和 U4–U7 质量目标；暂停不表示 U2 已通过，也不改变 U8 原验收门槛。
+
+2026-10-22 接续完成：U1身份/角色表、同名专辑修复、指南及84项Python/浏览器回归已完成。U0最新导入263图/262幕次v2，剩1处角色冲突；375项照片复核包、9测试/20完整性/759产物只读核查/浏览器12项通过，导入修正6回归/12差异审计通过。历史U4保留旧260 query：来源v1五份报告/45项审计、新82块固定向量两后端12变体，各12检查、分块测试10、数组102、演出版10项通过。均值25/28池SigLIP2 R@3为70.00%/53.46%、Gemma76.54%/71.92%，样式雷Gemma相对自身长文−8.16 pp，分块离线、SigLIP2默认。final test未锁定；[来源指南](sourced_scene_candidates_guide.md)、[照片复核/版本指南](photo_partition_review_guide.md)记录复现边界。下文历史报告的“当前”指各执行时版本，U3的两个API/任务文件已因U1变化。
+
 | 阶段 | 当前实现与检查 | 尚缺验收 | 默认采用 |
 | --- | --- | --- | --- |
-| U0 | 清单、去重、保守划分；4 个 raw/corrected 复现各重复 5 次 | GT 核对、final test 锁定、真实 raw 流水线基准 | 不适用 |
-| U1 | C1–C4 核心修复；核心回归 28/28、工作台 9/9、多模态 11/11 | 显式身份 ID/剧目角色映射、身份阈值校准 | 正确性修复已启用 |
+| U0 | 副本/EXIF/相机/近重复/图库复核包375项；9测试/20检查/浏览器12项；263图/262幕次v2导入6测试/12审计；历史raw/corrected复现保留 | 独立场次、近重复/连拍/框级核对、final test锁定、真实raw流水线基准 | 不适用 |
+| U1 | 显式身份/角色表、同名专辑及84项/浏览器回归保留；图库109裁剪名称对应47源图，108裁剪/46图与旧U4 query对应 | 核验裁剪来源/框级身份、gallery/query隔离与阈值校准 | 正确性修复启用；身份表扩展实现与回归完成 |
 | U2 | 分析/整理共用内容缓存；批量图文推理、有界解码、人脸批次上限；缓存 24/24、核心 28/28、多模态 11/11 | 新 200 图 × 5 次完整复验仅特征吞吐未通过；质量 GT、DALI 未验收 | 默认 8 图/批、2 解码线程；正式性能仍 not_passed |
-| U3 | 五类持久任务、后台内容哈希、取消/恢复、执行版本绑定；任务核心 10/10、阶段/导出/版本 17/17、聚类 18/18、建库 17/17、工作台 22/22；三类 HTTP、35 图结果与恢复、200 图发布恢复通过；预览 3 轮对照总耗时约 2.25 倍 | 新裁剪阶段完整 HTTP/规模复验、受控整链路性能对照、远端权重验证 | 部分启用，阶段未完成 |
-| U4 | Gemma 可选后端；同池 34 图/5 幕对比及 5 次编码计时 | 多剧目独立标注、质量门槛；其他候选未运行 | 保留 SigLIP2 base；Gemma 可选 |
+| U3 | 五类持久任务、后台内容哈希、取消/恢复、执行版本绑定；任务核心 10/10、阶段/导出/版本 17/17、聚类 18/18、建库 17/17、工作台 22/22；三类 HTTP、35 图结果与恢复通过；新版 200 图 HTTP、裁剪/发布四次服务恢复通过，326 份 JPEG 与旧版一致；预览 3 轮对照总耗时约 2.25 倍 | 大于 704 脸的规模复验、受控整链路性能对照、远端权重验证 | 部分启用，阶段未完成 |
+| U4 | 260图/4剧目；v1来源与45项比较审计保留。82短块/102去重文档、两后端12变体完成；均值25/28池R@3：SigLIP2 70.00%/53.46%，Gemma 76.54%/71.92%；数组审计102项、演出版10项、分块测试10项通过 | 8项正文缺失、精确演出版/完整池核验、新候选正例、独立final test及质量门槛；其他模型未运行 | 保留 SigLIP2 base；Gemma 可选；分块仅离线 |
 | U5 | 图片观察 → 引用校验 → 闭集判断；1 图真实双请求通过 | 100 图双人事实核对、预算、缓存、OCR、Macro-F1 | “视觉模型辅助”选项启用 |
 | U6 | 尚未实施，not_run | 变化点、DINOv3、边界 GT | 未采用 |
 | U7a/U7b | 尚未进行模型/聚类/选优升级，not_run | 框级身份、连拍与选优 GT；候选对比 | 未采用 |
 | U8 | 35 图浏览器流程、新旧入口、5 种屏宽通过 | U0–U3 完整验收、GPU 整链路与最终选择 | 未验收 |
 
 ## 2. 本轮实现
+
+### 2026-10-22：独立场次、图库来源与照片复核准备
+
+新增离线 `tools/prepare_photo_partition_review.py`，按EXIF方向RGB像素重新核对319唯一图，保留582源路径及263原/整理副本组。286舞台图有DateTimeOriginal、6缺失、日期不一致0；按来源目录/机身线索分14流，编辑时间不代替拍摄时间，跨相机时钟不合并。发现14处整理序号相对EXIF逆序线索、49同名组中17组跨已导入幕次；仅1对同流≤2秒、197停顿/幕次变化边界线索、4近重复候选，均未提升为真实GT。
+
+29张未导入舞台照均样式雷，其中20已用于U2；每剧仅1日期线索。图库109裁剪名称唯一对应47源图，108裁剪/46源图在旧U4query中；裁剪框/来源未人工核验，现图库不能作为已隔离身份评测。旧final_test_provisional的79图中至少69已用于提供的实验清单，本轮所有文件均标记development review，旧划分历史保留、final test未锁定。
+
+375项复核页面支持分类/文字/待核查筛选、浏览器草稿、JSON导出/恢复及协议拒绝；相机时间线独立展示。逐图检查点绑定协议/像素/内容/预览摘要、支持同版resume；全部源/图库/输入摘要与增删在结束时核对。9契约测试、20完整性与759产物只读核查、宿主浏览器12检查通过；沙箱套接字受限后获准重试。CPU会话59907/浏览器33879退出0，无新GPU。
+
+两处已确认整理文件名场次使用连字符独立段，旧导入器漏读天下第5幕见母/样式雷第8场。修复仅在独立import工具，6回归先复现4失败后全部通过；新目录`verified_labels_scene_segments_v2_20261022/`保存263图/262幕次。12差异审计确认仅两图scene_label/scene_id变化、旧260条/人物/角色冲突保持、身份注册表字节相同。旧标注、冻结短块协议与11源码、全部260图模型结果不改写；262图比较另建清单/协议，当前未运行。
+
+产物：[复核页面](../outputs/acceptance/core_upgrade/u0_partition_review_20261022/artifacts/index.html)、[复核报告](../outputs/acceptance/core_upgrade/u0_partition_review_20261022/artifacts/report.md)、[标签差异审计](../outputs/acceptance/core_upgrade/u0_partition_review_20261022/import_gap_audit.json)、[恢复/使用指南](photo_partition_review_guide.md)。独立场次/人脸框/unknown/连拍偏好/真实边界仍待确认；默认与暂停项保持。
+
+### 2026-10-22：短原文块、固定向量与演出版交叉核对
+
+在来源v1之外建立冻结协议，不新增模型正文；相同已选引用和5段本地剧情覆盖为82块，含剧名/幕次/特殊token最长64。28长文加82块去重为102文档，逐文档batch1、每后端260图各编码一次，图像内部batch8。预先固定均值为主、最大值为次，25/28排名从同一完整分数表取列。`tools/scene_text_blocks.py`、准备/评测入口与10项契约测试新增；11份测量源码/tokenizer/输入/角色表/本地文件绑定SHA256。业务与模型适配器未在此阶段修改。
+
+| 模型 / 池 | 本协议长文Top-1 / Top-3 | 分块均值（主） | 分块最大值（次） |
+| --- | ---: | ---: | ---: |
+| SigLIP2 · 25 | 38 / 160 | 61 / 182 | 60 / 178 |
+| SigLIP2 · 28 | 37 / 129 | 60 / 139 | 56 / 151 |
+| Gemma · 25 | 79 / 189 | 72 / 199 | 101 / 200 |
+| Gemma · 28 | 60 / 175 | 56 / 187 | 83 / 182 |
+
+分母均260。两后端退出0，各12项检查通过；102项数组审计精确复现全部向量点乘、三张候选表、12变体分数/排名/指标；两模型输入与文档索引字节相同。25→28移除新ID后原排名与分数完全相同，竞争只改变马可；均值扩池SigLIP2损失1/43张、Gemma损失16/12张，分别为Top-1/Top-3。原马可3候选R@3=100%是池大小决定，新增3候选仍缺正例。
+
+固定25池均值SigLIP2 R@3相对自身长文+8.46 pp，Gemma+3.85 pp；Gemma Top-1反而−2.69 pp、样式雷R@3−8.16 pp。均值等权包含短尾块，最大值有块数偏置；最高显示结果不直接进入默认。与历史v1的权重/预处理签名一致，但Gemma长文排名25/28池分别50/59图微变、最大分数差0.001434；batch1和共同去重协议不同，没有独立证明唯一原因。本协议只在内部解释长文/分块差值。
+
+另保存16来源、21段精确原文跨度、6份搜索发现，10项演出版审计通过。[2017假面探班页](https://www.chncpa.org/zxdt_331/zxdtlm/mtsj_334/201705/t20170522_170922.shtml)与2024资料同2012瑞典版谱系；马可2014升级版重编舞美/结尾、2014官网明确第三幕战争，2015巡演又压缩至90分钟；样式雷2016复排和6月10–19日档期获官方支持。文件名日期和具体彩排/逐场边界仍未确认，家族代际编号不当场次。8项正文继续缺失，新网页不加入冻结模型文本。
+
+完整产物：[短块报告](../outputs/acceptance/core_upgrade/u4_text_blocks_20261022/report.md)、[数组summary](../outputs/acceptance/core_upgrade/u4_text_blocks_20261022/summary.json)、[演出版报告](../outputs/acceptance/core_upgrade/u4_text_blocks_20261022/production_chronology_report.md)。两后端于07:05 UTC完成，会话22447退出0；命令/PID/摘要在研究`run_state.json`，恢复/只读复现见[指南](sourced_scene_candidates_guide.md)。当前仍为开发集、formal U4未通过，SigLIP2默认、Gemma可选、分块仅离线，U2暂停。
+
+### 2026-10-22：有出处分幕候选v1与独立扩池对照
+
+用户授权网上搜集国家大剧院剧目资料后，保存6份参考页面、响应头、SHA256与确定性提取文本。《假面舞会》官网明确六节；《样式雷》初排/复排报道明确第1、6、8场；《马可·波罗》北京日报报道（中国侨网转载）明确序、四幕及尾声，央视核对编号，NCPA巡演页作交叉参考。仅按明确编号映射，正文不使用照片图注、query人物标注或搜索摘要。2015巡演压缩版与文件名提示2014照片的等同性未确认。
+
+两版在运行前冻结：25候选保留5个本地正文、补12个来源正文、余8项标签；28候选只追加《马可·波罗》第3幕、第4幕和尾声，无对应query GT。`tools/sourced_scene_candidates.py`校验快照、精确字符跨度、场次编号、候选ID、原清单及来源包，拒绝等大小/等mtime改写和已准备清单篡改。评测入口支持`--candidate-texts`与直接复用来源准备清单；10项契约测试通过。
+
+| 模型 | 原25候选Top-1 / Top-3 | 增补25候选Top-1 / Top-3 | 扩展28候选Top-1 / Top-3 |
+| --- | ---: | ---: | ---: |
+| SigLIP2 | 49 / 143 | 38 / 160 | 37 / 129 |
+| Gemma | 45 / 151 | 77 / 188 | 60 / 177 |
+
+分母均260。Gemma原25候选引用本日历史报告：输入、模型/预处理签名和7份非评测入口源码一致，评测入口后增来源校验。当前5份报告各7项检查、比较45项审计通过，9份被测源码一致并匹配现场；新SigLIP2基线复现旧260图排名。固定池补正文使Gemma净增32/37张，SigLIP2净减11张Top-1、净增17张Top-3。未改变生产默认或正式知识库。
+
+扩池后《马可·波罗》6候选的SigLIP2 / Gemma R@3为47.46% / 79.66%，R@1为27.12% / 23.73%；原3候选R@3=100%由池大小决定。Gemma独立重编码还让未扩池剧目新增2张Top-1、1张Top-3命中。将已存28候选分数限制回原25候选得到79/189，新增候选竞争再降为60/177；竞争丢失19/12张，全部来自《马可·波罗》。共同分数最大变动0.001310，分批/BF16是可能因素，未作独立因果消融。
+
+SigLIP2的12个新增文档原长73–190 tokens，处理器全部截断到64；扩展版15个来源文档也超窗。证据为`text_window_audit.json`及CPU复现脚本。8项仍缺明确正文，演出版本/独立数据划分未核验；《天下归心》Gemma相对同文本SigLIP2 R@3仍下降14.71 pp，未达U4逐剧目下降≤3 pp的目标。开发集结果不作正式质量验收或速度/U2结论。
+
+产物：[来源报告](../outputs/acceptance/core_upgrade/u4_ncpa_sources_20261022/source_report.md)、[比较报告](../outputs/acceptance/core_upgrade/u4_sourced_comparison_20261022/report.md)、同目录`summary.json`与`comparison_analysis.py`。命令、来源URL、文件契约与中断恢复见[指南](sourced_scene_candidates_guide.md)。五次GPU实验已于05:18 UTC全部结束，会话38976退出0，无需复跑完成项。
+
+### 2026-10-22：身份契约复验与原25候选历史对照
+
+身份表扩展原有回归通过后，新增用例复现了同名不同演员分别出现在不同照片时被合入一个专辑，以及登记姓名/身份 ID 无法筛选的问题。展示名称现按完整注册表稳定区分，跨照片/剧目保持身份隔离；筛选支持登记姓名、精确身份 ID，同时保留全图库身份竞争。演员专辑 API 返回实际 margin 与角色表摘要。
+
+修复后身份 15/15、核心 28/28、整理 17/17、工作台 24/24，共 84 项通过；35 图浏览器流程、角色表保存/参数、刷新与五种屏宽通过。初次工作台在沙箱首个请求超时，同源码宿主重跑及新增用例后的最终重跑均通过；日志保留于 `u1_regression_initial_20261022/` 与 `u1_regression_final_20261022/`。[角色表指南](identity_registry_guide.md) 包含真实解析器验证过的 JSON 示例、API 参数与恢复规则。正式框级身份质量和阈值校准仍未验收。
+
+同一当前源码、260 张中性图片和 25 个按剧目分池候选下，SigLIP2 Top-1 / Top-3 命中 49 / 143，Gemma 为 45 / 151。Gemma R@3 净增 3.08 pp，但《天下归心》下降 14.71 pp；按 4 剧目完整重采样的探索性 R@3 差值 95% 区间为 −6.62～+7.78 pp，不支持正式提升声明。两份输入清单字节一致、8 份源码一致且匹配当前版本，配对 12 项检查通过，SigLIP2 排序复现初次报告。
+
+仅《天下归心》5 个候选有分幕正文；其余 20 个仅幕次标签。《假面舞会》《样式雷》的本地资料只有网址，《马可·波罗》只有整剧梗概且候选仅 3 个，R@3=100% 不代表有效区分。原始计时 20.309 / 54.789 秒的加载边界不同（Gemma 在计时内懒加载），加上共享 GPU 与单遍条件，不能作速度比较或 U2 结论。默认继续 SigLIP2，下一步补有出处的分幕资料及独立标注/划分。详细结果、环境版本与分析脚本见 [260 图比较报告](../outputs/acceptance/core_upgrade/u4_verified_comparison_20261022/report.md)。
 
 ### 2026-10-21：U2 缓存与批量路径
 
@@ -153,7 +217,36 @@ profiling 显示 GPU 前向仅约 2 秒，CPU 解码/预处理与完整内容哈
 | 检查点数据库 | 16.20 MiB | 50.25 MiB |
 | 各次峰值 RSS | 593.46 / 673.70 / 674.36 MiB | 668.18 / 672.02 / 674.54 MiB |
 
-该对照只证明真实输入预览阶段的收益，不能替代 U2 性能门槛、完整 GPU 流水线或身份质量。相同进程交替运行，文件系统缓存、分配器和同机负载影响结果；RSS 每 20 ms 采样且包含导入依赖，峰值比较不作内存收益结论。新增裁剪增加约 34 MiB 持久存储，尚无大型任务清理策略。下一步以新版本复验完整聚类 HTTP 与更大规模，随后处理真实整理性能和远端权重契约。
+该对照只证明真实输入预览阶段的收益，不能替代 U2 性能门槛、完整 GPU 流水线或身份质量。相同进程交替运行，文件系统缓存、分配器和同机负载影响结果；RSS 每 20 ms 采样且包含导入依赖，峰值比较不作内存收益结论。新增裁剪增加约 34 MiB 持久存储，尚无大型任务清理策略。新版 HTTP 和恢复复验见下节；更大规模、真实整理性能和远端权重契约仍待完成。
+
+### 2026-10-22：新版 200 图 HTTP 与裁剪/发布跨服务恢复
+
+`49b9ce0` 已提交并推送。以相同 200 张唯一剧照清单新建隔离任务，使用真实 CUDA SCRFD/ArcFace、完整 main API（关闭其他生产模型启动）。逐图阶段仍按 5 客户端、60 秒、合计 5 请求/秒查询 10000 条复核记录，另测 5 次不同任务创建和幂等重复。
+
+| 新版聚类 HTTP | 实测 |
+| --- | --- |
+| 健康/分页 P95 | 3.38 / 8.18 ms |
+| 健康/分页最大值 | 543.17 / 350.95 ms |
+| 5 次新任务创建 P95 | 82.10 ms |
+| 取消确认 / 最终取消 | 5.52 / 227.53 ms |
+
+`u3_cluster_crops_http_200_20261021/summary.json` 的 10 项检查全部通过：主任务持续运行、取消后不再开始下一图、查询无错误、幂等重复正确，原图/副本与被测源码完整摘要未变。P95 满足门槛，但健康查询有 543 ms 的单次延迟，不表示所有请求均低于 500 ms。取消时 116 张逐图处理成功，84 张待继续。
+
+扩展 `benchmark_face_task_completion.py --cancel-after-crop`，保持业务源码和执行版本不变，依次启动四个新服务：完成余下检测后在聚类计划保存处取消；完成首张源图裁剪后取消；恢复余下裁剪与拼图，在首个文件独占发布后注入异常；复用该文件完成发布。取消发生在裁剪处理返回后，队列正常保存该成功项，再停止下一项。
+
+| 新版恢复测量 | 实测 |
+| --- | --- |
+| 最终输出 | 200 图、704 脸、326 簇/预览，无条目失败 |
+| 本轮剩余检测 | 84 图，累计 79.644 秒 |
+| 源图裁剪 / 拼图 | 159 图 / 326 簇，累计 63.188 / 21.728 秒 |
+| 四次恢复尝试耗时 | 81.135 / 1.019 / 97.148 / 8.090 秒 |
+| 各进程峰值 RSS | 2247.10 / 1328.15 / 1591.47 / 1454.54 MiB |
+| 期间健康/分页 P95 | 3.32 / 8.98 ms（555 / 370 次） |
+| 最终任务数据库 | 51.68 MiB，包含原 HTTP 任务记录与裁剪 |
+
+`u3_cluster_crops_completion_200_20261021/summary.json` 的 17 项检查全部通过，已成功检测检查点未变，检测/裁剪/预览无重复处理，159 张选中源图裁剪全部完成，计划取消、裁剪取消和部分发布失败均恢复。独立 `artifact_audit.json` 进一步逐路径核对：326 个文件各新建一次，只复用中断前的一个文件；簇成员、框、关键点、内聚度与默认复核状态和旧版一致（仅归一化隔离输入目录），全部 326 份 JPEG 字节相同。四次执行契约一致，报告所列源码及测量工具摘要与当前文件匹配。
+
+此轮是同版本 HTTP 任务的恢复测量，不是完整冷基线或受控整链路对照；逐图和预览耗时不能与前一天不同负载的旧版恢复结果直接比较。恢复查询每秒五次直到结束，短取消/发布阶段样本稀疏；RSS 每秒采样可能漏掉短峰值。层次聚类仍不能中途取消，尚未验证大于 704 脸的二次方开销。U3 阶段未完成，U2 保持 `not_passed`，身份质量和远端权重验证仍缺验收。目录沿用 `_20261021` 名称，本次收尾记录日期为 2026-10-22。
 
 ### 2026-10-19：正确性与模型探索
 
@@ -255,8 +348,8 @@ MPLCONFIGDIR=/tmp/theatre-core-mpl /home/huachenghao/.conda/envs/face_scrfd_arcf
 # 真实 SCRFD/ArcFace HTTP（200 唯一图清单，新的空目录，独立图库）
 MPLCONFIGDIR=/tmp/theatre-core-mpl /home/huachenghao/.conda/envs/face_scrfd_arcface/bin/python tools/benchmark_face_task_http.py --manifest outputs/acceptance/core_upgrade/u3_http_versioned_final_20261021/input_manifest.json --kind face_cluster --output outputs/acceptance/core_upgrade/u3_cluster_http_new_run --gpu 1
 MPLCONFIGDIR=/tmp/theatre-core-mpl /home/huachenghao/.conda/envs/face_scrfd_arcface/bin/python tools/benchmark_face_task_http.py --manifest outputs/acceptance/core_upgrade/u3_http_versioned_final_20261021/input_manifest.json --kind face_database --output outputs/acceptance/core_upgrade/u3_database_http_new_run --gpu 1
-# 继续同版本已取消的隔离 HTTP 任务，经过计划取消/首文件失败/服务重启
-MPLCONFIGDIR=/tmp/theatre-core-mpl /home/huachenghao/.conda/envs/face_scrfd_arcface/bin/python tools/benchmark_face_task_completion.py --resume-from outputs/acceptance/core_upgrade/u3_cluster_http_new_run --kind face_cluster --output outputs/acceptance/core_upgrade/u3_cluster_completion_new_run --gpu 1
+# 继续同版本已取消的隔离 HTTP 任务，经过计划取消/裁剪取消/首文件失败/服务重启
+MPLCONFIGDIR=/tmp/theatre-core-mpl /home/huachenghao/.conda/envs/face_scrfd_arcface/bin/python tools/benchmark_face_task_completion.py --resume-from outputs/acceptance/core_upgrade/u3_cluster_http_new_run --kind face_cluster --output outputs/acceptance/core_upgrade/u3_cluster_completion_new_run --gpu 1 --cancel-after-crop
 MPLCONFIGDIR=/tmp/theatre-core-mpl /home/huachenghao/.conda/envs/face_scrfd_arcface/bin/python tools/benchmark_face_task_completion.py --resume-from outputs/acceptance/core_upgrade/u3_database_http_new_run --kind face_database --output outputs/acceptance/core_upgrade/u3_database_completion_new_run --gpu 1
 # 同一真实检测检查点比较新旧持久预览，新的空目录
 MPLCONFIGDIR=/tmp/theatre-core-mpl /home/huachenghao/.conda/envs/face_scrfd_arcface/bin/python tools/benchmark_cluster_previews.py --task-root outputs/acceptance/core_upgrade/u3_cluster_http_200_20261021/tasks --output outputs/acceptance/core_upgrade/u3_cluster_previews_new_run --repeats 3
@@ -299,10 +392,10 @@ WORKSPACE_URL=http://127.0.0.1:18301 node tests/test_workspace_browser.cjs
 
 ## 5. 下一步
 
-1. 核对场次、资料分类、弱标签和近重复，再锁定独立 final test；现有舞台照数量基本够幕次初评，主要缺口是可信标注。
-2. 补齐身份 ID 与剧目角色映射，隔离 gallery/query 并校准 margin；保存真实 raw/corrected 流水线 5 次基准。
-3. U2：完整复验已结束且仍 not_passed；继续降低 CPU 预处理成本，保持完整内容改写失效和路径对应契约。正式质量核对和 DALI 实验另行记录。
-4. U3：新版裁剪阶段已减少重复解码，200 图/3 轮预览对照约 2.25 倍且字节一致；补完整聚类 HTTP、更大人脸规模、远端权重验证与真实整理性能。历史 200 图计划/部分发布跨服务恢复报告对应 `961ffb7`，源码变化后不可直接复用其执行版本。初次载入仍下载分页队列，兼容复核快照每次决定仍全量生成。
-5. 扩展多剧目检索和 U5 预算/事实质量评估，再进入 U6/U7；未达门槛组件保留实验状态。
+1. U0复核包及263图/262幕次v2已完成；从375项页面核验场次、资料分类、近重复/连拍与图库来源，再采集独立final test。旧260模型报告不改分母，现有复核图保留development使用。
+2. 身份 ID 与剧目角色映射的实现、回归和指南已完成；补框级身份 GT、隔离 gallery/query 并校准 margin；真实 raw/corrected 流水线 5 次基准仍待补。
+3. U2：按用户要求暂停提速与 DALI，保持 `not_passed`；恢复需用户后续指示。当前优先 U1 身份/角色映射、U0 标注准备及其他阶段质量目标。
+4. U3：`49b9ce0` 新版 200 图 HTTP 与裁剪/发布四次服务恢复已通过，预览 3 轮对照约 2.25 倍且字节一致；接续大于 704 脸的真实规模、受控整链路性能、远端权重验证与真实整理性能。历史 200 图计划/部分发布恢复对应 `961ffb7`，不能跨源码版本继续旧任务。初次载入仍下载分页队列，兼容复核快照每次决定仍全量生成。
+5. 来源v1与82短块/固定向量25/28消融均已完成，全部产物保留。接续剩8项正文、新候选正例、精确演出版/完整池及独立数据核验；262图新比较另建协议，现有开发集不改名为final test。随后推进U5预算/事实质量及U6/U7；未达门槛组件保留实验状态，不凭最大值最佳显示结果切换默认。
 
 新增测试已加入 `.gitignore` 例外。每阶段更新命令、代码版本、报告和质量状态，禁止将合成复现、小样本 smoke 或历史结果计为正式效果通过。
