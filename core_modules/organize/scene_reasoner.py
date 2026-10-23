@@ -119,7 +119,8 @@ def _build_prompt(image_path, parsed, candidates, evidences):
 
 class SceneReasoner:
     def __init__(self, knowledge, client=None, weights=None, embedder=None,
-                 top_k=5, use_rule_shortcut=True, vision_client=None):
+                 top_k=5, use_rule_shortcut=True, vision_client=None, visual_controller=None,
+                 boundary_check=None):
         self.knowledge = knowledge
         self.client = client
         self.weights = dict(DEFAULT_WEIGHTS)
@@ -129,6 +130,10 @@ class SceneReasoner:
         self.top_k = top_k
         self.use_rule_shortcut = use_rule_shortcut
         self.vision_client = vision_client
+        self.visual_controller = visual_controller
+        self.boundary_check = boundary_check
+        self.ocr_provider = None
+        self.ocr_images = set()
 
     # ---------- 证据与候选 ----------
 
@@ -187,43 +192,48 @@ class SceneReasoner:
 
     # ---------- 模型调用 ----------
 
-    def _observe(self, image_path):
+    def _observe(self, image_path, max_tokens=None):
         from core_modules.organize.llm_client import image_content, LLMError
         try:
             content = image_content(image_path)
-            result = self.vision_client.chat([
-                {'role': 'system', 'content': '请观察剧照，只描述可见事实，不猜演员姓名或幕次。'
-                 '只输出 JSON，字段 clothing、props、setting、actions、visible_text、uncertain 均为字符串列表。'},
-                {'role': 'user', 'content': [{'type': 'text', 'text': '描述画面可见内容及不确定项。'}, content]},
-            ])
+            if self.boundary_check:
+                self.boundary_check()
+            from core_modules.organize.visual_evidence import OBSERVATION_SYSTEM, OBSERVATION_REQUEST, OBSERVATION_VERSION
+            messages = [
+                {'role': 'system', 'content': OBSERVATION_SYSTEM},
+                {'role': 'user', 'content': [{'type': 'text', 'text': OBSERVATION_REQUEST}, content]},
+            ]
+            result = (self.vision_client.chat(messages, max_tokens=max_tokens)
+                      if max_tokens is not None else self.vision_client.chat(messages))
             observation = _parse_json(result['content'])
-            fields = ('clothing', 'props', 'setting', 'actions', 'visible_text', 'uncertain')
-            if not isinstance(observation, dict) or any(
-                not isinstance(observation.get(key), list) or
-                any(not isinstance(item, str) for item in observation[key]) for key in fields
-            ):
+            from core_modules.organize.visual_evidence import FIELDS, validate_observation
+            fields = FIELDS
+            if not validate_observation(observation):
                 return None, {'error': 'invalid_visual_schema', **result.get('trace', {})}
             trace = dict(result.get('trace', {}))
             trace['model_identity'] = getattr(self.vision_client, 'model_identity',
                                               getattr(self.vision_client, 'model', 'unknown'))
             trace['model_identity_source'] = getattr(self.vision_client, 'model_identity_source', 'configuration')
-            trace['prompt_version'] = 'visual-observation-v1'
+            trace['prompt_version'] = OBSERVATION_VERSION
             return {'id': 'observation:' + os.path.basename(image_path), 'type': 'observation',
                     'quote': json.dumps({k: observation[k] for k in fields}, ensure_ascii=False),
                     'ref': os.path.basename(image_path)}, trace
         except (LLMError, OSError, ValueError, KeyError, TypeError) as exc:
             return None, {'error': type(exc).__name__}
 
-    def _ask(self, messages, candidate_ids, evidence_ids):
+    def _ask(self, messages, candidate_ids, evidence_ids, max_tokens=None):
         if self.client is None:
             return None, {}
-        result = self.client.chat(messages)
+        if self.boundary_check:
+            self.boundary_check()
+        result = (self.client.chat(messages, max_tokens=max_tokens)
+                  if max_tokens is not None else self.client.chat(messages))
         choice = _parse_json(result['content'])
         ok, err = validate_choice(choice, candidate_ids, evidence_ids)
         if ok:
             return choice, result['trace']
         big = getattr(self.client, 'big', None)
-        if big is not None and getattr(self.client, 'cascade_enabled', True):
+        if big is not None and getattr(self.client, 'cascade_enabled', True) and max_tokens is None:
             result = big.chat(messages)
             choice = _parse_json(result['content'])
             ok, err = validate_choice(choice, candidate_ids, evidence_ids)
@@ -247,6 +257,14 @@ class SceneReasoner:
             model_trace['retrieval_model_signature'] = getattr(self.embedder, 'model_signature', 'unknown')
             model_trace['retrieval_errors'] = getattr(self.embedder, 'diagnostics', {}).get(image_path, [])
         llm_pick = None
+        if self.ocr_provider is not None and image_path in self.ocr_images and not manual_label:
+            if self.boundary_check:
+                self.boundary_check()
+            ocr, trace = self.ocr_provider.observe(image_path, requested=True)
+            model_trace['ocr'] = trace
+            if ocr:
+                evidences.append(ocr)
+                evidence_ids.append(ocr['id'])
 
         if manual_label:
             decision = 'human'
@@ -257,16 +275,28 @@ class SceneReasoner:
             chosen_id = rule_matches[0]['scene_id']
         else:
             chosen_id = 'unknown'
+            observation = None
             if self.vision_client is not None:
-                observation, trace = self._observe(image_path)
+                if self.visual_controller is not None:
+                    from core_modules.organize.visual_evidence import call_reasons
+                    reasons = call_reasons(candidates, parsed, self.knowledge.get('scenes'),
+                                           self.visual_controller.policy.candidate_margin)
+                    observation, trace = self.visual_controller.observe(image_path, reasons, self._observe)
+                else:
+                    observation, trace = self._observe(image_path)
                 model_trace['vision'] = trace
                 if observation:
                     evidences.append(observation)
                     evidence_ids.append(observation['id'])
-            if self.client is not None:
+            if self.client is not None and (self.visual_controller is None or observation):
                 decision = 'model'
                 messages = _build_prompt(image_path, parsed, candidates, evidences)
-                choice, trace = self._ask(messages, candidate_ids, evidence_ids)
+                if self.visual_controller is not None:
+                    choice, trace = self.visual_controller.choice(image_path, messages, candidate_ids,
+                                                                 evidence_ids, self._ask, validate_choice)
+                    model_trace['visual_choice'] = trace
+                else:
+                    choice, trace = self._ask(messages, candidate_ids, evidence_ids)
                 model_trace.update(trace or {})
                 if choice:
                     model_trace['choice'] = choice
@@ -276,6 +306,8 @@ class SceneReasoner:
                     decision = 'model'
                 elif choice and choice.get('scene_id') == 'unknown':
                     decision = 'model'
+            elif self.visual_controller is not None and self.vision_client is None:
+                model_trace['vision'] = {'called': False, 'skipped': 'vision_client_unavailable'}
 
         # 逐候选打分
         scored = []

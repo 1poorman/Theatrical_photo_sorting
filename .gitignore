@@ -40,6 +40,12 @@ tests/*
 !tests/test_scene_text_blocks.py
 !tests/test_photo_partition_review.py
 !tests/test_verified_photo_label_import.py
+!tests/test_scene_retrieval_study.py
+!tests/test_visual_evidence.py
+!tests/test_scene_change_points.py
+!tests/test_face_graph_cluster.py
+!tests/test_temporal_burst.py
+!tests/test_ocr_evidence.py
 
 
 .env 

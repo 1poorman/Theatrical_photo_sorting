@@ -1,6 +1,6 @@
 # 文档中心
 
-更新时间：2026-10-22。文档基于当前工作区与 Git 历史整理；代码和测试文件保留原路径，避免破坏导入、样本路径及历史链接。
+更新时间：2026-10-23。文档基于当前工作区与 Git 历史整理；代码和测试文件保留原路径，避免破坏导入、样本路径及历史链接。
 
 异常中断后继续或协作接手，先读 [工作状态与中断接续](../WORK_STATE.md)，其中记录当前优先级、未提交改动、验证边界与下一步命令。
 
@@ -21,6 +21,7 @@
 | [identity_registry_guide.md](identity_registry_guide.md) | 演员身份与剧目角色表 | JSON 格式、身份与角色来源、专辑筛选、API 参数和任务恢复 |
 | [sourced_scene_candidates_guide.md](sourced_scene_candidates_guide.md) | 有出处的分幕候选与U4复现 | 官方/媒体资料、精确引用、短原文块/固定向量25/28对照、来源v1与演出版边界 |
 | [photo_partition_review_guide.md](photo_partition_review_guide.md) | 剧照划分与图库来源复核 | 原/整理副本、EXIF相机时间、近重复/连拍线索、复核草稿与262条新版幕次标签 |
+| [experimental_components_guide.md](experimental_components_guide.md) | 视觉证据、时序与图聚类实验 | 请求/token 预算、OCR、窗口分段、图聚类、连拍研究及实际验收边界 |
 | [core_upgrade_blueprint.md](core_upgrade_blueprint.md) | 核心算法与性能后续蓝图 | U0–U8 实施依赖、开源选型、数据划分、验收门槛与默认采用规则 |
 | [core_upgrade_progress.md](core_upgrade_progress.md) | 核心升级执行状态 | 全目录清单、正确性修复、真实模型探索、配置与后续待验收项 |
 | [CHANGELOG.md](CHANGELOG.md) | 可追溯迭代记录 | 日期、提交、变更与验证边界 |

@@ -66,6 +66,20 @@ class FaceClusterTasksTests(unittest.TestCase):
         self.assertEqual(Path(state['clusters'][0]['preview']).read_bytes(), Path(legacy['clusters'][0]['preview']).read_bytes())
         self.assertTrue(all(batch <= 1 for batch in self.batches))
 
+    def test_graph_task_preserves_physical_face_constraints_and_audits_backend(self):
+        params, items = prepare_face_cluster({'input_dir': str(self.photos), 'output_dir': str(self.output),
+                                             'clustering_backend': 'graph_experimental'})
+        queue = TaskQueue(self.root / 'tasks', {'face_cluster': lambda p: FaceClusterTask(p, self.system)})
+        self.addCleanup(queue.close, 10)
+        task, _ = queue.submit('face_cluster', params, items)
+        self.assertEqual(wait_for(queue, task['task_id'])['status'], 'completed')
+        state = FaceClusterBuilder.load_state(self.output / 'cluster_state.json')
+        self.assertEqual(state['n_faces'], 6)
+        self.assertEqual(state['clustering_backend'], 'graph_experimental')
+        self.assertEqual(state['graph_audit']['constraint_violations'], 0)
+        self.assertTrue(all(len({m['img_path'] for m in cluster['members']}) == cluster['size']
+                            for cluster in state['clusters']))
+
     def test_restart_after_cancel_skips_completed_detection(self):
         entered, release = threading.Event(), threading.Event()
         def factory(params):

@@ -69,11 +69,12 @@
     }
   }
   const state = {project: null, photos: [], records: new Map(), knowledge: null, summary: null,
-    selected: null, view: 'photos', filter: 'all', query: '', page: 0, busy: false, taskId: null, generation: 0};
+    selected: null, view: 'photos', filter: 'all', query: '', page: 0, busy: false, taskId: null, generation: 0,
+    reviewPending: new Map()};
   const pageSize = 36;
   const titles = {photos: '影像资料', knowledge: '剧目与剧情', actors: '演员与角色', review: '场景复核', export: '整理与导出'};
   const statuses = {pending: '待复核', approved: '已确认', rejected: '已拒绝', unprocessed: '待分析'};
-  const evidenceNames = {filename: '文件名线索', knowledge: '剧情依据', rule: '文件名规则', person: '人物线索', people: '人物线索', visual: '图文相似度', observation: '画面观察', language: '语言模型', time: '时间线索'};
+  const evidenceNames = {filename: '文件名线索', knowledge: '剧情依据', rule: '文件名规则', person: '人物线索', people: '人物线索', visual: '图文相似度', observation: '画面观察', ocr: '可见文字识别', language: '语言模型', time: '时间线索'};
 
   async function api(url, data) {
     const options = {};
@@ -195,7 +196,7 @@
     history.replaceState(null, '', `#${view}`);
     renderGallery();
   }
-  function renderGallery() {
+  function renderGallery(hydrate = true) {
     const filtered = filteredPhotos();
     state.page = Math.min(state.page, Math.max(0, Math.ceil(filtered.length / pageSize) - 1));
     document.querySelectorAll('[data-filter]').forEach(el => {
@@ -215,6 +216,7 @@
     $('photo-grid').querySelectorAll('[data-photo]').forEach(button => { button.onclick = () => selectPhoto(button.dataset.photo, true); });
     updateControls();
     renderInspector();
+    if (hydrate) hydrateVisibleReviews();
   }
   const inspectorPlaceholder = $('inspector-body').innerHTML;
   function selectPhoto(path, scroll = false) {
@@ -236,7 +238,7 @@
       $('lightbox-image').alt = photo.name;
       $('image-dialog').showModal();
     };
-    if (record) {
+    if (record && !record._metadata_only) {
       const knownLabel = record.label && record.label !== 'unknown';
       const options = state.knowledge?.scene_options || [];
       const confidence = Number.isFinite(record.confidence) ? `${Math.round(record.confidence * 100)}% 证据分` : '证据分未提供';
@@ -255,6 +257,8 @@
       $('accept-review').onclick = () => decide(record, 'accept');
       $('reject-review').onclick = () => decide(record, 'reject');
       $('review-decision-form').onsubmit = event => { event.preventDefault(); decide(record, 'modify'); };
+    } else if (record?._metadata_only) {
+      body.insertAdjacentHTML('beforeend', '<div class="detail-section"><h4>正在读取这张照片的复核依据…</h4></div>');
     } else {
       body.insertAdjacentHTML('beforeend', '<div class="detail-section"><h4>场景尚未分析</h4><p>关联剧目知识库后，点击「分析场景」生成幕次候选和依据。</p><button class="button secondary" id="detail-knowledge">关联剧目资料 →</button></div>');
       $('detail-knowledge').onclick = () => setView('knowledge');
@@ -272,23 +276,56 @@
 
   async function loadReviews() {
     const project = state.project, generation = state.generation;
-    const rows = []; let summary = null;
-    for (let offset = 0; ; offset += 200) {
-      const result = await api(`/api/organize/scene/review?${new URLSearchParams({review_dir: project.review, limit: 200, offset})}`);
-      rows.push(...result.records); summary = result.summary;
-      if (result.records.length < 200) break;
-    }
+    const result = await api(`/api/organize/scene/review/metadata?${new URLSearchParams({review_dir: project.review})}`);
+    const rows = result.records;
     if (generation !== state.generation) return;
     // Match full paths first. Basenames only support legacy evidence that stored no path.
     const currentPaths = new Set(state.photos.map(photo => photo.path));
     const names = new Set(state.photos.map(photo => photo.name));
     const matching = rows.filter(record => currentPaths.has(record.source_image || record.image) || (!record.source_image && record.image === basename(record.image) && names.has(record.image)));
-    state.records = new Map(matching.map(record => [record.image, record]));
+    state.records = new Map(matching.map(record => {
+      const previous = state.records.get(record.image);
+      return [record.image, previous && previous.review_revision >= record.review_revision ? previous : record];
+    }));
     state.summary = {pending: 0, approved: 0, rejected: 0};
-    matching.forEach(record => { const status = record.review?.status || 'pending'; state.summary[status] = (state.summary[status] || 0) + 1; });
+    state.records.forEach(record => { const status = record.review?.status || 'pending'; state.summary[status] = (state.summary[status] || 0) + 1; });
     state.queueMismatch = rows.length !== matching.length;
     if (state.queueMismatch) notice('该复核目录包含不属于当前照片目录的记录。请在项目设置中选择此剧目专用的复核目录；已暂停标签导出。', true);
     renderHeader(); renderGallery();
+    await hydrateVisibleReviews();
+  }
+  function hydrateVisibleReviews() {
+    if (!state.project) return Promise.resolve();
+    const project = state.project, generation = state.generation;
+    const photos = filteredPhotos().slice(state.page * pageSize, (state.page + 1) * pageSize);
+    const selected = state.photos.find(photo => photo.path === state.selected);
+    if (selected && !photos.includes(selected)) photos.push(selected);
+    const needed = photos.filter(photo => recordFor(photo)?._metadata_only && !state.reviewPending.has(photo.path));
+    if (needed.length) {
+      const request = (async () => {
+        try {
+          const response = await fetch('/api/organize/scene/review/records', {method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({review_dir: project.review, images: needed.map(photo => photo.path)})});
+          const body = await response.json();
+          if (!response.ok || !Array.isArray(body.data?.records)) throw new Error(body.detail || body.message || '读取复核依据失败');
+          if (generation !== state.generation) return;
+          body.data.records.forEach(record => {
+            const previous = state.records.get(record.image);
+            if (previous && record.review_revision >= previous.review_revision) mergeReview(previous, record);
+          });
+          renderHeader(); renderGallery(false);
+        } catch (error) {
+          if (generation === state.generation) notice(error.message, true);
+        } finally {
+          if (generation === state.generation) needed.forEach(photo => state.reviewPending.delete(photo.path));
+        }
+      })();
+      needed.forEach(photo => state.reviewPending.set(photo.path, request));
+    }
+    // A repaint may already have started these requests. Opening/reloading a
+    // project must await the same promises before its controls become available.
+    return Promise.all([...new Set(photos.map(photo => state.reviewPending.get(photo.path)).filter(Boolean))]);
   }
   async function loadKnowledge(silent = false) {
     try {
@@ -326,6 +363,7 @@
     state.generation++;
     state.project = {...project, input: result.input_dir};
     state.photos = result.photos; state.records = new Map(); state.knowledge = null; state.summary = null;
+    state.reviewPending = new Map();
     state.selected = result.photos.some(photo => photo.path === project.selected) ? project.selected : null;
     state.query = ''; state.page = 0; state.taskId = project.clusterTask || null; state.queueMismatch = false;
     $('photo-search').value = ''; $('actor-result').hidden = true; $('organize-result').hidden = true;

@@ -284,6 +284,41 @@ class ReviewQueue:
         with self.store.session() as connection:
             return self._summary(connection)
 
+    def metadata(self):
+        """Small project index; exclude evidence/model payloads from initial load."""
+        with self.store.session() as connection:
+            rows = connection.execute('SELECT r.image,r.status,json_extract(r.payload,\'$.label\'),'
+                                      'r.revision,b.source_image FROM records r '
+                                      'LEFT JOIN bindings b ON b.image=r.image ORDER BY r.image')
+            records = [{'image': image, 'label': label, 'review_revision': revision,
+                        'review': {'status': status}, '_metadata_only': True,
+                        **({'source_image': source} if source else {})}
+                       for image, status, label, revision, source in rows]
+            return {'records': records, 'summary': self._summary(connection)}
+
+    def records_for(self, images):
+        """Fetch visible detail records only; full paths take priority over legacy names."""
+        if not isinstance(images, list) or len(images) > 200 or any(not isinstance(image, str) for image in images):
+            raise ValueError('最多查询200张图片')
+        with self.store.session() as connection:
+            result = []
+            for image in dict.fromkeys(images):
+                row = connection.execute('SELECT r.payload,r.revision,b.source_image FROM records r '
+                                         'LEFT JOIN bindings b ON b.image=r.image WHERE r.image=?', (image,)).fetchone()
+                if row is None:
+                    row = connection.execute('SELECT r.payload,r.revision,b.source_image FROM records r '
+                                             'LEFT JOIN bindings b ON b.image=r.image WHERE b.source_image=?', (image,)).fetchone()
+                if row is None and os.path.dirname(image):
+                    row = connection.execute('SELECT r.payload,r.revision,b.source_image FROM records r '
+                                             'LEFT JOIN bindings b ON b.image=r.image WHERE r.image=? '
+                                             'AND (b.source_image IS NULL OR b.source_image=?)',
+                                             (os.path.basename(image), image)).fetchone()
+                if row:
+                    payload, revision, source = row
+                    result.append(dict(json.loads(payload), review_revision=revision,
+                                       **({'source_image': source} if source else {})))
+            return {'records': result, 'summary': self._summary(connection)}
+
     @staticmethod
     def _summary(connection):
         counts = {'pending': 0, 'approved': 0, 'rejected': 0}

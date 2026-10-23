@@ -81,6 +81,7 @@ class OpenAICompatClient:
         prompt_text = json.dumps(messages, ensure_ascii=False)
         url = f'{self.base_url}/chat/completions'
         last_err = None
+        total_started = time.monotonic()
         for attempt in range(self.max_retries + 1):
             started = time.time()
             try:
@@ -96,13 +97,34 @@ class OpenAICompatClient:
                     raise ValueError('模型响应正文为空或类型错误')
                 trace = {
                     'model': self.model,
-                    'endpoint': self.base_url,
+                    'endpoint_sha256': hashlib.sha256(self.base_url.encode()).hexdigest(),
                     'prompt_hash': _hash(prompt_text),
                     'response_hash': _hash(content),
                     'temperature': payload['temperature'],
                     'attempts': attempt + 1,
                     'elapsed_ms': int((time.time() - started) * 1000),
+                    'total_elapsed_ms': int((time.monotonic() - total_started) * 1000),
+                    'max_output_tokens': payload['max_tokens'],
                 }
+                usage = data.get('usage')
+                if isinstance(usage, dict):
+                    trace['usage'] = {key: value for key, value in usage.items()
+                                      if key in ('prompt_tokens', 'completion_tokens', 'total_tokens')
+                                      and type(value) is int and value >= 0}
+                trace['finish_reason'] = data['choices'][0].get('finish_reason')
+                images = []
+                for message in messages:
+                    if not isinstance(message.get('content'), list):
+                        continue
+                    for part in message['content']:
+                        if part.get('type') != 'image_url':
+                            continue
+                        image_url = part.get('image_url', {}).get('url', '')
+                        if image_url.startswith('data:image/') and ';base64,' in image_url:
+                            raw_image = base64.b64decode(image_url.split(';base64,', 1)[1], validate=True)
+                            images.append({'sha256': hashlib.sha256(raw_image).hexdigest(),
+                                           'bytes': len(raw_image)})
+                trace['image_inputs'] = images
                 return {'content': content, 'trace': trace}
             except (HTTPError, URLError, TimeoutError, OSError, ValueError,
                     KeyError, IndexError, TypeError, json.JSONDecodeError) as e:
@@ -157,7 +179,7 @@ def vision_client_from_env(env_path=DEFAULT_ENV_PATH, opener=urlopen):
     if not url or not model:
         return None
     client = OpenAICompatClient(url, cfg.get('key') or cfg.get('big_diag_key'),
-                                model, max_tokens=2048, opener=opener,
+                                model, max_tokens=1024, max_retries=0, opener=opener,
                                 chat_template_kwargs={'enable_thinking': VISION_ENABLE_THINKING})
     client.model_identity = VISION_MODEL_IDENTITY
     client.model_identity_source = 'configuration'

@@ -590,6 +590,37 @@ class WorkspaceTest(unittest.TestCase):
         self.assertEqual(len(queue.records()), 1)
         self.assertEqual(queue.final_labels(), {self.names[0]: '第2幕庆功'})
 
+    def test_review_metadata_and_bounded_details_preserve_paths_revisions_and_evidence(self):
+        from core_modules.organize.review_queue import ReviewQueue
+        queue = ReviewQueue(str(self.root / 'review'))
+        paths = [str(self.photos / name) for name in self.names]
+        queue.seed([{'image': image, 'label': 'candidate', 'evidence': [{'quote': 'long evidence'}]}
+                    for image in paths])
+        queue.decide(paths[0], 'modify', label='confirmed', expected_revision=0)
+        index = self.client.get('/api/organize/scene/review/metadata',
+                                params={'review_dir': queue.root}).json()['data']
+        self.assertEqual(index['summary'], {'pending': 2, 'approved': 1, 'rejected': 0})
+        self.assertEqual(len(index['records']), 3)
+        self.assertTrue(all(row['_metadata_only'] and 'evidence' not in row for row in index['records']))
+        confirmed = next(row for row in index['records'] if row['image'] == paths[0])
+        self.assertEqual((confirmed['label'], confirmed['review_revision']), ('confirmed', 1))
+        response = self.client.post('/api/organize/scene/review/records',
+                                    json={'review_dir': queue.root, 'images': [paths[0], paths[0], 'missing']})
+        self.assertEqual(response.status_code, 200, response.text)
+        details = response.json()['data']['records']
+        self.assertEqual(len(details), 1)
+        self.assertEqual(details[0]['evidence'], [{'quote': 'long evidence'}])
+        self.assertEqual(details[0]['review_revision'], 1)
+        for images in ([paths[0]] * 201, [None], 'not a list'):
+            self.assertEqual(self.client.post('/api/organize/scene/review/records',
+                json={'review_dir': queue.root, 'images': images}).status_code, 400)
+        # A bound legacy basename must never be returned for a different source.
+        legacy = ReviewQueue(str(self.root / 'legacy-review'))
+        legacy.seed([{'image': self.names[0], 'label': 'legacy'}])
+        legacy.seed([{'image': paths[0], 'label': 'bound'}])
+        self.assertEqual(legacy.records_for([paths[0]])['records'][0]['source_image'], paths[0])
+        self.assertEqual(legacy.records_for([str(self.root / 'other' / self.names[0])])['records'], [])
+
     def test_review_revision_conflict_returns_409_and_single_record_refresh(self):
         from core_modules.organize.review_queue import ReviewQueue
         queue = ReviewQueue(str(self.root / 'review'))

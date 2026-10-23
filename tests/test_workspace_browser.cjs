@@ -9,7 +9,7 @@ const assert = require('node:assert/strict');
 const {chromium} = require(process.env.PLAYWRIGHT_PATH || '/tmp/pwcli/node_modules/playwright');
 const root = path.resolve(__dirname, '..');
 const base = process.env.WORKSPACE_URL || 'http://127.0.0.1:18299';
-const shots = path.join(root, 'outputs/workspace_qa');
+const shots = process.env.WORKSPACE_SHOTS || path.join(root, 'outputs/workspace_qa');
 const fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'theatre-browser-'));
 const play = path.join(root, 'data/ncpa_test/京剧《天下归心》');
 const photos = path.join(play, '【整理完成】京剧《天下归心》彩排');
@@ -336,34 +336,54 @@ fs.mkdirSync(shots, {recursive: true});
 
     // A queue larger than the API's page size must not lose off-screen records.
     const longPhotos = Array.from({length: 10000}, (_, index) => ({name: `photo-${String(index).padStart(3, '0')}.jpg`, path: `${photos}/photo-${String(index).padStart(3, '0')}.jpg`, size: 100, metadata: {people: []}}));
-    const longRecords = longPhotos.map(photo => ({image: photo.path, label: '第1幕克段', scene_id: 'act-01', review: {status: 'pending'}}));
-    const offsets = [];
+    const longRecords = longPhotos.map(photo => ({image: photo.path, label: '第1幕克段', scene_id: 'act-01',
+      review_revision: 0, evidence: [{type: 'knowledge', quote: 'Only visible details are downloaded'}], review: {status: 'pending'}}));
+    const detailQueries = [], indexQueries = [], unexpectedQueueQueries = [];
     await page.route('**/api/workspace/photos?*', route => route.fulfill({json: {code: 200, data: {input_dir: photos, photos: longPhotos, total: 10000, truncated: false}}}));
     await page.route('**/api/organize/scene/review?*', route => {
-      const offset = Number(new URL(route.request().url()).searchParams.get('offset'));
-      offsets.push(offset);
-      return route.fulfill({json: {code: 200, data: {records: longRecords.slice(offset, offset + 200), summary: {pending: 10000, approved: 0, rejected: 0}}}});
+      unexpectedQueueQueries.push(route.request().url());
+      return route.fulfill({status: 500, json: {detail: 'Full queue downloads are forbidden in this check'}});
+    });
+    await page.route('**/api/organize/scene/review/metadata?*', route => {
+      indexQueries.push(route.request().url());
+      return route.fulfill({json: {code: 200, data: {records: longRecords.map(row => ({image: row.image,
+        label: row.label, review_revision: row.review_revision, review: row.review, _metadata_only: true})),
+        summary: {pending: 10000, approved: 0, rejected: 0}}}});
+    });
+    await page.route('**/api/organize/scene/review/records', async route => {
+      const query = route.request().postDataJSON();
+      detailQueries.push(query.images);
+      assert.ok(query.images.length <= 37, 'details are limited to the visible page and selection');
+      await new Promise(resolve => setTimeout(resolve, 120));
+      const requested = new Set(query.images);
+      return route.fulfill({json: {code: 200, data: {records: longRecords.filter(row => requested.has(row.image)),
+        summary: {pending: 10000, approved: 0, rejected: 0}}}});
     });
     await page.reload(); await idle(); await clickView('photos');
     assert.equal(Number(await page.locator('#metric-pending').textContent()), 10000);
-    assert.deepEqual(offsets, Array.from({length: 51}, (_, index) => index * 200));
+    assert.equal(indexQueries.length, 1);
+    assert.equal(detailQueries.length, 1, 'project loading must await the existing detail request');
+    assert.equal(detailQueries[0].length, 36);
     assert.equal(await page.locator('.photo-card').count(), 36);
     await page.locator('#next-page').click();
     assert.equal(await page.locator('#page-number').textContent(), '2 / 278');
     await page.locator('#photo-search').fill('photo-9999');
     assert.equal(await page.locator('.photo-card').count(), 1);
     await page.locator('.photo-card').click();
-    const queriesBeforeDecision = offsets.length;
+    await page.locator('#accept-review').waitFor();
+    const queriesBeforeDecision = {details: detailQueries.length, index: indexQueries.length};
     let decisionPosts = 0;
     await page.route('**/api/organize/scene/review', route => {
       decisionPosts++;
       return route.fulfill({json: {code: 200, data: {
-        record: {...longRecords[9999], review: {status: 'approved'}},
+        record: {...longRecords[9999], review_revision: 1, review: {status: 'approved'}},
         summary: {pending: 9999, approved: 1, rejected: 0}}}});
     });
     await page.locator('#accept-review').click(); await idle();
     assert.equal(decisionPosts, 1);
-    assert.equal(offsets.length, queriesBeforeDecision, 'a review decision must not download the queue again');
+    assert.deepEqual({details: detailQueries.length, index: indexQueries.length}, queriesBeforeDecision,
+      'a review decision must not download the queue or visible details again');
+    assert.deepEqual(unexpectedQueueQueries, []);
     assert.equal(Number(await page.locator('#metric-pending').textContent()), 9999);
     assert.equal(Number(await page.locator('#metric-approved').textContent()), 1);
     assert.equal(await page.locator('.photo-card').count(), 1);
@@ -372,7 +392,9 @@ fs.mkdirSync(shots, {recursive: true});
     assert.notEqual(await page.locator('#output-dir').inputValue(), fixture);
     await page.keyboard.press('Escape');
     assert.equal(errors.length, 0, errors.join('\n'));
-    console.log(JSON.stringify({passed: true, realPhotos: total, checks: ['empty/error states', 'real photo previews', 'knowledge ingest', 'offline scene analysis', 'background analysis refresh reuses task without resubmission', 'review accept/modify/reject', 'draft survives selection/search/reload/failure', 'revision conflict refreshes record and preserves draft', 'successful decision clears draft', 'search/filter', 'label download', 'organize payload', 'background organize refresh/cancel/resume/partial failures', 'cluster refresh/cancel/resume and persistent assign/ignore/restore/error', 'face database refresh/cancel/resume/partial report and dry-run/build payload', 'refresh persistence', 'responsive 1440/1024/768/540/390', 'escaped evidence', '10000 record pagination and bounded DOM', 'decision updates one record without queue reload', 'independent project contexts'], screenshots: shots}, null, 2));
+    console.log(JSON.stringify({passed: true, realPhotos: total, largeQueue: {records: 10000,
+      indexRequests: indexQueries.length, detailRequestSizes: detailQueries.map(rows => rows.length),
+      fullQueueRequests: unexpectedQueueQueries.length, decisionPosts}, checks: ['empty/error states', 'real photo previews', 'knowledge ingest', 'offline scene analysis', 'background analysis refresh reuses task without resubmission', 'review accept/modify/reject', 'draft survives selection/search/reload/failure', 'revision conflict refreshes record and preserves draft', 'successful decision clears draft', 'search/filter', 'label download', 'organize payload', 'background organize refresh/cancel/resume/partial failures', 'cluster refresh/cancel/resume and persistent assign/ignore/restore/error', 'face database refresh/cancel/resume/partial report and dry-run/build payload', 'refresh persistence', 'responsive 1440/1024/768/540/390', 'escaped evidence', '10000 record metadata and bounded visible details/DOM', 'decision updates one record without queue reload', 'independent project contexts'], screenshots: shots}, null, 2));
   } finally {
     await browser.close();
     fs.rmSync(fixture, {recursive: true, force: true});

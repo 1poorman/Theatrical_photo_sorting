@@ -24,7 +24,7 @@ from typing import Optional
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, PROJECT_ROOT)
 
-from fastapi import FastAPI, Request, UploadFile, File, Form
+from fastapi import FastAPI, Request, UploadFile, File, Form, Body
 from fastapi.responses import JSONResponse, FileResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -878,6 +878,23 @@ def scene_review_list(review_dir: str, status: str = '',
         return JSONResponse(status_code=404, content=srv.get_error(message=str(e)))
     except Exception as e:
         return JSONResponse(status_code=500, content=srv.get_error(message=f"Error listing review queue: {str(e)}"))
+
+
+@app.get('/api/organize/scene/review/metadata')
+def scene_review_metadata(review_dir: str):
+    from core_modules.organize.review_queue import ReviewQueue
+    return {'code': 200, 'data': ReviewQueue(review_dir).metadata()}
+
+
+@app.post('/api/organize/scene/review/records')
+def scene_review_records(payload: dict = Body(...)):
+    try:
+        if set(payload) != {'review_dir', 'images'} or not isinstance(payload['review_dir'], str):
+            raise ValueError('invalid_review_record_query')
+        from core_modules.organize.review_queue import ReviewQueue
+        return {'code': 200, 'data': ReviewQueue(payload['review_dir']).records_for(payload['images'])}
+    except ValueError as exc:
+        return JSONResponse(status_code=400, content=srv.get_error(message=str(exc)))
 
 
 @app.post("/api/organize/scene/review")

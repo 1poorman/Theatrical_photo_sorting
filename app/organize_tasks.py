@@ -89,7 +89,8 @@ def face_database_handler(params):
 
 
 def prepare_face_cluster(params, defer_hash=False):
-    if set(params) - {'input_dir', 'output_dir', 'dist_threshold', 'min_face_area'}:
+    if set(params) - {'input_dir', 'output_dir', 'dist_threshold', 'min_face_area',
+                      'clustering_backend', 'graph_config', 'cannot_link_exemptions'}:
         raise ValueError('聚类参数含未知字段')
     if not isinstance(params.get('input_dir'), str) or not os.path.isdir(params['input_dir']):
         raise ValueError('input_dir 必须为现有目录')
@@ -100,16 +101,32 @@ def prepare_face_cluster(params, defer_hash=False):
         raise ValueError('dist_threshold 必须在 (0, 2]')
     if type(area) is not int or not 1 <= area <= 100000000:
         raise ValueError('min_face_area 必须为正整数')
+    backend = params.get('clustering_backend', 'legacy')
+    if backend not in ('legacy', 'graph_experimental'):
+        raise ValueError('invalid_face_clustering_backend')
+    from dataclasses import asdict
+    from core_modules.organize.face_graph_cluster import FaceGraphConfig
+    options = params.get('graph_config') or {}
+    if not isinstance(options, dict) or set(options) - set(FaceGraphConfig.__dataclass_fields__):
+        raise ValueError('invalid_face_graph_config')
+    graph_config = asdict(FaceGraphConfig(**options))
     source, output = Path(params['input_dir']).resolve(), Path(params['output_dir']).resolve()
     if source == output or source in output.parents or output in source.parents:
         raise ValueError('聚类输出必须位于原图目录之外')
     images = [str((source / name).resolve()) for name in list_images(source)]
     if not images:
         raise ValueError('输入目录中没有图片')
+    exemptions = params.get('cannot_link_exemptions', [])
+    if not isinstance(exemptions, list) or any(not isinstance(row, dict) or set(row) != {'image', 'face_index'} or
+                                             row['image'] not in images or type(row['face_index']) is not int or
+                                             row['face_index'] < 0 for row in exemptions):
+        raise ValueError('invalid_cannot_link_exemptions')
     items = [{'image': image, 'stage': 'faces',
               **({'file_state': file_state(image)} if defer_hash else {'sha256': fingerprint(image)})} for image in images]
     return dict(params, input_dir=str(source), output_dir=str(output), dist_threshold=threshold,
-                min_face_area=area, input_hashes={item['image']: item.get('sha256') for item in items}), items
+                min_face_area=area, clustering_backend=backend, graph_config=graph_config,
+                cannot_link_exemptions=exemptions,
+                input_hashes={item['image']: item.get('sha256') for item in items}), items
 
 
 def face_cluster_handler(params):
@@ -123,7 +140,8 @@ def face_cluster_handler(params):
 def prepare_organize(params, defer_hash=False):
     allowed = {'input_dir', 'output_dir', 'db_root', 'keep_per_bucket', 'gap_seconds',
                'classify_role', 'scene_labels_file', 'scene_evidence_file',
-               'identity_registry_file', 'face_threshold', 'face_margin'}
+               'identity_registry_file', 'face_threshold', 'face_margin',
+               'scene_strategy', 'scene_change_config', 'scene_order_trusted'}
     if set(params) - allowed:
         raise ValueError('整理参数含未知字段')
     for field in ('input_dir', 'db_root'):
@@ -134,6 +152,18 @@ def prepare_organize(params, defer_hash=False):
             raise ValueError(f'{field} 必须为 {lower}–{upper} 的整数')
     if type(params.get('classify_role', True)) is not bool:
         raise ValueError('classify_role 必须为布尔值')
+    if params.get('scene_strategy', 'legacy') not in ('legacy', 'window_change_points'):
+        raise ValueError('unknown_scene_split_strategy')
+    if type(params.get('scene_order_trusted', False)) is not bool:
+        raise ValueError('scene_order_trusted 必须为布尔值')
+    from dataclasses import asdict
+    from core_modules.organize.scene_change_points import ChangePointConfig
+    options = params.get('scene_change_config') or {}
+    if not isinstance(options, dict) or set(options) - set(ChangePointConfig.__dataclass_fields__):
+        raise ValueError('invalid_scene_change_config')
+    options = dict(options)
+    options.setdefault('max_gap_seconds', params.get('gap_seconds', 300))
+    change_config = asdict(ChangePointConfig(**options))
     import math
     from config.base import KNOWN_FACE_THRESHOLD, FACE_AMBIGUOUS_MARGIN
     for field, default, upper in (('face_threshold', KNOWN_FACE_THRESHOLD, 1),
@@ -166,6 +196,8 @@ def prepare_organize(params, defer_hash=False):
                     db_root=str(Path(params['db_root']).resolve()),
                     keep_per_bucket=params.get('keep_per_bucket', 2), gap_seconds=params.get('gap_seconds', 300),
                     classify_role=params.get('classify_role', True), scene_labels=labels, scene_evidence=evidence,
+                    scene_strategy=params.get('scene_strategy', 'legacy'), scene_change_config=change_config,
+                    scene_order_trusted=params.get('scene_order_trusted', False),
                     input_hashes={item['image']: item.get('sha256') for item in items})
     # Gallery changes must not silently mix identity decisions across a resumed task.
     prepared['gallery_hashes'] = gallery_hashes(prepared['db_root'])
@@ -276,7 +308,8 @@ def execute_staged(kind, params):
 
 
 def prepare_scene(params, defer_hash=False):
-    allowed = {'input_dir', 'knowledge_dir', 'output_file', 'top_k', 'use_llm', 'use_embedder'}
+    allowed = {'input_dir', 'knowledge_dir', 'output_file', 'top_k', 'use_llm', 'use_embedder',
+               'visual_policy', 'visual_cache_dir', 'ocr_images', 'ocr_config'}
     if set(params) - allowed:
         raise ValueError('分析参数含未知字段')
     for field in ('input_dir', 'knowledge_dir'):
@@ -290,6 +323,11 @@ def prepare_scene(params, defer_hash=False):
             raise ValueError(f'{field} 必须为布尔值')
     if not isinstance(params.get('output_file', ''), str):
         raise ValueError('output_file 必须为路径字符串')
+    from dataclasses import asdict
+    from core_modules.organize.visual_evidence import VisualPolicy
+    visual_policy = asdict(VisualPolicy.from_dict(params.get('visual_policy')))
+    if params.get('visual_cache_dir') is not None and (not isinstance(params['visual_cache_dir'], str) or not params['visual_cache_dir']):
+        raise ValueError('visual_cache_dir 必须为目录路径字符串')
     from core_modules.organize.play_knowledge import read_knowledge
     entities = read_knowledge(params['knowledge_dir'])['entities']
     knowledge = {key: entities.get(key, {} if key == 'role_aliases' else [])
@@ -297,12 +335,23 @@ def prepare_scene(params, defer_hash=False):
     images = [str(Path(params['input_dir'], name).resolve()) for name in list_images(params['input_dir'])]
     if not images:
         raise ValueError('输入目录中没有图片')
+    ocr_images = params.get('ocr_images', [])
+    if not isinstance(ocr_images, list) or len(ocr_images) > 64 or any(image not in images for image in ocr_images):
+        raise ValueError('ocr_images 必须是当前输入中的最多64张明确含字图片')
+    ocr_config = params.get('ocr_config')
+    if ocr_config is not None:
+        if not isinstance(ocr_config, dict) or set(ocr_config) != {'python', 'detector_dir', 'recognizer_dir', 'cache_dir'} or any(
+                not isinstance(value, str) or not value for value in ocr_config.values()):
+            raise ValueError('invalid_ocr_config')
+    if ocr_images and not ocr_config:
+        raise ValueError('ocr_images 需要本地ocr_config')
     output = str(Path(params.get('output_file') or Path(params['input_dir']) / 'scene_evidence.jsonl').resolve())
     if output in images or not output.endswith('.jsonl'):
         raise ValueError('证据输出必须为独立的 .jsonl 文件')
     # Persist the exact knowledge snapshot and content identity used by this task.
     items = [{'image': image, **({'file_state': file_state(image)} if defer_hash else {'sha256': fingerprint(image)})} for image in images]
     prepared = dict(params, knowledge=knowledge, output_file=output, top_k=top_k,
+                    visual_policy=visual_policy,
                     input_hashes={item['image']: item.get('sha256') for item in items})
     return prepared, items
 
@@ -319,8 +368,30 @@ def scene_handler(params):
         import main
         from core_modules.organize.multimodal_evidence import MultimodalRetriever
         embedder = MultimodalRetriever(embedder=main._get_scene_embedder(), cache_dir=main.FEATURE_CACHE_DIR)
+    from core_modules.organize.visual_evidence import VisualEvidenceController, VisualPolicy
+    from core_modules.organize.feature_cache import signature
+    from config.base import VISION_IMAGE_MAX_SIDE
+    policy = VisualPolicy.from_dict(params.get('visual_policy'))
+    controller = None
+    if vision_client is not None:
+        scope = signature([params['output_file'], params['input_hashes'], params['knowledge']])
+        controller = VisualEvidenceController(
+            vision_client, params.get('visual_cache_dir') or 'outputs/visual_evidence_cache',
+            str(params['output_file']) + '.visual_budget.sqlite3', scope,
+            len(params['input_hashes']), policy, max_side=VISION_IMAGE_MAX_SIDE)
     reasoner = SceneReasoner(params['knowledge'], client=client, embedder=embedder,
-                             vision_client=vision_client, top_k=params.get('top_k', 5))
+                             vision_client=vision_client, top_k=params.get('top_k', 5),
+                             visual_controller=controller)
+    ocr = None
+    if params.get('ocr_images'):
+        from core_modules.organize.ocr_evidence import PaddleOCRProvider
+        ocr = PaddleOCRProvider(**params['ocr_config'])
+        reasoner.ocr_provider = ocr
+        reasoner.ocr_images = set(params['ocr_images'])
+    # A configured visual pipeline must not silently switch to an unbudgeted
+    # language-only model if the vision client is unavailable.
+    if params.get('use_llm') and vision_client is None:
+        reasoner.client = None
 
     def process(item):
         path = item['image']
@@ -345,12 +416,17 @@ def scene_handler(params):
                 'n_failed': sum(bool(row.get('error')) for row in rows),
                 'labels': [row['label'] for row in rows],
                 'n_visual': sum(row.get('retrieval_mode') == 'visual' for row in rows),
-                'llm': client is not None, 'visual': embedder is not None}
+                'llm': reasoner.client is not None, 'visual': embedder is not None,
+                'vision_budget': controller.budget.summary() if controller else None,
+                'n_observed': sum(any(e.get('type') == 'observation' for e in row.get('evidence', [])) for row in rows),
+                'n_vision_cache_hits': sum(bool(row.get('model_trace', {}).get('vision', {}).get('cache_hit')) for row in rows)}
 
     from core_modules.organize.task_versions import VersionedHandler, execution_code, model_identity, client_identity
     from config.base import VISION_IMAGE_MAX_SIDE, VISION_ENABLE_THINKING
     code_version = execution_code([
         'app/organize_tasks.py', 'core_modules/organize/scene_reasoner.py',
+        'core_modules/organize/visual_evidence.py',
+        'core_modules/organize/ocr_evidence.py', 'tools/paddle_ocr_worker.py',
         'core_modules/organize/multimodal_evidence.py', 'core_modules/organize/llm_client.py',
         'core_modules/image_search.py', 'core_modules/organize/embedding_gemma.py',
         'core_modules/organize/feature_cache.py', 'core_modules/organize/task_artifacts.py'])
@@ -358,8 +434,29 @@ def scene_handler(params):
         return {'code': code_version,
                 'embedding': model_identity(embedder.embedder) if embedder else None,
                 'client': client_identity(client), 'vision_client': client_identity(vision_client),
-                'vision_settings': [VISION_IMAGE_MAX_SIDE, VISION_ENABLE_THINKING]}
-    return VersionedHandler(process, finish, contract)
+                'vision_settings': [VISION_IMAGE_MAX_SIDE, VISION_ENABLE_THINKING],
+                'visual_policy': params.get('visual_policy', {}),
+                'ocr_identity': ocr.identity if ocr else None,
+                'remote_weights_verified': getattr(vision_client, 'verified_weights_sha256', None) is not None}
+
+    class SceneTask:
+        context = None
+        model_contract = staticmethod(contract)
+
+        def process(self, item):
+            reasoner.boundary_check = self.context.check if self.context else None
+            return process(item)
+
+        def advance(self):
+            return False
+
+        def finish(self, rows):
+            return finish(rows)
+
+        def __iter__(self):
+            return iter((self.process, self.finish))
+
+    return SceneTask()
 
 
 def execute_scene(params):

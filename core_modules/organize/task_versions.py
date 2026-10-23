@@ -54,12 +54,21 @@ def client_identity(client):
         return {'small': client_identity(client.small), 'big': client_identity(client.big),
                 'cascade_enabled': client.cascade_enabled}
     # Endpoint changes matter, but URLs can contain credentials or query tokens.
-    return {'endpoint_sha256': signature(client.base_url), 'model': client.model,
+    verified = getattr(client, 'verified_weights_sha256', None)
+    if not isinstance(verified, str) or len(verified) != 64 or any(c not in '0123456789abcdef' for c in verified):
+        verified = None
+    identity = {'endpoint_sha256': signature(client.base_url), 'model': client.model,
             'declared_identity': getattr(client, 'model_identity', None),
             'identity_source': getattr(client, 'model_identity_source', 'served_alias'),
+            'verified_weights_sha256': verified,
+            'remote_weights_verified': verified is not None,
             'temperature': client.temperature, 'max_tokens': client.max_tokens,
             'chat_template_kwargs': client.chat_template_kwargs,
             'max_retries': client.max_retries, 'timeout': client.timeout}
+    if verified is None:
+        # A stable alias cannot prove the remote weights survived a restart.
+        identity['private_process'] = _PROCESS
+    return identity
 
 
 def execution_code(files):

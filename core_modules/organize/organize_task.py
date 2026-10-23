@@ -21,6 +21,7 @@ class OrganizeTask:
             'core_modules/organize/organize_task.py', 'core_modules/organize/smart_organizer.py',
             'core_modules/organize/identity_registry.py',
             'core_modules/organize/burst_dedup.py', 'core_modules/organize/scene_split.py',
+            'core_modules/organize/scene_change_points.py',
             'core_modules/organize/filename_parser.py', 'core_modules/organize/role_classifier.py',
             'core_modules/organize/face_db_builder.py', 'core_modules/shot_classify.py',
             'core_modules/face_recognition/arcface/arcface_onnx.py',
@@ -119,7 +120,10 @@ class OrganizeTask:
         embeddings = {image: records[image]['embedding'] for image in selected
                       if records[image].get('embedding') is not None}
         scenes = split_scenes(selected, gap_seconds=self.params['gap_seconds'],
-                              embeddings=embeddings if self.organizer.embedder is not None else None)
+                              embeddings=embeddings if self.organizer.embedder is not None else None,
+                              strategy=self.params.get('scene_strategy', 'legacy'),
+                              change_config=self.params.get('scene_change_config'),
+                              order_trusted=self.params.get('scene_order_trusted', False))
         if self.params.get('scene_labels'):
             labels = self.params['scene_labels']
             scenes = {image: labels.get(scene, scene) for image, scene in scenes.items()}
@@ -156,6 +160,9 @@ class OrganizeTask:
                   'copied': len(successful), 'files_copied_this_attempt': copied,
                   'files_reused_this_attempt': reused, 'n_scenes': len(set(scenes.values())),
                   'scene_evidence': evidence_stats, 'records': successful, 'errors': failures,
+                  'scene_strategy': self.params.get('scene_strategy', 'legacy'),
+                  'scene_change_config': self.params.get('scene_change_config'),
+                  'scene_order_trusted': self.params.get('scene_order_trusted', False),
                   'execution_contract': self.context.checkpoint('execution_contract'),
                   'burst': {'n_groups': len(plan['groups']), 'kept': len(selected), 'discarded': discarded}}
         self.context.check()

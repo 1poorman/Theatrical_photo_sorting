@@ -1,6 +1,24 @@
 # 有出处的分幕候选与U4复现
 
-2026-10-22已完成国家大剧院三部剧目的来源v1比较及短原文块对照：原25候选补12正文，28候选版本增加《马可·波罗》的第三、四幕及尾声。短块与长文、25/28候选由同一后端保存的向量和分数表比较，生产默认仍为SigLIP2。
+更新：2026-10-23。来源v1、260图短块对照及独立262图增量协议均已完成。原25候选补12正文，28候选增加《马可·波罗》的第三、四幕及尾声；旧协议/分母不变，生产默认仍为SigLIP2。
+
+## 最新262图协议与来源续查
+
+新版场次导入补回两条已确认的连字符幕次，另建262图协议。原260图、102文档向量和六个长文/短块变体分数逐项复用，每后端只新增2图及12个缺失基线文本编码；共保存14个变体。两个后端各13项检查与276项独立数组/排名/Macro-F1/子集审计通过。
+
+预声明短块均值的25/28池R@3为SigLIP2 **69.85%/53.44%**、Gemma **76.34%/71.76%**。历史260、新增2、全部262分开报告。新增基线从本次复用向量集合重建，Gemma历史子集42/147命中与早先独立运行45/151不同，不能称为另一基线的逐位重放；原六个长文/短块变体完整保留。
+
+新增[协议助手](../tools/scene_retrieval_study.py)、[准备入口](../tools/prepare_scene_retrieval_study.py)及[增量评测入口](../tools/evaluate_scene_retrieval_study.py)，绑定源码、已有向量与新输入摘要。完整结果见[262图报告](../outputs/acceptance/core_upgrade/u4_retrieval_study_262_gpu_retry_20261022/report.md)。沙箱CUDA失败保留于首个目录，宿主GPU1重试完成；增量编码时间不代表完整模型速度。
+
+来源续查另存18个原页面、21份搜索记录、20段精确引文和15项审计，核对2016样式雷过场/暗场调整、2015马可再改与网页日期差异。见[续查目录](../outputs/acceptance/core_upgrade/u4_ncpa_source_followup_v2_20261022/)。8项正文、照片精确演出版和新增马可正例仍未补齐，未把新网页静默加入冻结模型正文。全部仍为开发集，formal U4未通过。
+
+只读复现现有262图分析，无需再次加载模型：
+
+```bash
+/home/huachenghao/.conda/envs/face_scrfd_arcface/bin/python outputs/acceptance/core_upgrade/u4_retrieval_study_262_gpu_retry_20261022/analyze_saved_results.py --verify-existing
+```
+
+后续新模型实验使用`--protocol`指向匹配版本协议，`--backend siglip2_base`或`embeddinggemma2`及新的空`--output`目录；现有协议为`u4_retrieval_study_262_20261022/prepared/protocol.json`，SHA256 `e8519c7e0f58c6b9494d3ae317a7c93bff4de5e3e3a5e064acb97bed42268103`。修改绑定源码或输入后先建新协议。下文260图结果保留各历史版本范围。
 
 ## 短原文块与固定向量结果
 
@@ -86,6 +104,10 @@ Gemma原25候选引用本日较早的报告：输入、模型/预处理签名和
 | `u4_text_blocks_20261022/prepared/` | 冻结短块协议、82块/精确来源跨度、输入/源码/tokenizer摘要 |
 | `u4_text_blocks_20261022/{siglip2_fixed_vectors,gemma2_fixed_vectors}/` | 图文向量、文档分数、候选表、文档索引、输入、六变体/后端的报告与运行JSON |
 | `u4_text_blocks_20261022/` | 两次命令/PID/退出码、102项分析报告/复现、逐场CSV、演出版审计/原文、测试与日志 |
+| `u4_inputs_scene_segments_v2_20261022/` | 262图中性输入，旧260图顺序/标签/PNG与25/28候选文本保留 |
+| `u4_retrieval_study_262_20261022/` | 冻结增量协议、82块及首次沙箱CUDA失败记录 |
+| `u4_retrieval_study_262_gpu_retry_20261022/` | 两后端14变体、276项独立审计、完整数组与只读复现、运行命令及退出码 |
+| `u4_ncpa_source_followup_v2_20261022/` | 续查网页/搜索/精确引文与15项可复现审计，8缺项保持 |
 
 只读复核候选来源、原图与PNG摘要，同时重新生成本目录分析产物：
 

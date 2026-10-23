@@ -42,7 +42,7 @@ def read_exif_datetime(img_path):
 
 
 def split_scenes(image_paths, gap_seconds=DEFAULT_GAP_SECONDS, embeddings=None,
-                 max_sub_k=3):
+                 max_sub_k=3, strategy='legacy', change_config=None, order_trusted=False):
     """场景划分。
 
     Args:
@@ -54,6 +54,17 @@ def split_scenes(image_paths, gap_seconds=DEFAULT_GAP_SECONDS, embeddings=None,
         dict: {image_path: scene_id}，scene_id 形如 'scene-01'
     """
     image_paths = list(image_paths)
+    if strategy not in ('legacy', 'window_change_points'):
+        raise ValueError('unknown_scene_split_strategy')
+    if strategy == 'window_change_points':
+        from core_modules.organize.scene_change_points import ChangePointConfig, split_ordered_scenes
+        options = dict(change_config or {})
+        options.setdefault('max_gap_seconds', gap_seconds)
+        config = ChangePointConfig(**options)
+        result = split_ordered_scenes(image_paths, embeddings,
+                                     {path: read_exif_datetime(path) for path in image_paths},
+                                     config, order_trusted=order_trusted)
+        return result['assignments']
     timed = []
     no_time = []
     # Resolve against the original order before EXIF sorting or segmentation.

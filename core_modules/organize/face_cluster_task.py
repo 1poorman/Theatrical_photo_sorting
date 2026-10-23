@@ -21,13 +21,23 @@ class FaceClusterTask:
         self.code = execution_code([
             'app/organize_tasks.py', 'core_modules/organize/face_cluster_task.py',
             'core_modules/organize/face_cluster.py', 'core_modules/tools/image_io.py',
+            'core_modules/organize/face_graph_cluster.py',
             'core_modules/face_recognition/arcface/arcface_onnx.py',
             'core_modules/face_recognition/scrfd/scrfd_det.py'])
 
     def model_contract(self):
         from importlib.metadata import version
-        return {'code': self.code, 'face': model_identity(self.builder.system),
-                'sklearn': version('scikit-learn')}
+        contract = {'code': self.code, 'face': model_identity(self.builder.system),
+                    'sklearn': version('scikit-learn'),
+                    'clustering_backend': self.params.get('clustering_backend', 'legacy'),
+                    'graph_config': self.params.get('graph_config')}
+        if self.params.get('clustering_backend') == 'graph_experimental':
+            try:
+                import faiss
+                contract['faiss_version'] = faiss.__version__
+            except ImportError:
+                contract['faiss_version'] = None
+        return contract
 
     def verify(self, image):
         self.context.check()
@@ -38,6 +48,12 @@ class FaceClusterTask:
         if item['stage'] == 'faces':
             self.verify(item['image'])
             members = self.builder.scan_image(item['image'], self.params['min_face_area'], self.context.check)
+            if self.params.get('clustering_backend') == 'graph_experimental':
+                exemptions = {(row['image'], row['face_index']) for row in self.params.get('cannot_link_exemptions', [])}
+                for member in members:
+                    member['source_image_sha256'] = self.params['input_hashes'][item['image']]
+                    if (item['image'], member['face_index']) in exemptions:
+                        member['cannot_link_exempt'] = True
             self.verify(item['image'])
             return {'image': item['image'], 'stage': 'faces', 'members': members}
         if item['stage'] == 'crops':
@@ -93,7 +109,12 @@ class FaceClusterTask:
                   'cluster_id': cluster['id'], 'members': cluster['members'][:CLUSTER_COLLAGE_MAX]} for cluster in clusters])
         self.context.check()
         members = [member for row in self.context.results() if not row.get('error') for member in row['members']]
-        clusters = self.builder.cluster_members(members, self.params['dist_threshold'])
+        if self.params.get('clustering_backend') == 'graph_experimental':
+            from core_modules.organize.face_graph_cluster import FaceGraphConfig, graph_clusters
+            clusters, audit = graph_clusters(members, FaceGraphConfig(**self.params.get('graph_config', {})))
+            self.context.advance('graph_audit', audit, [])
+        else:
+            clusters = self.builder.cluster_members(members, self.params['dist_threshold'])
         self.context.check()
         by_image = {}
         for cluster in clusters:
@@ -114,6 +135,9 @@ class FaceClusterTask:
         output = Path(self.params['output_dir'])
         scan_id = signature({'hashes': self.params['input_hashes'],
                              'threshold': self.params['dist_threshold'], 'area': self.params['min_face_area'],
+                             'clustering_backend': self.params.get('clustering_backend', 'legacy'),
+                             'graph_config': self.params.get('graph_config'),
+                             'cannot_link_exemptions': self.params.get('cannot_link_exemptions', []),
                              'version': self.context.checkpoint('execution_contract')})
         path = output / STATE_FILE
         previews = {row['cluster_id']: row for row in rows if row.get('stage') == 'preview'}
@@ -142,6 +166,9 @@ class FaceClusterTask:
                  'clusters': plan, 'failed': len(failures), 'errors': failures,
                  'input_hashes': self.params['input_hashes'],
                  'execution_contract': self.context.checkpoint('execution_contract')}
+        if self.params.get('clustering_backend') == 'graph_experimental':
+            state['clustering_backend'] = 'graph_experimental'
+            state['graph_audit'] = self.context.checkpoint('graph_audit')
         # A single valid face retains the legacy empty-cluster behavior.
         if not plan:
             state['n_faces'] = sum(len(row.get('members', [])) for row in rows)

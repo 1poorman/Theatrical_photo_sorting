@@ -62,6 +62,7 @@ class ReviewStore:
             CREATE TABLE IF NOT EXISTS revisions (
                 sequence INTEGER PRIMARY KEY AUTOINCREMENT, payload TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS bindings (image TEXT PRIMARY KEY, source_image TEXT NOT NULL);
+            CREATE INDEX IF NOT EXISTS bindings_source ON bindings(source_image);
             CREATE TABLE IF NOT EXISTS metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL);
             CREATE TRIGGER IF NOT EXISTS revisions_no_update BEFORE UPDATE ON revisions
                 BEGIN SELECT RAISE(ABORT, 'revision history is immutable'); END;
