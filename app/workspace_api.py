@@ -1,7 +1,6 @@
 """Read-only photo browsing for the organize workspace; no model initialization."""
 import os
 from pathlib import Path
-import re
 
 from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import FileResponse, Response
@@ -39,7 +38,7 @@ def photos(input_dir: str, limit: int = Query(10000, ge=1, le=10000)):
                        and p.resolve().is_relative_to(root))
         items = []
         for path in paths[:limit]:
-            meta = parse_filename(path.name, done_style=bool(re.match(r'^\d{1,3}-\d{8}', path.name)))
+            meta = parse_filename(path.name)
             items.append({'name': path.name, 'path': str(path), 'size': path.stat().st_size,
                           'metadata': {k: meta.get(k) for k in
                                        ('play', 'date', 'venue', 'people', 'scene', 'photographer')}})

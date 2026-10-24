@@ -559,10 +559,10 @@
       try {
         result = await api('/api/organize/scene/review', {review_dir: state.project.review, image: record.image, action,
           label: action === 'modify' ? label : '', scene_id: action === 'modify' ? (option?.scene_id || '') : '', reviewer: 'workspace', note,
-          expected_revision: record.review_revision});
+          expected_revision: record.review_revision, defer_snapshot: true});
       } catch (error) {
         if (error.status === 409) {
-          const latest = await api(`/api/organize/scene/review?${new URLSearchParams({review_dir: state.project.review, image: record.image})}`);
+          const latest = await api(`/api/organize/scene/review?${new URLSearchParams({review_dir: state.project.review, image: record.image, defer_snapshot: 'true'})}`);
           mergeReview(record, latest.record); renderHeader(); renderGallery();
         }
         throw error;

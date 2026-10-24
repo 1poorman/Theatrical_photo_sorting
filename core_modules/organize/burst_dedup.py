@@ -22,7 +22,10 @@ logger = get_app_logger()
 def normalize_group_key(filename):
     """从文件名提取连拍分组键：解析后的 base（已移除连拍序号与摄影师）。"""
     info = parse_filename(filename)
-    return info['base'] or info['raw'].replace(' ', '')
+    key = info['base'] or info['raw'].replace(' ', '')
+    # A curated output sequence is not proof of a shared burst. Preserve its
+    # independent membership when parsing now removes the sequence prefix.
+    return f"{info['seq']}-{key}" if info['seq'] is not None else key
 
 
 def image_quality(img):

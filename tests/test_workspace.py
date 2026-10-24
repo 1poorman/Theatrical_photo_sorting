@@ -191,6 +191,15 @@ class WorkspaceTest(unittest.TestCase):
         self.assertEqual(final['result']['failed'], 0)
         self.assertTrue(Path(final['result']['report_path']).is_file())
 
+    def test_scene_task_binds_filename_parser_for_restart(self):
+        from core_modules.organize.task_artifacts import fingerprint
+        knowledge = self.knowledge()
+        params, _ = organize_tasks.prepare_scene({'input_dir': str(self.photos),
+            'knowledge_dir': str(knowledge), 'output_file': str(self.root / 'evidence.jsonl')})
+        handler = organize_tasks.scene_handler(params)
+        parser = 'core_modules/organize/filename_parser.py'
+        self.assertEqual(handler.model_contract()['code']['files'][parser], fingerprint(ROOT / parser))
+
     def test_organize_identity_registry_reaches_background_and_legacy_handlers(self):
         from core_modules.organize.smart_organizer import SmartOrganizer
         from test_identity_registry import registry_data
@@ -641,6 +650,35 @@ class WorkspaceTest(unittest.TestCase):
         self.assertEqual(len(queue.revisions()), 1)
         self.assertEqual(self.client.get('/api/organize/scene/review', params={**params, 'image': 'missing'}).status_code, 404)
         self.assertEqual(self.client.get('/api/organize/scene/review', params={'review_dir': queue.root, 'limit': -1}).status_code, 400)
+
+    def test_deferred_review_saves_and_refreshes_without_full_snapshot_then_exports_latest(self):
+        from core_modules.organize.review_queue import ReviewQueue
+        queue = ReviewQueue(str(self.root / 'review'))
+        image = str(self.photos / self.names[0])
+        queue.seed([{'image': image, 'label': 'candidate'}])
+        before = Path(queue.queue_path).read_bytes()
+        data = {'review_dir': queue.root, 'image': image, 'action': 'modify',
+                'label': 'confirmed', 'expected_revision': 0, 'defer_snapshot': 'true'}
+        with patch('core_modules.organize.review_store.atomic_rows',
+                   side_effect=AssertionError('full_queue_snapshot_in_single_record_request')):
+            saved = self.client.post('/api/organize/scene/review', data=data)
+            self.assertEqual(saved.status_code, 200, saved.text)
+            self.assertEqual(saved.json()['data']['record']['review_revision'], 1)
+            self.assertEqual(self.client.post('/api/organize/scene/review', data=data).status_code, 409)
+            latest = self.client.get('/api/organize/scene/review', params={
+                'review_dir': queue.root, 'image': image, 'defer_snapshot': 'true'})
+            self.assertEqual(latest.json()['data']['record']['label'], 'confirmed')
+            index = self.client.get('/api/organize/scene/review/metadata',
+                                    params={'review_dir': queue.root})
+            self.assertEqual(index.json()['data']['summary']['approved'], 1)
+            details = self.client.post('/api/organize/scene/review/records',
+                json={'review_dir': queue.root, 'images': [image]})
+            self.assertEqual(details.json()['data']['records'][0]['review_revision'], 1)
+        self.assertEqual(Path(queue.queue_path).read_bytes(), before)
+        result = self.post('/api/organize/scene/review/export', review_dir=queue.root)
+        self.assertEqual(json.loads(Path(result['path']).read_text()), {image: 'confirmed'})
+        self.assertEqual(json.loads(Path(queue.queue_path).read_text())['label'], 'confirmed')
+        self.assertEqual(len(queue.revisions()), 1)
 
 
 if __name__ == '__main__':

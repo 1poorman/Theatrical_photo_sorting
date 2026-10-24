@@ -425,6 +425,7 @@ def scene_handler(params):
     from config.base import VISION_IMAGE_MAX_SIDE, VISION_ENABLE_THINKING
     code_version = execution_code([
         'app/organize_tasks.py', 'core_modules/organize/scene_reasoner.py',
+        'core_modules/organize/filename_parser.py',
         'core_modules/organize/visual_evidence.py',
         'core_modules/organize/ocr_evidence.py', 'tools/paddle_ocr_worker.py',
         'core_modules/organize/multimodal_evidence.py', 'core_modules/organize/llm_client.py',

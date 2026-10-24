@@ -29,9 +29,10 @@ def atomic_rows(path, rows):
 
 
 class ReviewStore:
-    def __init__(self, root):
+    def __init__(self, root, snapshot_on_write=True):
         self.root = Path(root)
         self.path = self.root / 'review.sqlite3'
+        self.snapshot_on_write = snapshot_on_write
 
     @contextmanager
     def _lock(self):
@@ -116,6 +117,14 @@ class ReviewStore:
         with connection:
             connection.execute("UPDATE metadata SET value='0' WHERE key='dirty'")
 
+    def export_snapshots(self):
+        """Materialize legacy files from one committed state, even after a crash."""
+        with self._lock():
+            with closing(self._connect()) as connection:
+                self._initialize(connection)
+                connection.execute('BEGIN IMMEDIATE')
+                self._snapshots(connection)
+
     @contextmanager
     def session(self, write=False):
         # Lock imports, mutations and compatibility snapshot recovery across
@@ -124,7 +133,8 @@ class ReviewStore:
             with self._lock():
                 with closing(self._connect()) as connection:
                     self._initialize(connection)
-                    if connection.execute("SELECT value FROM metadata WHERE key='dirty'").fetchone()[0] == '1':
+                    if self.snapshot_on_write and connection.execute(
+                            "SELECT value FROM metadata WHERE key='dirty'").fetchone()[0] == '1':
                         self._snapshots(connection)
                     connection.execute('BEGIN IMMEDIATE' if write else 'BEGIN')
                     try:
@@ -132,7 +142,8 @@ class ReviewStore:
                         if write:
                             connection.execute("UPDATE metadata SET value='1' WHERE key='dirty'")
                             connection.commit()
-                            self._snapshots(connection)
+                            if self.snapshot_on_write:
+                                self._snapshots(connection)
                     except BaseException:
                         connection.rollback()
                         raise
@@ -143,12 +154,13 @@ class ReviewStore:
                 state = dict(connection.execute('SELECT key, value FROM metadata'))
             except sqlite3.OperationalError:
                 state = {}
-            if state.get('imported') != '1' or state.get('dirty') == '1':
+            if state.get('imported') != '1' or (self.snapshot_on_write and state.get('dirty') == '1'):
                 connection.close()
                 with self._lock():
                     connection = self._connect()
                     self._initialize(connection)
-                    if connection.execute("SELECT value FROM metadata WHERE key='dirty'").fetchone()[0] == '1':
+                    if self.snapshot_on_write and connection.execute(
+                            "SELECT value FROM metadata WHERE key='dirty'").fetchone()[0] == '1':
                         self._snapshots(connection)
             connection.execute('BEGIN')
             yield connection

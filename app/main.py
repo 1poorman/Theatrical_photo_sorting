@@ -863,11 +863,12 @@ def scene_review_seed(review_dir: str = Form(...),
 
 @app.get("/api/organize/scene/review")
 def scene_review_list(review_dir: str, status: str = '',
-                            limit: int = 50, offset: int = 0, image: str = ''):
+                            limit: int = 50, offset: int = 0, image: str = '',
+                            defer_snapshot: bool = False):
     """分页获取待审核记录。"""
     try:
         from core_modules.organize.review_queue import ReviewQueue
-        queue = ReviewQueue(review_dir)
+        queue = ReviewQueue(review_dir, snapshot_on_write=not defer_snapshot)
         if image:
             return JSONResponse({"code": 200, "data": {"record": queue.record(image), "summary": queue.summary()}})
         return JSONResponse({"code": 200, "message": "OK",
@@ -883,7 +884,7 @@ def scene_review_list(review_dir: str, status: str = '',
 @app.get('/api/organize/scene/review/metadata')
 def scene_review_metadata(review_dir: str):
     from core_modules.organize.review_queue import ReviewQueue
-    return {'code': 200, 'data': ReviewQueue(review_dir).metadata()}
+    return {'code': 200, 'data': ReviewQueue(review_dir, snapshot_on_write=False).metadata()}
 
 
 @app.post('/api/organize/scene/review/records')
@@ -892,7 +893,7 @@ def scene_review_records(payload: dict = Body(...)):
         if set(payload) != {'review_dir', 'images'} or not isinstance(payload['review_dir'], str):
             raise ValueError('invalid_review_record_query')
         from core_modules.organize.review_queue import ReviewQueue
-        return {'code': 200, 'data': ReviewQueue(payload['review_dir']).records_for(payload['images'])}
+        return {'code': 200, 'data': ReviewQueue(payload['review_dir'], snapshot_on_write=False).records_for(payload['images'])}
     except ValueError as exc:
         return JSONResponse(status_code=400, content=srv.get_error(message=str(exc)))
 
@@ -901,12 +902,13 @@ def scene_review_records(payload: dict = Body(...)):
 def scene_review_decide(review_dir: str = Form(...), image: str = Form(...),
                               action: str = Form(...), scene_id: str = Form(''),
                               label: str = Form(''), reviewer: str = Form('human'),
-                              note: str = Form(''), expected_revision: Optional[int] = Form(None)):
+                              note: str = Form(''), expected_revision: Optional[int] = Form(None),
+                              defer_snapshot: bool = Form(False)):
     """接受/修改/拒绝一条场景标签，写入不可变修订日志。"""
     try:
         from core_modules.organize.review_queue import ReviewQueue
         from core_modules.organize.review_store import ReviewConflict
-        queue = ReviewQueue(review_dir)
+        queue = ReviewQueue(review_dir, snapshot_on_write=not defer_snapshot)
         record = queue.decide(image, action, scene_id=scene_id or None,
                               label=label or None, reviewer=reviewer, note=note,
                               expected_revision=expected_revision)

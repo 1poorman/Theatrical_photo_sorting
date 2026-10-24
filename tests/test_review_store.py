@@ -174,6 +174,74 @@ class ReviewStoreTests(unittest.TestCase):
             self.assertEqual(self.queue.page('approved', limit=1)['records'][0]['image'], 'photo-09999.jpg')
             self.assertEqual(self.queue.record('photo-09999.jpg')['review_revision'], 1)
 
+    def test_deferred_transactions_and_restarted_reads_do_not_regenerate_snapshots(self):
+        self.seed()
+        before = (self.root / 'review_queue.jsonl').read_bytes()
+        deferred = ReviewQueue(str(self.root), snapshot_on_write=False)
+        with patch('core_modules.organize.review_store.atomic_rows',
+                   side_effect=AssertionError('unexpected full snapshot')):
+            deferred.decide('a.jpg', 'modify', label='latest', expected_revision=0)
+            restarted = ReviewQueue(str(self.root), snapshot_on_write=False)
+            self.assertEqual(restarted.record('a.jpg')['label'], 'latest')
+            self.assertEqual(restarted.summary()['approved'], 1)
+            self.assertEqual(len(restarted.revisions()), 1)
+            with self.assertRaises(ReviewConflict):
+                restarted.decide('a.jpg', 'reject', expected_revision=0)
+        self.assertEqual((self.root / 'review_queue.jsonl').read_bytes(), before)
+        deferred.store.export_snapshots()
+        self.assertEqual(_snapshot_records(self.root), deferred.records())
+        with sqlite3.connect(deferred.store.path) as connection:
+            self.assertEqual(connection.execute("SELECT value FROM metadata WHERE key='dirty'").fetchone()[0], '0')
+
+    def test_deferred_export_failure_keeps_committed_history_and_legacy_reader_repairs(self):
+        self.seed()
+        deferred = ReviewQueue(str(self.root), snapshot_on_write=False)
+        deferred.decide('a.jpg', 'modify', label='latest', expected_revision=0)
+        with patch('core_modules.organize.review_store.atomic_rows', side_effect=OSError('disk failure')):
+            with self.assertRaises(OSError):
+                deferred.store.export_snapshots()
+            self.assertEqual(deferred.record('a.jpg')['label'], 'latest')
+            self.assertEqual(len(deferred.revisions()), 1)
+        # Eager mode remains the default for old callers and repairs stale files.
+        self.assertEqual(self.queue.record('a.jpg')['label'], 'latest')
+        self.assertEqual(_snapshot_records(self.root), self.queue.records())
+
+    def test_deferred_writers_preserve_different_records_and_final_export(self):
+        self.seed()
+        def save(image):
+            return ReviewQueue(str(self.root), snapshot_on_write=False).decide(
+                image, 'modify', label=image, expected_revision=0)
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            list(pool.map(save, ('a.jpg', 'b.jpg')))
+        deferred = ReviewQueue(str(self.root), snapshot_on_write=False)
+        path, count = deferred.export_final()
+        self.assertEqual(count, 2)
+        self.assertEqual(json.loads(Path(path).read_text()), {'a.jpg': 'a.jpg', 'b.jpg': 'b.jpg'})
+        self.assertEqual(_snapshot_records(self.root), deferred.records())
+        history = [json.loads(line) for line in (self.root / 'revisions.jsonl').read_text().splitlines()]
+        self.assertEqual(history, deferred.revisions())
+
+    def test_scene_evidence_reads_SQLite_when_deferred_snapshot_is_absent_or_stale(self):
+        deferred = ReviewQueue(str(self.root), snapshot_on_write=False)
+        with patch('core_modules.organize.review_store.atomic_rows',
+                   side_effect=AssertionError('reader unexpectedly materialized snapshots')):
+            deferred.seed([{'image': '/one/a.jpg', 'label': 'candidate'}])
+            deferred.decide('/one/a.jpg', 'modify', label='latest', expected_revision=0)
+            self.assertFalse(Path(deferred.queue_path).exists())
+            self.assertEqual(load_scene_evidence(deferred.queue_path)['by_path'], {'/one/a.jpg': 'latest'})
+        deferred.store.export_snapshots()
+        before = Path(deferred.queue_path).read_bytes()
+        deferred.decide('/one/a.jpg', 'modify', label='newer', expected_revision=1)
+        with patch('core_modules.organize.review_store.atomic_rows',
+                   side_effect=AssertionError('reader unexpectedly materialized snapshots')):
+            self.assertEqual(load_scene_evidence(deferred.queue_path)['by_path'], {'/one/a.jpg': 'newer'})
+        self.assertEqual(Path(deferred.queue_path).read_bytes(), before)
+
+
+def _snapshot_records(root):
+    return {row['image']: row for row in
+            (json.loads(line) for line in (root / 'review_queue.jsonl').read_text().splitlines())}
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -82,8 +82,22 @@ PHOTOGRAPHER_RE = re.compile(r'^([\u4e00-\u9fa5]{2,4})\d{0,3}$')
 DATE_VENUE_RE = re.compile(r'^(\d{8})(' + '|'.join(VENUES) + r')?')
 # 剧目名：类别前缀 + 《剧名》
 PLAY_RE = re.compile(r'([\u4e00-\u9fa5]{0,4}《[^》]+》)')
-# 整理完成文件名的序号前缀：NN-
-SEQ_PREFIX_RE = re.compile(r'^(\d{1,3})-')
+# 整理序号可以超过 999；自动检测还要求日期和剧目结构。
+SEQ_PREFIX_RE = re.compile(r'^(\d+)-')
+ORGANIZED_PREFIX_RE = re.compile(r'^\d+-\d{8}(?:-|'+ '|'.join(VENUES) + r')')
+EXPLICIT_SCENE_RE = re.compile(
+    r'(?:第\d+[幕场](?:\d+场)?[\u4e00-\u9fff：:·\s]{0,24}|序[曲幕]?|尾声|谢幕)'
+    r'(?:[：:][\u4e00-\u9fff·\s]{1,24})?')
+
+
+def is_organized_filename(path):
+    """Detect a numbered/date/play name even after copying to a plain folder."""
+    name = os.path.basename(path)
+    return bool(ORGANIZED_PREFIX_RE.match(name) and PLAY_RE.search(name))
+
+
+def _is_explicit_scene(segment):
+    return bool(EXPLICIT_SCENE_RE.fullmatch(segment) and '饰' not in segment and '摄影' not in segment)
 
 
 def _split_segments(stem):
@@ -100,6 +114,7 @@ def parse_stem(stem, done_style=False):
             'scene': None, 'people': [], 'photographer': None, 'burst_seq': None,
             'base': None, 'raw': stem}
 
+    done_style = done_style or is_organized_filename(stem)
     work = stem
 
     # 整理完成命名：序号前缀
@@ -125,11 +140,20 @@ def parse_stem(stem, done_style=False):
         segs_tmp = _split_segments(work)
         if len(segs_tmp) >= 2:
             m2 = PHOTOGRAPHER_RE.match(segs_tmp[-1])
-            if m2 and '饰' not in segs_tmp[-1]:
+            if m2 and '饰' not in segs_tmp[-1] and not (done_style and _is_explicit_scene(segs_tmp[-1])):
                 info['photographer'] = m2.group(1)
                 work = work[:work.rfind(segs_tmp[-1])]
 
     work = work.strip().strip('-')
+    # Generated placeholders contain hyphens of their own. Extract the whole
+    # token before segment splitting so its index cannot become a burst number.
+    if done_style:
+        pm = PLAY_RE.search(work)
+        placeholder = re.search(r'\s+(scene-\d+(?:-[A-Za-z0-9]+)*)(?=-|$)', work[pm.end():]) if pm else None
+        if placeholder:
+            info['scene'] = placeholder.group(1)
+            start, end = pm.end() + placeholder.start(), pm.end() + placeholder.end()
+            work = work[:start] + work[end:]
     segs = _split_segments(work)
     if not segs:
         return info
@@ -159,16 +183,25 @@ def parse_stem(stem, done_style=False):
         pm = PLAY_RE.search(seg)
         if pm:
             play = pm.group(1)
-            rest = seg[pm.end():].strip()
+            suffix = seg[pm.end():]
+            rest = suffix.strip()
             info['play'] = play
             if rest:
                 # 整理完成命名中"剧名 场景"以空格分隔，场景含幕次信息
-                if done_style and ' ' in rest:
+                if done_style and suffix[:1].isspace() and info['scene'] is None:
+                    info['scene'] = rest
+                elif done_style and ' ' in rest:
                     event, scene = rest.split(' ', 1)
                     info['event'] = event or None
                     info['scene'] = scene or None
                 else:
                     info['event'] = rest
+            # Historical curated names also use a distinct hyphen scene field.
+            # Conflicting fields remain for the verified importer to reject.
+            if done_style and info['scene'] is None:
+                explicit = [field for field in segs[i + 1:] if _is_explicit_scene(field)]
+                if len(set(explicit)) == 1:
+                    info['scene'] = explicit[0]
             segs = segs[:i] + segs[i + 1:]
             break
 

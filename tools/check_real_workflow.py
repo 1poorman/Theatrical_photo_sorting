@@ -176,6 +176,8 @@ def main():
     parser.add_argument('--registry', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--max-images', type=int, default=200)
+    parser.add_argument('--input-kind', choices=('raw', 'organized'), default='raw',
+                        help='Select filename scope explicitly; raw runs reject organized copies.')
     parser.add_argument('--gpu', type=int, default=1)
     parser.add_argument('--worker', action='store_true')
     parser.add_argument('--port', type=int, default=0)
@@ -200,11 +202,13 @@ def main():
     selected = selected[:args.max_images]
     if len(selected) != args.max_images or len({row['content_hash'] for row in selected}) != len(selected):
         raise ValueError('not_enough_unique_workflow_images')
-    from core_modules.organize.filename_parser import parse_filename
+    from core_modules.organize.filename_parser import parse_filename, is_organized_filename
     from core_modules.organize.burst_dedup import normalize_group_key
     source_metadata = {row['source']: parse_filename(row['source']) for row in selected}
     if any(not all(info.get(key) for key in ('date', 'venue', 'play')) for info in source_metadata.values()):
-        raise ValueError('raw_filenames_with_date_venue_play_required_not_organized_copies')
+        raise ValueError('filenames_with_date_venue_play_required')
+    if any(is_organized_filename(row['source']) != (args.input_kind == 'organized') for row in selected):
+        raise ValueError('filename_input_kind_mismatch')
     grouped = defaultdict(list)
     for row in selected:
         grouped[(row['play_id'], normalize_group_key(row['source']))].append(row['source'])
@@ -245,6 +249,7 @@ def main():
     files = ['app/main.py', 'app/organize_tasks.py', 'core_modules/organize/task_versions.py',
              'core_modules/organize/task_queue.py', 'core_modules/organize/scene_reasoner.py',
              'core_modules/organize/organize_task.py', 'core_modules/organize/smart_organizer.py',
+             'core_modules/organize/filename_parser.py', 'core_modules/organize/burst_dedup.py',
              'core_modules/organize/review_queue.py', 'core_modules/organize/review_store.py',
              'tools/check_real_workflow.py']
     state = {'status': 'running', 'command': [sys.executable, *sys.argv],
@@ -276,7 +281,7 @@ def main():
               'measured_code_unchanged': all(fingerprint(ROOT / name) == digest for name, digest in state['source_sha256'].items())}
     summary = {'status': 'passed' if all(checks.values()) else 'failed', 'checks': checks, 'projects': results,
                'input_count': len(selected), 'project_count': len(projects), 'physical_gpu': args.gpu,
-               'input_kind': 'raw_photo_filenames',
+               'input_kind': args.input_kind + '_photo_filenames',
                'formal_u8_gate': 'not_passed', 'quality_gate': 'insufficient_data',
                'limitations': ['Functional replay of actual SigLIP2, SCRFD/ArcFace, pose and role paths, with use_llm=false.',
                               'Scripted review decisions in isolated copies are not new human annotations.',

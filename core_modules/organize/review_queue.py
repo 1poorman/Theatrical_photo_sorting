@@ -61,13 +61,13 @@ def _image_bindings(root):
 
 
 class ReviewQueue:
-    def __init__(self, root):
+    def __init__(self, root, snapshot_on_write=True):
         self.root = root
         self.queue_path = os.path.join(root, 'review_queue.jsonl')
         self.revisions_path = os.path.join(root, 'revisions.jsonl')
         self.final_path = os.path.join(root, 'scene_labels.json')
         self.bindings_path = os.path.join(root, 'image_bindings.jsonl')
-        self.store = ReviewStore(root)
+        self.store = ReviewStore(root, snapshot_on_write=snapshot_on_write)
 
     # ---------- 读取 ----------
 
@@ -259,6 +259,8 @@ class ReviewQueue:
 
     def export_final(self, path=None):
         path = path or self.final_path
+        if not self.store.snapshot_on_write:
+            self.store.export_snapshots()
         with self.store.session() as connection:
             records = self._records(connection)
             bindings = self._bindings(connection)
@@ -349,12 +351,15 @@ def load_scene_evidence(path):
             by_path[os.path.abspath(image)] = label
         else:
             legacy_by_image[image] = label
-    if not path or not os.path.exists(path):
+    if not path:
+        return result
+    root = os.path.dirname(path)
+    authoritative_queue = os.path.basename(path) == 'review_queue.jsonl' and os.path.exists(os.path.join(root, 'review.sqlite3'))
+    if not os.path.exists(path) and not authoritative_queue:
         return result
     if path.endswith('.jsonl'):
-        root = os.path.dirname(path)
-        if os.path.basename(path) == 'review_queue.jsonl' and os.path.exists(os.path.join(root, 'review.sqlite3')):
-            queue = ReviewQueue(root)
+        if authoritative_queue:
+            queue = ReviewQueue(root, snapshot_on_write=False)
             with queue.store.session() as connection:
                 bindings = queue._bindings(connection)
                 rows = list(queue._records(connection).values())

@@ -72,6 +72,32 @@ class OrganizeTasksTests(unittest.TestCase):
         for row in report['records']:
             self.assertEqual(fingerprint(self.photos / row['source']), fingerprint(self.output / 'organized' / row['organized_name']))
 
+    def test_reprocess_organized_names_outside_curated_directory(self):
+        # Copies often live in a plain project directory. Existing filename
+        # labels are hints; only this project's review may name the new scene.
+        self.photos = self.root / 'copied_photos'
+        self.photos.mkdir()
+        names = [
+            '01-20160609-戏剧场-话剧《样式雷》彩排 第1场-摄影凌风.JPG',
+            '02-20160609-戏剧场-话剧《样式雷》彩排 第1场-摄影凌风.JPG',
+            '03-20160609-戏剧场-话剧《样式雷》彩排-第8场-摄影凌风.JPG',
+        ]
+        for name in names:
+            Image.new('RGB', (40, 30), 'red').save(self.photos / name)
+        original = {name: fingerprint(self.photos / name) for name in names}
+        queue, task_id = self.submit()
+        self.assertEqual(wait_for(queue, task_id)['status'], 'completed')
+        report = json.loads((self.output / 'organize_report.json').read_text())
+        self.assertEqual((report['kept'], report['discarded'], report['failed']), (3, 0, 0))
+        for row in report['records']:
+            self.assertEqual((row['date'], row['venue'], row['play'], row['event']),
+                             ('20160609', '戏剧场', '话剧《样式雷》', '彩排'))
+            self.assertRegex(row['organized_name'], r'^\d+-20160609-戏剧场-话剧《样式雷》彩排 scene-\d+')
+            self.assertNotIn('第1场', row['organized_name'])
+            self.assertNotIn('第8场', row['organized_name'])
+            self.assertEqual(fingerprint(self.output / 'organized' / row['organized_name']), original[row['source']])
+        self.assertEqual({name: fingerprint(self.photos / name) for name in names}, original)
+
     def test_bad_quality_image_and_recognition_error_leave_other_results(self):
         (self.photos / 'bad.jpg').write_bytes(b'broken image')
         self.organizer._recognize_image = lambda img, threshold: (_ for _ in ()).throw(ValueError('model failed')) if img[0, 0, 0] > 100 else ({}, [])

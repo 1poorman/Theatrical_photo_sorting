@@ -46,6 +46,11 @@ tests/*
 !tests/test_face_graph_cluster.py
 !tests/test_temporal_burst.py
 !tests/test_ocr_evidence.py
+!tests/test_filename_parser.py
+!tests/test_face_identity_review.py
+!tests/test_visual_fact_review.py
+!tests/test_face_identity_quality.py
+!tests/test_visual_fact_review_browser.cjs
 
 
 .env 

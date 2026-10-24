@@ -62,8 +62,7 @@ def validate_choice(choice, candidate_ids, evidence_ids):
 def _parse_local(image_path):
     """兼容原始与整理完成两类命名，尽量解析出场景段。"""
     name = os.path.basename(image_path)
-    done = '整理完成' in image_path or bool(re.match(r'^\d{1,3}-', name))
-    return parse_filename(name, done_style=done)
+    return parse_filename(name, done_style='整理完成' in image_path)
 
 
 def _filename_scene_match(parsed, scene):

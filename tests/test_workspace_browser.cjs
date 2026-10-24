@@ -20,7 +20,15 @@ fs.mkdirSync(shots, {recursive: true});
   const context = await browser.newContext({viewport: {width: 1440, height: 1000}});
   const page = await context.newPage();
   const errors = [];
+  const reviewSnapshotFlags = [], conflictSnapshotFlags = [];
   page.on('pageerror', error => errors.push(error.message));
+  page.on('request', request => {
+    const url = new URL(request.url());
+    if (url.pathname !== '/api/organize/scene/review') return;
+    if (request.method() === 'POST') reviewSnapshotFlags.push(
+      /name="defer_snapshot"\r?\n\r?\ntrue(?:\r?\n|$)/.test(request.postData() || ''));
+    else if (url.searchParams.has('image')) conflictSnapshotFlags.push(url.searchParams.get('defer_snapshot'));
+  });
   const idle = () => page.locator('body:not([aria-busy="true"])').waitFor({timeout: 45000});
   const clickView = async view => { await page.locator(`.nav-item[data-view="${view}"]`).click(); };
   const noOverflow = async () => {
@@ -392,6 +400,10 @@ fs.mkdirSync(shots, {recursive: true});
     assert.notEqual(await page.locator('#output-dir').inputValue(), fixture);
     await page.keyboard.press('Escape');
     assert.equal(errors.length, 0, errors.join('\n'));
+    assert.ok(reviewSnapshotFlags.length > 0 && reviewSnapshotFlags.every(Boolean),
+      'workspace decisions must defer compatibility snapshots');
+    assert.ok(conflictSnapshotFlags.length > 0 && conflictSnapshotFlags.every(flag => flag === 'true'),
+      'conflict refreshes must not materialize the complete queue');
     console.log(JSON.stringify({passed: true, realPhotos: total, largeQueue: {records: 10000,
       indexRequests: indexQueries.length, detailRequestSizes: detailQueries.map(rows => rows.length),
       fullQueueRequests: unexpectedQueueQueries.length, decisionPosts}, checks: ['empty/error states', 'real photo previews', 'knowledge ingest', 'offline scene analysis', 'background analysis refresh reuses task without resubmission', 'review accept/modify/reject', 'draft survives selection/search/reload/failure', 'revision conflict refreshes record and preserves draft', 'successful decision clears draft', 'search/filter', 'label download', 'organize payload', 'background organize refresh/cancel/resume/partial failures', 'cluster refresh/cancel/resume and persistent assign/ignore/restore/error', 'face database refresh/cancel/resume/partial report and dry-run/build payload', 'refresh persistence', 'responsive 1440/1024/768/540/390', 'escaped evidence', '10000 record metadata and bounded visible details/DOM', 'decision updates one record without queue reload', 'independent project contexts'], screenshots: shots}, null, 2));
