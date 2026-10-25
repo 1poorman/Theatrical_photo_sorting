@@ -16,6 +16,7 @@
 | 文档 | 定位 | 使用方式 |
 | --- | --- | --- |
 | [WORK_STATE.md](../WORK_STATE.md) | 当前开发交接快照 | 异常恢复、关键节点、未提交改动与多智能体协作 |
+| [technical_report_20261024.md](technical_report_20261024.md) | 技术评审报告（26页PDF与离线HTML） | 功能架构、模型原理、实验设置、14种检索变体、性能与质量边界；附图表和数据来源 |
 | [PROJECT_GUIDE.md](PROJECT_GUIDE.md) | 当前项目手册 | 部署、接手开发、排障与文件管理 |
 | [workspace_guide.md](workspace_guide.md) | 多模态整理工作台 | 图片浏览、剧情关联、看图复核、整理导出与界面验收 |
 | [identity_registry_guide.md](identity_registry_guide.md) | 演员身份与剧目角色表 | JSON 格式、身份与角色来源、专辑筛选、API 参数和任务恢复 |
