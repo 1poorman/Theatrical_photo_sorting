@@ -1,0 +1,82 @@
+{
+  "status": "validated",
+  "quality_gate": "insufficient_data",
+  "default_adoption": false,
+  "face_count": 1095,
+  "box_label_counts": {
+    "pending": 1095,
+    "known": 0,
+    "unknown": 0,
+    "not_evaluable": 0
+  },
+  "known_evaluable_non_exempt_faces": 0,
+  "distinct_known_identity_ids": 0,
+  "distinct_actor_names": 0,
+  "exempt_faces": 0,
+  "same_identity_physical_face_pairs_requiring_exception_review": [],
+  "partitions": {
+    "legacy": {
+      "known_subset_b_cubed": {
+        "count": 0,
+        "precision": null,
+        "recall": null,
+        "f1": null,
+        "mixed_clusters": 0,
+        "fragmented_identities": 0
+      },
+      "reviewed_cannot_link_pairs": 0,
+      "reviewed_constraint_violations": 0,
+      "cluster_count_all_faces": 453
+    },
+    "graph": {
+      "known_subset_b_cubed": {
+        "count": 0,
+        "precision": null,
+        "recall": null,
+        "f1": null,
+        "mixed_clusters": 0,
+        "fragmented_identities": 0
+      },
+      "reviewed_cannot_link_pairs": 0,
+      "reviewed_constraint_violations": 0,
+      "cluster_count_all_faces": 616
+    }
+  },
+  "identity_matching": {
+    "status": "insufficient_data",
+    "known_recall": null,
+    "unknown_FPIR": null,
+    "known_faces_at_least_200": false,
+    "unknown_faces_at_least_300": false,
+    "actors_at_least_10": false,
+    "gallery_query_isolation_verified": false,
+    "matching_predictions_provided": false
+  },
+  "exclusions": {
+    "unreviewed_faces": 1095,
+    "not_evaluable_faces": 0,
+    "unknown_faces_without_cross_photo_identity_GT": 0,
+    "known_exempt_faces": 0
+  },
+  "limitations": [
+    "B-cubed is restricted to the explicitly reviewed known-face subset, not all detections.",
+    "Unknown means outside the selected gallery identities; different unknown faces are not presumed different people.",
+    "Reviewed same-image non-exempt detections supply physical-face cannot-link assumptions; conflicting labels need review.",
+    "No verified isolated gallery/query predictions, unknown-identity FPIR, calibration or independent final test.",
+    "Machine partitions and feature vectors are reused; no faces, actor identities or defaults are assigned."
+  ],
+  "protocol_sha256": "caca1ddf10eb45e456cb6d977e6a945502f0ab3a0c1f2d4e464a4a5720d008a5",
+  "task_id": "ea49f74d798e46b9a6c992b0b5a72c0e",
+  "input_sha256": {
+    "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u1_face_identity_review_final_20261023/review_template.json": "8d28a54814be4c4aa775eacaffff1d7e1e1d231fec68158bb64f6f415d1d67a7",
+    "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u1_face_identity_review_final_20261023/artifact_manifest.json": "8db0956581564955eab0749551261901af961e55e6da419673f08b2b52466745",
+    "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u7_graph_real_1095_20261023/summary.json": "b21f0f029d2a2b6ce5966f8bfb56d015ded8171d412b36c183880c46a494fb92",
+    "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u7_graph_real_1095_20261023/clusters.json": "2796b0dc3df44e2ee96b9515defe0e1394d9db4c83330adb6266eddfd7c5492b",
+    "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u7_graph_real_1095_20261023/model_contract.json": "95fa7931750f6a3dc7a20ab8c130debd1202e4e0cbe928017f610b5cbfe3a2c5"
+  },
+  "source_sha256": {
+    "tools/evaluate_face_identity_review.py": "fdef1afbcff9d9e163b852e5d4f8d9a901dccfcf2d431a23e4bceb0bfd044d9f",
+    "tools/review_quality_metrics.py": "3c7f87f33c0cd3581ec9b54f4376d4d9cc6ad4088748e2ca4eb4c53f4b5bf753",
+    "tools/prepare_face_identity_review.py": "93f3a9503749c3429dc3fd83b981ed993216a8b1a5ca3c8b397902930826548b"
+  }
+}

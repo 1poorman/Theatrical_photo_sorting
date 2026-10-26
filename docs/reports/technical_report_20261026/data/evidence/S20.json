@@ -1,0 +1,43 @@
+{
+  "status": "metadata_audit_completed",
+  "identity": {
+    "endpoint_sha256": "51c10998d48131d0188bca9eb6e159f4f36c9a81f5b69c11110cea52878be701",
+    "served_alias": "Qwen3.6-27B",
+    "declared_identity": "Qwen3.8-27B",
+    "identity_source": "configuration"
+  },
+  "probes": [
+    {
+      "route": "/models",
+      "http_status": 200,
+      "response_sha256": "7707a2c064426b3d688646227f917bb3ad8a5307b0de8c13163eb355d86efd78",
+      "top_level_fields": [
+        "data",
+        "object"
+      ],
+      "model_ids": [
+        "Qwen3.6-27B"
+      ],
+      "declared_metadata": {}
+    },
+    {
+      "route": "/get_model_info",
+      "http_status": 404,
+      "error_type": "HTTPError"
+    }
+  ],
+  "configured_alias_listed": true,
+  "remote_weights_verified": false,
+  "verified_weights_sha256": null,
+  "persistent_cache_enabled_by_audit": false,
+  "inference_requests": 0,
+  "source_sha256": {
+    "tools/audit_remote_model.py": "fa3f30956389a70c6ae54256fc64d4e0c5e821d8e1644f86e982ac07f20c41f2",
+    "core_modules/organize/llm_client.py": "93a6b5c7584f771f8c58ad599ab6b8345b472ce11c6b23ceaa8e4d04d4203c32"
+  },
+  "limitations": [
+    "Server metadata is a declaration, not a hash of the served tensors.",
+    "No server weight files or authenticated immutable weight manifest were available.",
+    "Unverified caches and task recovery keep their process-private identity."
+  ]
+}

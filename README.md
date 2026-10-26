@@ -24,6 +24,7 @@
 
 - [工作状态与中断接续](WORK_STATE.md)：当前交接点、关键节点、提交范围、实验产物和协作接续步骤。
 - [文档中心](docs/README.md)：阅读顺序、现行说明与历史设计分类。
+- [最新技术报告](docs/technical_report_20261026.md)：29页、15幅正文插图，包含最新U2性能与DALI评价；[PDF](docs/reports/technical_report_20261026/technical_report.pdf)与插图随Git保存，可在GitHub阅读。
 - [工作台使用指南](docs/workspace_guide.md)：目录导入、图文分析、看图复核与归档。
 - [演员身份与角色表](docs/identity_registry_guide.md)：稳定身份 ID、剧目角色、同名演员专辑、JSON 格式与 API 参数。
 - [有出处的分幕候选](docs/sourced_scene_candidates_guide.md)：国家大剧院剧目资料、来源映射、固定候选池与扩池比较及复现。

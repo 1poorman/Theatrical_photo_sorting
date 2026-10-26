@@ -1,0 +1,82 @@
+{
+  "status": "validated",
+  "quality_gate": "insufficient_data",
+  "final_test_locked": false,
+  "distinct_active_reviewers": 0,
+  "visual_images": 100,
+  "image_states": {
+    "incomplete_or_not_evaluable": 100
+  },
+  "paired_evaluable_images": 0,
+  "fact_counts": {
+    "pending": 1352
+  },
+  "consensus_error_ratio": null,
+  "disagreements": [],
+  "per_reviewer_counts": {
+    "A": {},
+    "B": {}
+  },
+  "duplicate_flags": {},
+  "omission_counts": {},
+  "development_fact_check": "insufficient_data",
+  "ocr": {
+    "images": 5,
+    "agreed_transcriptions": 0,
+    "edits": 0,
+    "reference_characters": 0,
+    "cer": null,
+    "rows": [
+      {
+        "review_id": "ocr-3d31713024356ef791837d75fe6fb51a",
+        "status_a": "pending",
+        "status_b": "pending",
+        "status": "incomplete_or_not_evaluable"
+      },
+      {
+        "review_id": "ocr-667abdd9a6a5804981186db9111022d7",
+        "status_a": "pending",
+        "status_b": "pending",
+        "status": "incomplete_or_not_evaluable"
+      },
+      {
+        "review_id": "ocr-02d263076c2957a208c4ba54026ee365",
+        "status_a": "pending",
+        "status_b": "pending",
+        "status": "incomplete_or_not_evaluable"
+      },
+      {
+        "review_id": "ocr-523fe50fddb71fa0f54a6e9b688e9517",
+        "status_a": "pending",
+        "status_b": "pending",
+        "status": "incomplete_or_not_evaluable"
+      },
+      {
+        "review_id": "ocr-db9803d88ba413d059121e3e10b3fcd2",
+        "status_a": "pending",
+        "status_b": "pending",
+        "status": "incomplete_or_not_evaluable"
+      }
+    ]
+  },
+  "definitions": {
+    "fact_denominator": "supported + error among paired, agreed fact judgements; duplicates included",
+    "not_evaluable_pending_and_disagreements": "reported explicitly, never treated as supported",
+    "transcription": "NFC, CRLF/CR to LF, edge whitespace trimmed; interior whitespace retained",
+    "OCR_prediction_order": "recorded OCR line order, joined by LF; no reference-driven reordering"
+  },
+  "limitations": [
+    "Reviewer names alone do not prove independent human work.",
+    "Current images were used in development; final-test quality and Macro-F1 remain unevaluated.",
+    "Unknown actor identities are not inferred from visual observations or OCR text."
+  ],
+  "source_sha256": {
+    "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u5_dual_fact_review_v2_20261024/reviewer_A_template.json": "283b392a31e1ed784df215d413be74ed2978cc140d73588c3b4e466b94178480",
+    "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u5_dual_fact_review_v2_20261024/reviewer_B_template.json": "39be0594feb4694683e7d513c97ca22a24387b66ae6931c99ca5215bd1fbe6c0",
+    "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u5_dual_fact_review_v2_20261024/artifact_manifest.json": "93c3d37021da466861a366c5c8735c9e4fb7e711bb403a67724245b0b58db0b6"
+  },
+  "evaluation_code_sha256": {
+    "tools/prepare_visual_fact_review.py": "d61eacd50c1c0506b3c9db9111ff3c8093520b1d81fa89923ab1ab9fb4ff3387",
+    "tools/review_quality_metrics.py": "3c7f87f33c0cd3581ec9b54f4376d4d9cc6ad4088748e2ca4eb4c53f4b5bf753"
+  }
+}

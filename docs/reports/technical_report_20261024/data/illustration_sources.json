@@ -1,0 +1,26 @@
+[
+  {
+    "play": "京剧《天下归心》",
+    "source": "京剧《天下归心》/【整理完成】京剧《天下归心》彩排/18-20140304-戏剧场-京剧《天下归心》彩排 第4幕天问-前：史依弘饰庄后-苏岩.jpg",
+    "source_sha256": "c7b1ad5ad521694b36f074e7b6bb8a8d510aa7e903d40e26ca8f3639645f2458",
+    "usage": "editorial illustration; not selected for model success"
+  },
+  {
+    "play": "歌剧《假面舞会》",
+    "source": "歌剧《假面舞会》/【整理完成】歌剧《假面舞会》A组彩排/41-20170522-歌剧院-歌剧《假面舞会》A组彩排 第1幕2场-左起：安娜·玛丽亚·齐乌利饰乌丽卡、朱塞佩·季帕里饰古斯塔夫三世-凌风.JPG",
+    "source_sha256": "90c2dcaf4b6ca6ea7f21fbcfcc494f651406e3e97a0f24246f1e9a26ed445a9f",
+    "usage": "editorial illustration; not selected for model success"
+  },
+  {
+    "play": "舞剧《马可·波罗》",
+    "source": "舞剧《马可·波罗》/【整理完成】舞剧《马可·波罗》B组（第1-2幕）/30-20141012-歌剧院-舞剧《马可·波罗》B组 第2幕：古国情韵-苏鹏饰马可·波罗、李祎然饰中国公主-凌风.JPG",
+    "source_sha256": "7a252093b2cdc68814806a17cc61aade85249fab5f6096f0013c55d3bbe5c61d",
+    "usage": "editorial illustration; not selected for model success"
+  },
+  {
+    "play": "话剧《样式雷》",
+    "source": "话剧《样式雷》/【整理完成】话剧《样式雷》彩排/26-20160609-戏剧场-话剧《样式雷》彩排 第6场-左起：王文杰饰桂枝儿、彭国斌饰雷廷昌-凌风.JPG",
+    "source_sha256": "badaf6ac9824435c0193f6d8d26dad819b65053fa9d293396b6fa116990080b2",
+    "usage": "editorial illustration; not selected for model success"
+  }
+]

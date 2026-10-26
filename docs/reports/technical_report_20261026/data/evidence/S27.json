@@ -1,0 +1,2574 @@
+{
+  "mode": "batch",
+  "status": "measured",
+  "identity": {
+    "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+    "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+  },
+  "sample_count": 200,
+  "repeats": 5,
+  "feature_runs": [
+    {
+      "seconds": 42.87884418293834,
+      "forward": {
+        "calls": {
+          "image": 25,
+          "text": 1
+        },
+        "gpu_seconds": {
+          "image": 1.4988787536621093,
+          "text": 0.0064273920059204105
+        }
+      },
+      "rss_peak_bytes": 2104827904,
+      "device_used_peak_bytes": 19198050304,
+      "torch_allocated_peak_bytes": 1698467840,
+      "torch_reserved_peak_bytes": 1847590912,
+      "features": {
+        "encoder": {
+          "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+          "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+        },
+        "batch_size": 8,
+        "encoded_vectors": {
+          "image": 200,
+          "text": 5
+        },
+        "cache_hits": {
+          "image": 0,
+          "text": 0
+        },
+        "encoder_calls": {
+          "image_batch": 13,
+          "image_single": 0,
+          "text_batch": 1,
+          "text_single": 0
+        },
+        "timings": {
+          "identity_seconds": 0.5291771367192268,
+          "hash_seconds": 9.946411362849176,
+          "cache_seconds": 0.18199195805937052,
+          "encoder_seconds": 32.1755230082199
+        },
+        "model_metrics": {
+          "image_decode_seconds": 40.91685946378857,
+          "image_preprocess_seconds": 16.74228159431368,
+          "image_transfer_seconds": 0.46252533327788115,
+          "image_forward_calls": 25,
+          "image_forward_seconds": 1.504857094027102,
+          "image_postprocess_seconds": 0.009387160651385784,
+          "text_preprocess_seconds": 0.002264568582177162,
+          "text_forward_calls": 1,
+          "text_forward_seconds": 0.006619615480303764,
+          "text_postprocess_seconds": 0.00019125919789075851
+        },
+        "image_errors": {},
+        "text_errors": {}
+      },
+      "repeat_min_cosine": {
+        "images": 1.0,
+        "texts": 1.0
+      }
+    },
+    {
+      "seconds": 42.80983112193644,
+      "forward": {
+        "calls": {
+          "image": 25,
+          "text": 1
+        },
+        "gpu_seconds": {
+          "image": 1.4994915084838867,
+          "text": 0.0063508481979370115
+        }
+      },
+      "rss_peak_bytes": 2140311552,
+      "device_used_peak_bytes": 19198050304,
+      "torch_allocated_peak_bytes": 1698467840,
+      "torch_reserved_peak_bytes": 1847590912,
+      "features": {
+        "encoder": {
+          "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+          "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+        },
+        "batch_size": 8,
+        "encoded_vectors": {
+          "image": 200,
+          "text": 5
+        },
+        "cache_hits": {
+          "image": 0,
+          "text": 0
+        },
+        "encoder_calls": {
+          "image_batch": 13,
+          "image_single": 0,
+          "text_batch": 1,
+          "text_single": 0
+        },
+        "timings": {
+          "identity_seconds": 0.5382742723450065,
+          "hash_seconds": 9.75903570652008,
+          "cache_seconds": 0.17150223720818758,
+          "encoder_seconds": 32.29452446848154
+        },
+        "model_metrics": {
+          "image_decode_seconds": 41.200377956964076,
+          "image_preprocess_seconds": 16.71968820784241,
+          "image_transfer_seconds": 0.5222805850207806,
+          "image_forward_calls": 25,
+          "image_forward_seconds": 1.5070352964103222,
+          "image_postprocess_seconds": 0.01068714540451765,
+          "text_preprocess_seconds": 0.0026957793161273003,
+          "text_forward_calls": 1,
+          "text_forward_seconds": 0.006541509181261063,
+          "text_postprocess_seconds": 0.00021314900368452072
+        },
+        "image_errors": {},
+        "text_errors": {}
+      },
+      "repeat_min_cosine": {
+        "images": 1.0,
+        "texts": 1.0
+      }
+    },
+    {
+      "seconds": 42.13136983755976,
+      "forward": {
+        "calls": {
+          "image": 25,
+          "text": 1
+        },
+        "gpu_seconds": {
+          "image": 1.4967529525756835,
+          "text": 0.006419456005096436
+        }
+      },
+      "rss_peak_bytes": 2142519296,
+      "device_used_peak_bytes": 19198050304,
+      "torch_allocated_peak_bytes": 1698467840,
+      "torch_reserved_peak_bytes": 1847590912,
+      "features": {
+        "encoder": {
+          "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+          "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+        },
+        "batch_size": 8,
+        "encoded_vectors": {
+          "image": 200,
+          "text": 5
+        },
+        "cache_hits": {
+          "image": 0,
+          "text": 0
+        },
+        "encoder_calls": {
+          "image_batch": 13,
+          "image_single": 0,
+          "text_batch": 1,
+          "text_single": 0
+        },
+        "timings": {
+          "identity_seconds": 0.5252793924883008,
+          "hash_seconds": 9.800475000403821,
+          "cache_seconds": 0.17687796149402857,
+          "encoder_seconds": 31.58184719644487
+        },
+        "model_metrics": {
+          "image_decode_seconds": 40.12651772424579,
+          "image_preprocess_seconds": 16.39573276322335,
+          "image_transfer_seconds": 0.4474473409354687,
+          "image_forward_calls": 25,
+          "image_forward_seconds": 1.5023593781515956,
+          "image_postprocess_seconds": 0.008930553682148457,
+          "text_preprocess_seconds": 0.0023496774956583977,
+          "text_forward_calls": 1,
+          "text_forward_seconds": 0.006614783778786659,
+          "text_postprocess_seconds": 0.0001900428906083107
+        },
+        "image_errors": {},
+        "text_errors": {}
+      },
+      "repeat_min_cosine": {
+        "images": 1.0,
+        "texts": 1.0
+      }
+    },
+    {
+      "seconds": 42.30296892672777,
+      "forward": {
+        "calls": {
+          "image": 25,
+          "text": 1
+        },
+        "gpu_seconds": {
+          "image": 1.5001674919128418,
+          "text": 0.006274847984313965
+        }
+      },
+      "rss_peak_bytes": 2141306880,
+      "device_used_peak_bytes": 19198050304,
+      "torch_allocated_peak_bytes": 1698467840,
+      "torch_reserved_peak_bytes": 1847590912,
+      "features": {
+        "encoder": {
+          "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+          "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+        },
+        "batch_size": 8,
+        "encoded_vectors": {
+          "image": 200,
+          "text": 5
+        },
+        "cache_hits": {
+          "image": 0,
+          "text": 0
+        },
+        "encoder_calls": {
+          "image_batch": 13,
+          "image_single": 0,
+          "text_batch": 1,
+          "text_single": 0
+        },
+        "timings": {
+          "identity_seconds": 0.5388937592506409,
+          "hash_seconds": 9.825033291243017,
+          "cache_seconds": 0.17314238473773003,
+          "encoder_seconds": 31.719759647734463
+        },
+        "model_metrics": {
+          "image_decode_seconds": 40.56532965134829,
+          "image_preprocess_seconds": 16.433114042505622,
+          "image_transfer_seconds": 0.4443569015711546,
+          "image_forward_calls": 25,
+          "image_forward_seconds": 1.5068193254992366,
+          "image_postprocess_seconds": 0.009532132185995579,
+          "text_preprocess_seconds": 0.0023897159844636917,
+          "text_forward_calls": 1,
+          "text_forward_seconds": 0.006460661068558693,
+          "text_postprocess_seconds": 0.00019138865172863007
+        },
+        "image_errors": {},
+        "text_errors": {}
+      },
+      "repeat_min_cosine": {
+        "images": 1.0,
+        "texts": 1.0
+      }
+    },
+    {
+      "seconds": 42.6547368708998,
+      "forward": {
+        "calls": {
+          "image": 25,
+          "text": 1
+        },
+        "gpu_seconds": {
+          "image": 1.5009218521118164,
+          "text": 0.006562975883483887
+        }
+      },
+      "rss_peak_bytes": 2140856320,
+      "device_used_peak_bytes": 19198050304,
+      "torch_allocated_peak_bytes": 1698467840,
+      "torch_reserved_peak_bytes": 1847590912,
+      "features": {
+        "encoder": {
+          "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+          "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+        },
+        "batch_size": 8,
+        "encoded_vectors": {
+          "image": 200,
+          "text": 5
+        },
+        "cache_hits": {
+          "image": 0,
+          "text": 0
+        },
+        "encoder_calls": {
+          "image_batch": 13,
+          "image_single": 0,
+          "text_batch": 1,
+          "text_single": 0
+        },
+        "timings": {
+          "identity_seconds": 0.5491081345826387,
+          "hash_seconds": 9.80874996073544,
+          "cache_seconds": 0.17482919339090586,
+          "encoder_seconds": 32.07677753549069
+        },
+        "model_metrics": {
+          "image_decode_seconds": 41.24535706453025,
+          "image_preprocess_seconds": 16.506383404135704,
+          "image_transfer_seconds": 0.5065872082486749,
+          "image_forward_calls": 25,
+          "image_forward_seconds": 1.507107675075531,
+          "image_postprocess_seconds": 0.009261831641197205,
+          "text_preprocess_seconds": 0.0024872208014130592,
+          "text_forward_calls": 1,
+          "text_forward_seconds": 0.0068415021523833275,
+          "text_postprocess_seconds": 0.0002253251150250435
+        },
+        "image_errors": {},
+        "text_errors": {}
+      },
+      "repeat_min_cosine": {
+        "images": 1.0,
+        "texts": 1.0
+      }
+    }
+  ],
+  "pipeline_runs": [
+    {
+      "seconds": 181.18057803064585,
+      "forward": {
+        "calls": {
+          "image": 22,
+          "text": 0
+        },
+        "gpu_seconds": {
+          "image": 1.2016567649841308,
+          "text": 0.0
+        }
+      },
+      "rss_peak_bytes": 3516821504,
+      "device_used_peak_bytes": 20452147200,
+      "torch_allocated_peak_bytes": 1698467840,
+      "torch_reserved_peak_bytes": 1847590912,
+      "decisions_sha256": "99b23e27bee3aa1632ea3dd5bb5abcc8e5710aa891a01587ca2bee2c80a83265",
+      "quality_sha256": "b53dc5278e014e2b987501da2cd101c3d5a78c08f5cdd2655add8811a92a1cf9",
+      "total_input": 200,
+      "kept": 154,
+      "errors": 0,
+      "face_errors": [],
+      "stage_timings": {
+        "dedup_seconds": 51.14891638979316,
+        "scene_features_seconds": 34.67034192383289,
+        "recognition_and_copy_seconds": 95.00734652578831,
+        "before_report_seconds": 181.15526240039617
+      },
+      "features_by_directory": {
+        "a093afcea140": {
+          "encoder": {
+            "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+            "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+          },
+          "batch_size": 8,
+          "encoded_vectors": {
+            "image": 2,
+            "text": 0
+          },
+          "cache_hits": {
+            "image": 0,
+            "text": 0
+          },
+          "encoder_calls": {
+            "image_batch": 1,
+            "image_single": 0,
+            "text_batch": 0,
+            "text_single": 0
+          },
+          "timings": {
+            "identity_seconds": 0.528424484655261,
+            "hash_seconds": 0.025235465727746487,
+            "cache_seconds": 0.0018028626218438148,
+            "encoder_seconds": 0.23269480001181364
+          },
+          "model_metrics": {
+            "image_decode_seconds": 0.24924945458769798,
+            "image_preprocess_seconds": 0.1725119613111019,
+            "image_transfer_seconds": 0.0015269424766302109,
+            "image_forward_calls": 1,
+            "image_forward_seconds": 0.018629333935678005,
+            "image_postprocess_seconds": 0.0002647591754794121,
+            "text_preprocess_seconds": 0.0,
+            "text_forward_calls": 0,
+            "text_forward_seconds": 0.0,
+            "text_postprocess_seconds": 0.0
+          },
+          "image_errors": {},
+          "text_errors": {}
+        },
+        "f06c56f094a9": {
+          "encoder": {
+            "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+            "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+          },
+          "batch_size": 8,
+          "encoded_vectors": {
+            "image": 31,
+            "text": 0
+          },
+          "cache_hits": {
+            "image": 0,
+            "text": 0
+          },
+          "encoder_calls": {
+            "image_batch": 2,
+            "image_single": 0,
+            "text_batch": 0,
+            "text_single": 0
+          },
+          "timings": {
+            "identity_seconds": 0.6496636345982552,
+            "hash_seconds": 1.0273191034793854,
+            "cache_seconds": 0.026162823662161827,
+            "encoder_seconds": 3.9720627842471004
+          },
+          "model_metrics": {
+            "image_decode_seconds": 5.532925810664892,
+            "image_preprocess_seconds": 2.0642205895856023,
+            "image_transfer_seconds": 0.06917382683604956,
+            "image_forward_calls": 4,
+            "image_forward_seconds": 0.23690644558519125,
+            "image_postprocess_seconds": 0.0014421818777918816,
+            "text_preprocess_seconds": 0.0,
+            "text_forward_calls": 0,
+            "text_forward_seconds": 0.0,
+            "text_postprocess_seconds": 0.0
+          },
+          "image_errors": {},
+          "text_errors": {}
+        },
+        "404a5e376ee5": {
+          "encoder": {
+            "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+            "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+          },
+          "batch_size": 8,
+          "encoded_vectors": {
+            "image": 9,
+            "text": 0
+          },
+          "cache_hits": {
+            "image": 0,
+            "text": 0
+          },
+          "encoder_calls": {
+            "image_batch": 1,
+            "image_single": 0,
+            "text_batch": 0,
+            "text_single": 0
+          },
+          "timings": {
+            "identity_seconds": 0.5047376556321979,
+            "hash_seconds": 0.4962211446836591,
+            "cache_seconds": 0.007581289857625961,
+            "encoder_seconds": 1.5440901033580303
+          },
+          "model_metrics": {
+            "image_decode_seconds": 2.0338335167616606,
+            "image_preprocess_seconds": 0.7355257458984852,
+            "image_transfer_seconds": 0.016628658398985863,
+            "image_forward_calls": 2,
+            "image_forward_seconds": 0.07827114779502153,
+            "image_postprocess_seconds": 0.0007255151867866516,
+            "text_preprocess_seconds": 0.0,
+            "text_forward_calls": 0,
+            "text_forward_seconds": 0.0,
+            "text_postprocess_seconds": 0.0
+          },
+          "image_errors": {},
+          "text_errors": {}
+        },
+        "2c722183b1c2": {
+          "encoder": {
+            "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+            "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+          },
+          "batch_size": 8,
+          "encoded_vectors": {
+            "image": 40,
+            "text": 0
+          },
+          "cache_hits": {
+            "image": 0,
+            "text": 0
+          },
+          "encoder_calls": {
+            "image_batch": 3,
+            "image_single": 0,
+            "text_batch": 0,
+            "text_single": 0
+          },
+          "timings": {
+            "identity_seconds": 0.5457576904445887,
+            "hash_seconds": 1.7888607466593385,
+            "cache_seconds": 0.033856662921607494,
+            "encoder_seconds": 4.927821516990662
+          },
+          "model_metrics": {
+            "image_decode_seconds": 6.326331360265613,
+            "image_preprocess_seconds": 2.3156831925734878,
+            "image_transfer_seconds": 0.08366053830832243,
+            "image_forward_calls": 5,
+            "image_forward_seconds": 0.30142147559672594,
+            "image_postprocess_seconds": 0.0019802646711468697,
+            "text_preprocess_seconds": 0.0,
+            "text_forward_calls": 0,
+            "text_forward_seconds": 0.0,
+            "text_postprocess_seconds": 0.0
+          },
+          "image_errors": {},
+          "text_errors": {}
+        },
+        "347a44705f7c": {
+          "encoder": {
+            "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+            "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+          },
+          "batch_size": 8,
+          "encoded_vectors": {
+            "image": 8,
+            "text": 0
+          },
+          "cache_hits": {
+            "image": 0,
+            "text": 0
+          },
+          "encoder_calls": {
+            "image_batch": 1,
+            "image_single": 0,
+            "text_batch": 0,
+            "text_single": 0
+          },
+          "timings": {
+            "identity_seconds": 0.5288449451327324,
+            "hash_seconds": 0.13851866032928228,
+            "cache_seconds": 0.006236676126718521,
+            "encoder_seconds": 1.038336475379765
+          },
+          "model_metrics": {
+            "image_decode_seconds": 1.1761825028806925,
+            "image_preprocess_seconds": 0.7336177695542574,
+            "image_transfer_seconds": 0.007690238766372204,
+            "image_forward_calls": 1,
+            "image_forward_seconds": 0.060636043548583984,
+            "image_postprocess_seconds": 0.00037964433431625366,
+            "text_preprocess_seconds": 0.0,
+            "text_forward_calls": 0,
+            "text_forward_seconds": 0.0,
+            "text_postprocess_seconds": 0.0
+          },
+          "image_errors": {},
+          "text_errors": {}
+        },
+        "b2ade129ce0f": {
+          "encoder": {
+            "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+            "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+          },
+          "batch_size": 8,
+          "encoded_vectors": {
+            "image": 11,
+            "text": 0
+          },
+          "cache_hits": {
+            "image": 0,
+            "text": 0
+          },
+          "encoder_calls": {
+            "image_batch": 1,
+            "image_single": 0,
+            "text_batch": 0,
+            "text_single": 0
+          },
+          "timings": {
+            "identity_seconds": 0.696118101477623,
+            "hash_seconds": 0.5493660783395171,
+            "cache_seconds": 0.010121445171535015,
+            "encoder_seconds": 1.5902383644133806
+          },
+          "model_metrics": {
+            "image_decode_seconds": 2.18261905759573,
+            "image_preprocess_seconds": 0.62679154984653,
+            "image_transfer_seconds": 0.024336538277566433,
+            "image_forward_calls": 2,
+            "image_forward_seconds": 0.08660324104130268,
+            "image_postprocess_seconds": 0.0008368976414203644,
+            "text_preprocess_seconds": 0.0,
+            "text_forward_calls": 0,
+            "text_forward_seconds": 0.0,
+            "text_postprocess_seconds": 0.0
+          },
+          "image_errors": {},
+          "text_errors": {}
+        },
+        "a46c9f500244": {
+          "encoder": {
+            "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+            "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+          },
+          "batch_size": 8,
+          "encoded_vectors": {
+            "image": 29,
+            "text": 0
+          },
+          "cache_hits": {
+            "image": 0,
+            "text": 0
+          },
+          "encoder_calls": {
+            "image_batch": 2,
+            "image_single": 0,
+            "text_batch": 0,
+            "text_single": 0
+          },
+          "timings": {
+            "identity_seconds": 0.5613013543188572,
+            "hash_seconds": 1.6270939707756042,
+            "cache_seconds": 0.026047813706099987,
+            "encoder_seconds": 5.415711655281484
+          },
+          "model_metrics": {
+            "image_decode_seconds": 7.152030193246901,
+            "image_preprocess_seconds": 2.9439685931429267,
+            "image_transfer_seconds": 0.0846710866317153,
+            "image_forward_calls": 4,
+            "image_forward_seconds": 0.22295981645584106,
+            "image_postprocess_seconds": 0.00174760352820158,
+            "text_preprocess_seconds": 0.0,
+            "text_forward_calls": 0,
+            "text_forward_seconds": 0.0,
+            "text_postprocess_seconds": 0.0
+          },
+          "image_errors": {},
+          "text_errors": {}
+        },
+        "2d4392797a3e": {
+          "encoder": {
+            "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+            "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+          },
+          "batch_size": 8,
+          "encoded_vectors": {
+            "image": 24,
+            "text": 0
+          },
+          "cache_hits": {
+            "image": 0,
+            "text": 0
+          },
+          "encoder_calls": {
+            "image_batch": 2,
+            "image_single": 0,
+            "text_batch": 0,
+            "text_single": 0
+          },
+          "timings": {
+            "identity_seconds": 0.5487003559246659,
+            "hash_seconds": 1.409226719290018,
+            "cache_seconds": 0.022531195543706417,
+            "encoder_seconds": 4.151918015442789
+          },
+          "model_metrics": {
+            "image_decode_seconds": 5.431295422837138,
+            "image_preprocess_seconds": 2.102356618270278,
+            "image_transfer_seconds": 0.047284433618187904,
+            "image_forward_calls": 3,
+            "image_forward_seconds": 0.20245665963739157,
+            "image_postprocess_seconds": 0.0011596102267503738,
+            "text_preprocess_seconds": 0.0,
+            "text_forward_calls": 0,
+            "text_forward_seconds": 0.0,
+            "text_postprocess_seconds": 0.0
+          },
+          "image_errors": {},
+          "text_errors": {}
+        }
+      },
+      "feature_errors": {}
+    },
+    {
+      "seconds": 136.85555822774768,
+      "forward": {
+        "calls": {
+          "image": 22,
+          "text": 0
+        },
+        "gpu_seconds": {
+          "image": 1.1838082914352417,
+          "text": 0.0
+        }
+      },
+      "rss_peak_bytes": 3468541952,
+      "device_used_peak_bytes": 21525889024,
+      "torch_allocated_peak_bytes": 1698467840,
+      "torch_reserved_peak_bytes": 1847590912,
+      "decisions_sha256": "99b23e27bee3aa1632ea3dd5bb5abcc8e5710aa891a01587ca2bee2c80a83265",
+      "quality_sha256": "b53dc5278e014e2b987501da2cd101c3d5a78c08f5cdd2655add8811a92a1cf9",
+      "total_input": 200,
+      "kept": 154,
+      "errors": 0,
+      "face_errors": [],
+      "stage_timings": {
+        "dedup_seconds": 46.252100826241076,
+        "scene_features_seconds": 33.819765474647284,
+        "recognition_and_copy_seconds": 56.52417197544128,
+        "before_report_seconds": 136.83136758301407
+      },
+      "features_by_directory": {
+        "a093afcea140": {
+          "encoder": {
+            "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+            "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+          },
+          "batch_size": 8,
+          "encoded_vectors": {
+            "image": 2,
+            "text": 0
+          },
+          "cache_hits": {
+            "image": 0,
+            "text": 0
+          },
+          "encoder_calls": {
+            "image_batch": 1,
+            "image_single": 0,
+            "text_batch": 0,
+            "text_single": 0
+          },
+          "timings": {
+            "identity_seconds": 0.5520357908681035,
+            "hash_seconds": 0.024331440217792988,
+            "cache_seconds": 0.0018265647813677788,
+            "encoder_seconds": 0.2627066718414426
+          },
+          "model_metrics": {
+            "image_decode_seconds": 0.30031610932201147,
+            "image_preprocess_seconds": 0.17427339870482683,
+            "image_transfer_seconds": 0.0024687210097908974,
+            "image_forward_calls": 1,
+            "image_forward_seconds": 0.01733473129570484,
+            "image_postprocess_seconds": 0.00029772426933050156,
+            "text_preprocess_seconds": 0.0,
+            "text_forward_calls": 0,
+            "text_forward_seconds": 0.0,
+            "text_postprocess_seconds": 0.0
+          },
+          "image_errors": {},
+          "text_errors": {}
+        },
+        "f06c56f094a9": {
+          "encoder": {
+            "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+            "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+          },
+          "batch_size": 8,
+          "encoded_vectors": {
+            "image": 31,
+            "text": 0
+          },
+          "cache_hits": {
+            "image": 0,
+            "text": 0
+          },
+          "encoder_calls": {
+            "image_batch": 2,
+            "image_single": 0,
+            "text_batch": 0,
+            "text_single": 0
+          },
+          "timings": {
+            "identity_seconds": 0.5387287959456444,
+            "hash_seconds": 0.9893638826906681,
+            "cache_seconds": 0.023976638913154602,
+            "encoder_seconds": 3.742124074138701
+          },
+          "model_metrics": {
+            "image_decode_seconds": 5.101421180181205,
+            "image_preprocess_seconds": 2.0470705833286047,
+            "image_transfer_seconds": 0.05031558219343424,
+            "image_forward_calls": 4,
+            "image_forward_seconds": 0.23418480809777975,
+            "image_postprocess_seconds": 0.00147200096398592,
+            "text_preprocess_seconds": 0.0,
+            "text_forward_calls": 0,
+            "text_forward_seconds": 0.0,
+            "text_postprocess_seconds": 0.0
+          },
+          "image_errors": {},
+          "text_errors": {}
+        },
+        "404a5e376ee5": {
+          "encoder": {
+            "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+            "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+          },
+          "batch_size": 8,
+          "encoded_vectors": {
+            "image": 9,
+            "text": 0
+          },
+          "cache_hits": {
+            "image": 0,
+            "text": 0
+          },
+          "encoder_calls": {
+            "image_batch": 1,
+            "image_single": 0,
+            "text_batch": 0,
+            "text_single": 0
+          },
+          "timings": {
+            "identity_seconds": 0.5837690802291036,
+            "hash_seconds": 0.4904315769672394,
+            "cache_seconds": 0.007777702994644642,
+            "encoder_seconds": 1.4850437734276056
+          },
+          "model_metrics": {
+            "image_decode_seconds": 1.913421269506216,
+            "image_preprocess_seconds": 0.7211665734648705,
+            "image_transfer_seconds": 0.01582454238086939,
+            "image_forward_calls": 2,
+            "image_forward_seconds": 0.07051884196698666,
+            "image_postprocess_seconds": 0.0007111998274922371,
+            "text_preprocess_seconds": 0.0,
+            "text_forward_calls": 0,
+            "text_forward_seconds": 0.0,
+            "text_postprocess_seconds": 0.0
+          },
+          "image_errors": {},
+          "text_errors": {}
+        },
+        "2c722183b1c2": {
+          "encoder": {
+            "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+            "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+          },
+          "batch_size": 8,
+          "encoded_vectors": {
+            "image": 40,
+            "text": 0
+          },
+          "cache_hits": {
+            "image": 0,
+            "text": 0
+          },
+          "encoder_calls": {
+            "image_batch": 3,
+            "image_single": 0,
+            "text_batch": 0,
+            "text_single": 0
+          },
+          "timings": {
+            "identity_seconds": 0.5296994084492326,
+            "hash_seconds": 1.783738342113793,
+            "cache_seconds": 0.044524239376187325,
+            "encoder_seconds": 4.713876527734101
+          },
+          "model_metrics": {
+            "image_decode_seconds": 5.994593522511423,
+            "image_preprocess_seconds": 2.2639709431678057,
+            "image_transfer_seconds": 0.07061125990003347,
+            "image_forward_calls": 5,
+            "image_forward_seconds": 0.3009895430877805,
+            "image_postprocess_seconds": 0.001754152588546276,
+            "text_preprocess_seconds": 0.0,
+            "text_forward_calls": 0,
+            "text_forward_seconds": 0.0,
+            "text_postprocess_seconds": 0.0
+          },
+          "image_errors": {},
+          "text_errors": {}
+        },
+        "347a44705f7c": {
+          "encoder": {
+            "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+            "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+          },
+          "batch_size": 8,
+          "encoded_vectors": {
+            "image": 8,
+            "text": 0
+          },
+          "cache_hits": {
+            "image": 0,
+            "text": 0
+          },
+          "encoder_calls": {
+            "image_batch": 1,
+            "image_single": 0,
+            "text_batch": 0,
+            "text_single": 0
+          },
+          "timings": {
+            "identity_seconds": 0.5826487559825182,
+            "hash_seconds": 0.1410319283604622,
+            "cache_seconds": 0.005920066498219967,
+            "encoder_seconds": 0.920585161074996
+          },
+          "model_metrics": {
+            "image_decode_seconds": 0.9889924805611372,
+            "image_preprocess_seconds": 0.7040745168924332,
+            "image_transfer_seconds": 0.006893993355333805,
+            "image_forward_calls": 1,
+            "image_forward_seconds": 0.06037528160959482,
+            "image_postprocess_seconds": 0.00054949801415205,
+            "text_preprocess_seconds": 0.0,
+            "text_forward_calls": 0,
+            "text_forward_seconds": 0.0,
+            "text_postprocess_seconds": 0.0
+          },
+          "image_errors": {},
+          "text_errors": {}
+        },
+        "b2ade129ce0f": {
+          "encoder": {
+            "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+            "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+          },
+          "batch_size": 8,
+          "encoded_vectors": {
+            "image": 11,
+            "text": 0
+          },
+          "cache_hits": {
+            "image": 0,
+            "text": 0
+          },
+          "encoder_calls": {
+            "image_batch": 1,
+            "image_single": 0,
+            "text_batch": 0,
+            "text_single": 0
+          },
+          "timings": {
+            "identity_seconds": 0.5483083194121718,
+            "hash_seconds": 0.5612456854432821,
+            "cache_seconds": 0.011262412182986736,
+            "encoder_seconds": 1.5768747832626104
+          },
+          "model_metrics": {
+            "image_decode_seconds": 2.1848344914615154,
+            "image_preprocess_seconds": 0.6090820459648967,
+            "image_transfer_seconds": 0.022033662535250187,
+            "image_forward_calls": 2,
+            "image_forward_seconds": 0.08482691552489996,
+            "image_postprocess_seconds": 0.0007768590003252029,
+            "text_preprocess_seconds": 0.0,
+            "text_forward_calls": 0,
+            "text_forward_seconds": 0.0,
+            "text_postprocess_seconds": 0.0
+          },
+          "image_errors": {},
+          "text_errors": {}
+        },
+        "a46c9f500244": {
+          "encoder": {
+            "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+            "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+          },
+          "batch_size": 8,
+          "encoded_vectors": {
+            "image": 29,
+            "text": 0
+          },
+          "cache_hits": {
+            "image": 0,
+            "text": 0
+          },
+          "encoder_calls": {
+            "image_batch": 2,
+            "image_single": 0,
+            "text_batch": 0,
+            "text_single": 0
+          },
+          "timings": {
+            "identity_seconds": 0.5145772462710738,
+            "hash_seconds": 1.5978757310658693,
+            "cache_seconds": 0.023748954758048058,
+            "encoder_seconds": 5.412387702614069
+          },
+          "model_metrics": {
+            "image_decode_seconds": 7.11855942197144,
+            "image_preprocess_seconds": 2.976210119202733,
+            "image_transfer_seconds": 0.0841479767113924,
+            "image_forward_calls": 4,
+            "image_forward_seconds": 0.22003672365099192,
+            "image_postprocess_seconds": 0.0016494151204824448,
+            "text_preprocess_seconds": 0.0,
+            "text_forward_calls": 0,
+            "text_forward_seconds": 0.0,
+            "text_postprocess_seconds": 0.0
+          },
+          "image_errors": {},
+          "text_errors": {}
+        },
+        "2d4392797a3e": {
+          "encoder": {
+            "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+            "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+          },
+          "batch_size": 8,
+          "encoded_vectors": {
+            "image": 24,
+            "text": 0
+          },
+          "cache_hits": {
+            "image": 0,
+            "text": 0
+          },
+          "encoder_calls": {
+            "image_batch": 2,
+            "image_single": 0,
+            "text_batch": 0,
+            "text_single": 0
+          },
+          "timings": {
+            "identity_seconds": 0.5431521805003285,
+            "hash_seconds": 1.3375863898545504,
+            "cache_seconds": 0.12254539970308542,
+            "encoder_seconds": 4.111647658981383
+          },
+          "model_metrics": {
+            "image_decode_seconds": 5.349929348565638,
+            "image_preprocess_seconds": 2.07834751624614,
+            "image_transfer_seconds": 0.04803752060979605,
+            "image_forward_calls": 3,
+            "image_forward_seconds": 0.20121450070291758,
+            "image_postprocess_seconds": 0.0011802874505519867,
+            "text_preprocess_seconds": 0.0,
+            "text_forward_calls": 0,
+            "text_forward_seconds": 0.0,
+            "text_postprocess_seconds": 0.0
+          },
+          "image_errors": {},
+          "text_errors": {}
+        }
+      },
+      "feature_errors": {}
+    },
+    {
+      "seconds": 122.08590232115239,
+      "forward": {
+        "calls": {
+          "image": 22,
+          "text": 0
+        },
+        "gpu_seconds": {
+          "image": 1.1664280376434326,
+          "text": 0.0
+        }
+      },
+      "rss_peak_bytes": 3496251392,
+      "device_used_peak_bytes": 21525889024,
+      "torch_allocated_peak_bytes": 1698467840,
+      "torch_reserved_peak_bytes": 1847590912,
+      "decisions_sha256": "99b23e27bee3aa1632ea3dd5bb5abcc8e5710aa891a01587ca2bee2c80a83265",
+      "quality_sha256": "b53dc5278e014e2b987501da2cd101c3d5a78c08f5cdd2655add8811a92a1cf9",
+      "total_input": 200,
+      "kept": 154,
+      "errors": 0,
+      "face_errors": [],
+      "stage_timings": {
+        "dedup_seconds": 35.34086658619344,
+        "scene_features_seconds": 33.277076301164925,
+        "recognition_and_copy_seconds": 53.209871323779225,
+        "before_report_seconds": 122.06251968629658
+      },
+      "features_by_directory": {
+        "a093afcea140": {
+          "encoder": {
+            "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+            "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+          },
+          "batch_size": 8,
+          "encoded_vectors": {
+            "image": 2,
+            "text": 0
+          },
+          "cache_hits": {
+            "image": 0,
+            "text": 0
+          },
+          "encoder_calls": {
+            "image_batch": 1,
+            "image_single": 0,
+            "text_batch": 0,
+            "text_single": 0
+          },
+          "timings": {
+            "identity_seconds": 0.517759227193892,
+            "hash_seconds": 0.024071473628282547,
+            "cache_seconds": 0.0015255771577358246,
+            "encoder_seconds": 0.23071254417300224
+          },
+          "model_metrics": {
+            "image_decode_seconds": 0.23961819615215063,
+            "image_preprocess_seconds": 0.1709821531549096,
+            "image_transfer_seconds": 0.0020625749602913857,
+            "image_forward_calls": 1,
+            "image_forward_seconds": 0.017053915187716484,
+            "image_postprocess_seconds": 0.00021965056657791138,
+            "text_preprocess_seconds": 0.0,
+            "text_forward_calls": 0,
+            "text_forward_seconds": 0.0,
+            "text_postprocess_seconds": 0.0
+          },
+          "image_errors": {},
+          "text_errors": {}
+        },
+        "f06c56f094a9": {
+          "encoder": {
+            "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+            "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+          },
+          "batch_size": 8,
+          "encoded_vectors": {
+            "image": 31,
+            "text": 0
+          },
+          "cache_hits": {
+            "image": 0,
+            "text": 0
+          },
+          "encoder_calls": {
+            "image_batch": 2,
+            "image_single": 0,
+            "text_batch": 0,
+            "text_single": 0
+          },
+          "timings": {
+            "identity_seconds": 0.5253709275275469,
+            "hash_seconds": 0.994057971984148,
+            "cache_seconds": 0.025795861147344112,
+            "encoder_seconds": 3.7685674419626594
+          },
+          "model_metrics": {
+            "image_decode_seconds": 5.155600440688431,
+            "image_preprocess_seconds": 2.040710786357522,
+            "image_transfer_seconds": 0.05799933522939682,
+            "image_forward_calls": 4,
+            "image_forward_seconds": 0.23554570693522692,
+            "image_postprocess_seconds": 0.0015502935275435448,
+            "text_preprocess_seconds": 0.0,
+            "text_forward_calls": 0,
+            "text_forward_seconds": 0.0,
+            "text_postprocess_seconds": 0.0
+          },
+          "image_errors": {},
+          "text_errors": {}
+        },
+        "404a5e376ee5": {
+          "encoder": {
+            "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+            "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+          },
+          "batch_size": 8,
+          "encoded_vectors": {
+            "image": 9,
+            "text": 0
+          },
+          "cache_hits": {
+            "image": 0,
+            "text": 0
+          },
+          "encoder_calls": {
+            "image_batch": 1,
+            "image_single": 0,
+            "text_batch": 0,
+            "text_single": 0
+          },
+          "timings": {
+            "identity_seconds": 0.5142509127035737,
+            "hash_seconds": 0.4927098071202636,
+            "cache_seconds": 0.007485930807888508,
+            "encoder_seconds": 1.4902076162397861
+          },
+          "model_metrics": {
+            "image_decode_seconds": 1.930944594554603,
+            "image_preprocess_seconds": 0.7455120459198952,
+            "image_transfer_seconds": 0.015100282616913319,
+            "image_forward_calls": 2,
+            "image_forward_seconds": 0.0709067340940237,
+            "image_postprocess_seconds": 0.000570450909435749,
+            "text_preprocess_seconds": 0.0,
+            "text_forward_calls": 0,
+            "text_forward_seconds": 0.0,
+            "text_postprocess_seconds": 0.0
+          },
+          "image_errors": {},
+          "text_errors": {}
+        },
+        "2c722183b1c2": {
+          "encoder": {
+            "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+            "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+          },
+          "batch_size": 8,
+          "encoded_vectors": {
+            "image": 40,
+            "text": 0
+          },
+          "cache_hits": {
+            "image": 0,
+            "text": 0
+          },
+          "encoder_calls": {
+            "image_batch": 3,
+            "image_single": 0,
+            "text_batch": 0,
+            "text_single": 0
+          },
+          "timings": {
+            "identity_seconds": 0.592438898049295,
+            "hash_seconds": 1.7720706211403012,
+            "cache_seconds": 0.03288097772747278,
+            "encoder_seconds": 4.738620470277965
+          },
+          "model_metrics": {
+            "image_decode_seconds": 6.0208184365183115,
+            "image_preprocess_seconds": 2.279368587769568,
+            "image_transfer_seconds": 0.057136304676532745,
+            "image_forward_calls": 5,
+            "image_forward_seconds": 0.30323526728898287,
+            "image_postprocess_seconds": 0.0019999509677290916,
+            "text_preprocess_seconds": 0.0,
+            "text_forward_calls": 0,
+            "text_forward_seconds": 0.0,
+            "text_postprocess_seconds": 0.0
+          },
+          "image_errors": {},
+          "text_errors": {}
+        },
+        "347a44705f7c": {
+          "encoder": {
+            "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+            "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+          },
+          "batch_size": 8,
+          "encoded_vectors": {
+            "image": 8,
+            "text": 0
+          },
+          "cache_hits": {
+            "image": 0,
+            "text": 0
+          },
+          "encoder_calls": {
+            "image_batch": 1,
+            "image_single": 0,
+            "text_batch": 0,
+            "text_single": 0
+          },
+          "timings": {
+            "identity_seconds": 0.5403073448687792,
+            "hash_seconds": 0.13984526600688696,
+            "cache_seconds": 0.006057574413716793,
+            "encoder_seconds": 0.981060897000134
+          },
+          "model_metrics": {
+            "image_decode_seconds": 1.0845078537240624,
+            "image_preprocess_seconds": 0.7315688449889421,
+            "image_transfer_seconds": 0.0063610440120100975,
+            "image_forward_calls": 1,
+            "image_forward_seconds": 0.06028429511934519,
+            "image_postprocess_seconds": 0.000618581660091877,
+            "text_preprocess_seconds": 0.0,
+            "text_forward_calls": 0,
+            "text_forward_seconds": 0.0,
+            "text_postprocess_seconds": 0.0
+          },
+          "image_errors": {},
+          "text_errors": {}
+        },
+        "b2ade129ce0f": {
+          "encoder": {
+            "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+            "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+          },
+          "batch_size": 8,
+          "encoded_vectors": {
+            "image": 11,
+            "text": 0
+          },
+          "cache_hits": {
+            "image": 0,
+            "text": 0
+          },
+          "encoder_calls": {
+            "image_batch": 1,
+            "image_single": 0,
+            "text_batch": 0,
+            "text_single": 0
+          },
+          "timings": {
+            "identity_seconds": 0.5217373073101044,
+            "hash_seconds": 0.5436360454186797,
+            "cache_seconds": 0.01767209731042385,
+            "encoder_seconds": 1.538108448497951
+          },
+          "model_metrics": {
+            "image_decode_seconds": 2.1159549951553345,
+            "image_preprocess_seconds": 0.6029698355123401,
+            "image_transfer_seconds": 0.022459072060883045,
+            "image_forward_calls": 2,
+            "image_forward_seconds": 0.08433935604989529,
+            "image_postprocess_seconds": 0.0005915174260735512,
+            "text_preprocess_seconds": 0.0,
+            "text_forward_calls": 0,
+            "text_forward_seconds": 0.0,
+            "text_postprocess_seconds": 0.0
+          },
+          "image_errors": {},
+          "text_errors": {}
+        },
+        "a46c9f500244": {
+          "encoder": {
+            "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+            "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+          },
+          "batch_size": 8,
+          "encoded_vectors": {
+            "image": 29,
+            "text": 0
+          },
+          "cache_hits": {
+            "image": 0,
+            "text": 0
+          },
+          "encoder_calls": {
+            "image_batch": 2,
+            "image_single": 0,
+            "text_batch": 0,
+            "text_single": 0
+          },
+          "timings": {
+            "identity_seconds": 0.5011355197057128,
+            "hash_seconds": 1.588243211619556,
+            "cache_seconds": 0.024587437510490417,
+            "encoder_seconds": 5.071201789192855
+          },
+          "model_metrics": {
+            "image_decode_seconds": 6.555587529204786,
+            "image_preprocess_seconds": 2.915768042206764,
+            "image_transfer_seconds": 0.08856829069554806,
+            "image_forward_calls": 4,
+            "image_forward_seconds": 0.21923099551349878,
+            "image_postprocess_seconds": 0.0014717504382133484,
+            "text_preprocess_seconds": 0.0,
+            "text_forward_calls": 0,
+            "text_forward_seconds": 0.0,
+            "text_postprocess_seconds": 0.0
+          },
+          "image_errors": {},
+          "text_errors": {}
+        },
+        "2d4392797a3e": {
+          "encoder": {
+            "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+            "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+          },
+          "batch_size": 8,
+          "encoded_vectors": {
+            "image": 24,
+            "text": 0
+          },
+          "cache_hits": {
+            "image": 0,
+            "text": 0
+          },
+          "encoder_calls": {
+            "image_batch": 2,
+            "image_single": 0,
+            "text_batch": 0,
+            "text_single": 0
+          },
+          "timings": {
+            "identity_seconds": 0.5258281463757157,
+            "hash_seconds": 1.37188489921391,
+            "cache_seconds": 0.02057403326034546,
+            "encoder_seconds": 4.121422855183482
+          },
+          "model_metrics": {
+            "image_decode_seconds": 5.335459642112255,
+            "image_preprocess_seconds": 2.096465226262808,
+            "image_transfer_seconds": 0.034093355759978294,
+            "image_forward_calls": 3,
+            "image_forward_seconds": 0.1809301981702447,
+            "image_postprocess_seconds": 0.0012837126851081848,
+            "text_preprocess_seconds": 0.0,
+            "text_forward_calls": 0,
+            "text_forward_seconds": 0.0,
+            "text_postprocess_seconds": 0.0
+          },
+          "image_errors": {},
+          "text_errors": {}
+        }
+      },
+      "feature_errors": {}
+    },
+    {
+      "seconds": 121.00405400060117,
+      "forward": {
+        "calls": {
+          "image": 22,
+          "text": 0
+        },
+        "gpu_seconds": {
+          "image": 1.1639077529907227,
+          "text": 0.0
+        }
+      },
+      "rss_peak_bytes": 3500400640,
+      "device_used_peak_bytes": 21525889024,
+      "torch_allocated_peak_bytes": 1698467840,
+      "torch_reserved_peak_bytes": 1847590912,
+      "decisions_sha256": "99b23e27bee3aa1632ea3dd5bb5abcc8e5710aa891a01587ca2bee2c80a83265",
+      "quality_sha256": "b53dc5278e014e2b987501da2cd101c3d5a78c08f5cdd2655add8811a92a1cf9",
+      "total_input": 200,
+      "kept": 154,
+      "errors": 0,
+      "face_errors": [],
+      "stage_timings": {
+        "dedup_seconds": 32.573278359137475,
+        "scene_features_seconds": 33.63638322148472,
+        "recognition_and_copy_seconds": 54.53090208303183,
+        "before_report_seconds": 120.9815442757681
+      },
+      "features_by_directory": {
+        "a093afcea140": {
+          "encoder": {
+            "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+            "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+          },
+          "batch_size": 8,
+          "encoded_vectors": {
+            "image": 2,
+            "text": 0
+          },
+          "cache_hits": {
+            "image": 0,
+            "text": 0
+          },
+          "encoder_calls": {
+            "image_batch": 1,
+            "image_single": 0,
+            "text_batch": 0,
+            "text_single": 0
+          },
+          "timings": {
+            "identity_seconds": 0.5228710854426026,
+            "hash_seconds": 0.024404950439929962,
+            "cache_seconds": 0.0018068533390760422,
+            "encoder_seconds": 0.26172922272235155
+          },
+          "model_metrics": {
+            "image_decode_seconds": 0.3036547154188156,
+            "image_preprocess_seconds": 0.17283006198704243,
+            "image_transfer_seconds": 0.0020683463662862778,
+            "image_forward_calls": 1,
+            "image_forward_seconds": 0.017235541716217995,
+            "image_postprocess_seconds": 0.00024032127112150192,
+            "text_preprocess_seconds": 0.0,
+            "text_forward_calls": 0,
+            "text_forward_seconds": 0.0,
+            "text_postprocess_seconds": 0.0
+          },
+          "image_errors": {},
+          "text_errors": {}
+        },
+        "f06c56f094a9": {
+          "encoder": {
+            "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+            "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+          },
+          "batch_size": 8,
+          "encoded_vectors": {
+            "image": 31,
+            "text": 0
+          },
+          "cache_hits": {
+            "image": 0,
+            "text": 0
+          },
+          "encoder_calls": {
+            "image_batch": 2,
+            "image_single": 0,
+            "text_batch": 0,
+            "text_single": 0
+          },
+          "timings": {
+            "identity_seconds": 0.5681192921474576,
+            "hash_seconds": 1.0046561937779188,
+            "cache_seconds": 0.025791502557694912,
+            "encoder_seconds": 3.8039177423343062
+          },
+          "model_metrics": {
+            "image_decode_seconds": 5.162588803097606,
+            "image_preprocess_seconds": 2.0293293800204992,
+            "image_transfer_seconds": 0.060815718956291676,
+            "image_forward_calls": 4,
+            "image_forward_seconds": 0.2344651659950614,
+            "image_postprocess_seconds": 0.0014643268659710884,
+            "text_preprocess_seconds": 0.0,
+            "text_forward_calls": 0,
+            "text_forward_seconds": 0.0,
+            "text_postprocess_seconds": 0.0
+          },
+          "image_errors": {},
+          "text_errors": {}
+        },
+        "404a5e376ee5": {
+          "encoder": {
+            "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+            "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+          },
+          "batch_size": 8,
+          "encoded_vectors": {
+            "image": 9,
+            "text": 0
+          },
+          "cache_hits": {
+            "image": 0,
+            "text": 0
+          },
+          "encoder_calls": {
+            "image_batch": 1,
+            "image_single": 0,
+            "text_batch": 0,
+            "text_single": 0
+          },
+          "timings": {
+            "identity_seconds": 0.5063510118052363,
+            "hash_seconds": 0.49623499531298876,
+            "cache_seconds": 0.00776646938174963,
+            "encoder_seconds": 1.5049353893846273
+          },
+          "model_metrics": {
+            "image_decode_seconds": 1.9429848650470376,
+            "image_preprocess_seconds": 0.7071505738422275,
+            "image_transfer_seconds": 0.01546481903642416,
+            "image_forward_calls": 2,
+            "image_forward_seconds": 0.07080460246652365,
+            "image_postprocess_seconds": 0.000540662556886673,
+            "text_preprocess_seconds": 0.0,
+            "text_forward_calls": 0,
+            "text_forward_seconds": 0.0,
+            "text_postprocess_seconds": 0.0
+          },
+          "image_errors": {},
+          "text_errors": {}
+        },
+        "2c722183b1c2": {
+          "encoder": {
+            "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+            "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+          },
+          "batch_size": 8,
+          "encoded_vectors": {
+            "image": 40,
+            "text": 0
+          },
+          "cache_hits": {
+            "image": 0,
+            "text": 0
+          },
+          "encoder_calls": {
+            "image_batch": 3,
+            "image_single": 0,
+            "text_batch": 0,
+            "text_single": 0
+          },
+          "timings": {
+            "identity_seconds": 0.5315330931916833,
+            "hash_seconds": 1.7579323220998049,
+            "cache_seconds": 0.033073837868869305,
+            "encoder_seconds": 4.769943108782172
+          },
+          "model_metrics": {
+            "image_decode_seconds": 6.051813173107803,
+            "image_preprocess_seconds": 2.297151683829725,
+            "image_transfer_seconds": 0.05834332201629877,
+            "image_forward_calls": 5,
+            "image_forward_seconds": 0.30096421856433153,
+            "image_postprocess_seconds": 0.0017959075048565865,
+            "text_preprocess_seconds": 0.0,
+            "text_forward_calls": 0,
+            "text_forward_seconds": 0.0,
+            "text_postprocess_seconds": 0.0
+          },
+          "image_errors": {},
+          "text_errors": {}
+        },
+        "347a44705f7c": {
+          "encoder": {
+            "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+            "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+          },
+          "batch_size": 8,
+          "encoded_vectors": {
+            "image": 8,
+            "text": 0
+          },
+          "cache_hits": {
+            "image": 0,
+            "text": 0
+          },
+          "encoder_calls": {
+            "image_batch": 1,
+            "image_single": 0,
+            "text_batch": 0,
+            "text_single": 0
+          },
+          "timings": {
+            "identity_seconds": 0.5113809350878,
+            "hash_seconds": 0.13924438413232565,
+            "cache_seconds": 0.006338051520287991,
+            "encoder_seconds": 1.0370621345937252
+          },
+          "model_metrics": {
+            "image_decode_seconds": 1.1712129460647702,
+            "image_preprocess_seconds": 0.7364576179534197,
+            "image_transfer_seconds": 0.006193371489644051,
+            "image_forward_calls": 1,
+            "image_forward_seconds": 0.06047223787754774,
+            "image_postprocess_seconds": 0.0005723834037780762,
+            "text_preprocess_seconds": 0.0,
+            "text_forward_calls": 0,
+            "text_forward_seconds": 0.0,
+            "text_postprocess_seconds": 0.0
+          },
+          "image_errors": {},
+          "text_errors": {}
+        },
+        "b2ade129ce0f": {
+          "encoder": {
+            "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+            "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+          },
+          "batch_size": 8,
+          "encoded_vectors": {
+            "image": 11,
+            "text": 0
+          },
+          "cache_hits": {
+            "image": 0,
+            "text": 0
+          },
+          "encoder_calls": {
+            "image_batch": 1,
+            "image_single": 0,
+            "text_batch": 0,
+            "text_single": 0
+          },
+          "timings": {
+            "identity_seconds": 0.5868935808539391,
+            "hash_seconds": 0.5439862878993154,
+            "cache_seconds": 0.00925249233841896,
+            "encoder_seconds": 1.5297437980771065
+          },
+          "model_metrics": {
+            "image_decode_seconds": 2.1128320759162307,
+            "image_preprocess_seconds": 0.6013474259525537,
+            "image_transfer_seconds": 0.02222833875566721,
+            "image_forward_calls": 2,
+            "image_forward_seconds": 0.08404062036424875,
+            "image_postprocess_seconds": 0.0005587302148342133,
+            "text_preprocess_seconds": 0.0,
+            "text_forward_calls": 0,
+            "text_forward_seconds": 0.0,
+            "text_postprocess_seconds": 0.0
+          },
+          "image_errors": {},
+          "text_errors": {}
+        },
+        "a46c9f500244": {
+          "encoder": {
+            "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+            "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+          },
+          "batch_size": 8,
+          "encoded_vectors": {
+            "image": 29,
+            "text": 0
+          },
+          "cache_hits": {
+            "image": 0,
+            "text": 0
+          },
+          "encoder_calls": {
+            "image_batch": 2,
+            "image_single": 0,
+            "text_batch": 0,
+            "text_single": 0
+          },
+          "timings": {
+            "identity_seconds": 0.5104771349579096,
+            "hash_seconds": 1.608606836758554,
+            "cache_seconds": 0.02474376931786537,
+            "encoder_seconds": 5.173194577917457
+          },
+          "model_metrics": {
+            "image_decode_seconds": 6.630441874265671,
+            "image_preprocess_seconds": 2.927761672064662,
+            "image_transfer_seconds": 0.07018221449106932,
+            "image_forward_calls": 4,
+            "image_forward_seconds": 0.2203192226588726,
+            "image_postprocess_seconds": 0.0015537403523921967,
+            "text_preprocess_seconds": 0.0,
+            "text_forward_calls": 0,
+            "text_forward_seconds": 0.0,
+            "text_postprocess_seconds": 0.0
+          },
+          "image_errors": {},
+          "text_errors": {}
+        },
+        "2d4392797a3e": {
+          "encoder": {
+            "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+            "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+          },
+          "batch_size": 8,
+          "encoded_vectors": {
+            "image": 24,
+            "text": 0
+          },
+          "cache_hits": {
+            "image": 0,
+            "text": 0
+          },
+          "encoder_calls": {
+            "image_batch": 2,
+            "image_single": 0,
+            "text_batch": 0,
+            "text_single": 0
+          },
+          "timings": {
+            "identity_seconds": 0.58107028901577,
+            "hash_seconds": 1.3538963934406638,
+            "cache_seconds": 0.0203316118568182,
+            "encoder_seconds": 4.143722589127719
+          },
+          "model_metrics": {
+            "image_decode_seconds": 5.470982084050775,
+            "image_preprocess_seconds": 2.098913175985217,
+            "image_transfer_seconds": 0.0456325551494956,
+            "image_forward_calls": 3,
+            "image_forward_seconds": 0.18051652051508427,
+            "image_postprocess_seconds": 0.0012185955420136452,
+            "text_preprocess_seconds": 0.0,
+            "text_forward_calls": 0,
+            "text_forward_seconds": 0.0,
+            "text_postprocess_seconds": 0.0
+          },
+          "image_errors": {},
+          "text_errors": {}
+        }
+      },
+      "feature_errors": {}
+    },
+    {
+      "seconds": 122.83366112690419,
+      "forward": {
+        "calls": {
+          "image": 22,
+          "text": 0
+        },
+        "gpu_seconds": {
+          "image": 1.1620052814483643,
+          "text": 0.0
+        }
+      },
+      "rss_peak_bytes": 3552137216,
+      "device_used_peak_bytes": 21525889024,
+      "torch_allocated_peak_bytes": 1698467840,
+      "torch_reserved_peak_bytes": 1847590912,
+      "decisions_sha256": "99b23e27bee3aa1632ea3dd5bb5abcc8e5710aa891a01587ca2bee2c80a83265",
+      "quality_sha256": "b53dc5278e014e2b987501da2cd101c3d5a78c08f5cdd2655add8811a92a1cf9",
+      "total_input": 200,
+      "kept": 154,
+      "errors": 0,
+      "face_errors": [],
+      "stage_timings": {
+        "dedup_seconds": 34.25028611347079,
+        "scene_features_seconds": 33.73355418816209,
+        "recognition_and_copy_seconds": 54.594278471544385,
+        "before_report_seconds": 122.81096871662885
+      },
+      "features_by_directory": {
+        "a093afcea140": {
+          "encoder": {
+            "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+            "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+          },
+          "batch_size": 8,
+          "encoded_vectors": {
+            "image": 2,
+            "text": 0
+          },
+          "cache_hits": {
+            "image": 0,
+            "text": 0
+          },
+          "encoder_calls": {
+            "image_batch": 1,
+            "image_single": 0,
+            "text_batch": 0,
+            "text_single": 0
+          },
+          "timings": {
+            "identity_seconds": 0.5641829976812005,
+            "hash_seconds": 0.024346540682017803,
+            "cache_seconds": 0.0016710059717297554,
+            "encoder_seconds": 0.2699557114392519
+          },
+          "model_metrics": {
+            "image_decode_seconds": 0.25202128011733294,
+            "image_preprocess_seconds": 0.17494125198572874,
+            "image_transfer_seconds": 0.03515470772981644,
+            "image_forward_calls": 1,
+            "image_forward_seconds": 0.017576652579009533,
+            "image_postprocess_seconds": 0.00025716330856084824,
+            "text_preprocess_seconds": 0.0,
+            "text_forward_calls": 0,
+            "text_forward_seconds": 0.0,
+            "text_postprocess_seconds": 0.0
+          },
+          "image_errors": {},
+          "text_errors": {}
+        },
+        "f06c56f094a9": {
+          "encoder": {
+            "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+            "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+          },
+          "batch_size": 8,
+          "encoded_vectors": {
+            "image": 31,
+            "text": 0
+          },
+          "cache_hits": {
+            "image": 0,
+            "text": 0
+          },
+          "encoder_calls": {
+            "image_batch": 2,
+            "image_single": 0,
+            "text_batch": 0,
+            "text_single": 0
+          },
+          "timings": {
+            "identity_seconds": 0.5378878004848957,
+            "hash_seconds": 0.9927217913791537,
+            "cache_seconds": 0.02435655426234007,
+            "encoder_seconds": 3.949851591140032
+          },
+          "model_metrics": {
+            "image_decode_seconds": 5.413810702972114,
+            "image_preprocess_seconds": 2.0811354061588645,
+            "image_transfer_seconds": 0.06712684780359268,
+            "image_forward_calls": 4,
+            "image_forward_seconds": 0.23463451117277145,
+            "image_postprocess_seconds": 0.00129713024944067,
+            "text_preprocess_seconds": 0.0,
+            "text_forward_calls": 0,
+            "text_forward_seconds": 0.0,
+            "text_postprocess_seconds": 0.0
+          },
+          "image_errors": {},
+          "text_errors": {}
+        },
+        "404a5e376ee5": {
+          "encoder": {
+            "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+            "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+          },
+          "batch_size": 8,
+          "encoded_vectors": {
+            "image": 9,
+            "text": 0
+          },
+          "cache_hits": {
+            "image": 0,
+            "text": 0
+          },
+          "encoder_calls": {
+            "image_batch": 1,
+            "image_single": 0,
+            "text_batch": 0,
+            "text_single": 0
+          },
+          "timings": {
+            "identity_seconds": 0.5405240217223763,
+            "hash_seconds": 0.5021658223122358,
+            "cache_seconds": 0.007842029444873333,
+            "encoder_seconds": 1.4876633565872908
+          },
+          "model_metrics": {
+            "image_decode_seconds": 1.911722945049405,
+            "image_preprocess_seconds": 0.7253986820578575,
+            "image_transfer_seconds": 0.015319517813622952,
+            "image_forward_calls": 2,
+            "image_forward_seconds": 0.07019808050245047,
+            "image_postprocess_seconds": 0.0005642017349600792,
+            "text_preprocess_seconds": 0.0,
+            "text_forward_calls": 0,
+            "text_forward_seconds": 0.0,
+            "text_postprocess_seconds": 0.0
+          },
+          "image_errors": {},
+          "text_errors": {}
+        },
+        "2c722183b1c2": {
+          "encoder": {
+            "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+            "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+          },
+          "batch_size": 8,
+          "encoded_vectors": {
+            "image": 40,
+            "text": 0
+          },
+          "cache_hits": {
+            "image": 0,
+            "text": 0
+          },
+          "encoder_calls": {
+            "image_batch": 3,
+            "image_single": 0,
+            "text_batch": 0,
+            "text_single": 0
+          },
+          "timings": {
+            "identity_seconds": 0.53502999804914,
+            "hash_seconds": 1.7627251585945487,
+            "cache_seconds": 0.033945334143936634,
+            "encoder_seconds": 4.864701876416802
+          },
+          "model_metrics": {
+            "image_decode_seconds": 6.233682367950678,
+            "image_preprocess_seconds": 2.3298467360436916,
+            "image_transfer_seconds": 0.063715610653162,
+            "image_forward_calls": 5,
+            "image_forward_seconds": 0.3007101258262992,
+            "image_postprocess_seconds": 0.0020556803792715073,
+            "text_preprocess_seconds": 0.0,
+            "text_forward_calls": 0,
+            "text_forward_seconds": 0.0,
+            "text_postprocess_seconds": 0.0
+          },
+          "image_errors": {},
+          "text_errors": {}
+        },
+        "347a44705f7c": {
+          "encoder": {
+            "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+            "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+          },
+          "batch_size": 8,
+          "encoded_vectors": {
+            "image": 8,
+            "text": 0
+          },
+          "cache_hits": {
+            "image": 0,
+            "text": 0
+          },
+          "encoder_calls": {
+            "image_batch": 1,
+            "image_single": 0,
+            "text_batch": 0,
+            "text_single": 0
+          },
+          "timings": {
+            "identity_seconds": 0.5286045903339982,
+            "hash_seconds": 0.14022015780210495,
+            "cache_seconds": 0.005846255458891392,
+            "encoder_seconds": 0.9778151046484709
+          },
+          "model_metrics": {
+            "image_decode_seconds": 1.0946228727698326,
+            "image_preprocess_seconds": 0.7227115165442228,
+            "image_transfer_seconds": 0.00655753631144762,
+            "image_forward_calls": 1,
+            "image_forward_seconds": 0.060096913017332554,
+            "image_postprocess_seconds": 0.0003539472818374634,
+            "text_preprocess_seconds": 0.0,
+            "text_forward_calls": 0,
+            "text_forward_seconds": 0.0,
+            "text_postprocess_seconds": 0.0
+          },
+          "image_errors": {},
+          "text_errors": {}
+        },
+        "b2ade129ce0f": {
+          "encoder": {
+            "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+            "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+          },
+          "batch_size": 8,
+          "encoded_vectors": {
+            "image": 11,
+            "text": 0
+          },
+          "cache_hits": {
+            "image": 0,
+            "text": 0
+          },
+          "encoder_calls": {
+            "image_batch": 1,
+            "image_single": 0,
+            "text_batch": 0,
+            "text_single": 0
+          },
+          "timings": {
+            "identity_seconds": 0.5604300647974014,
+            "hash_seconds": 0.5453784894198179,
+            "cache_seconds": 0.009162800386548042,
+            "encoder_seconds": 1.60817348677665
+          },
+          "model_metrics": {
+            "image_decode_seconds": 2.180221190676093,
+            "image_preprocess_seconds": 0.6369221797212958,
+            "image_transfer_seconds": 0.028464006260037422,
+            "image_forward_calls": 2,
+            "image_forward_seconds": 0.08367519918829203,
+            "image_postprocess_seconds": 0.0006120447069406509,
+            "text_preprocess_seconds": 0.0,
+            "text_forward_calls": 0,
+            "text_forward_seconds": 0.0,
+            "text_postprocess_seconds": 0.0
+          },
+          "image_errors": {},
+          "text_errors": {}
+        },
+        "a46c9f500244": {
+          "encoder": {
+            "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+            "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+          },
+          "batch_size": 8,
+          "encoded_vectors": {
+            "image": 29,
+            "text": 0
+          },
+          "cache_hits": {
+            "image": 0,
+            "text": 0
+          },
+          "encoder_calls": {
+            "image_batch": 2,
+            "image_single": 0,
+            "text_batch": 0,
+            "text_single": 0
+          },
+          "timings": {
+            "identity_seconds": 0.5078968526795506,
+            "hash_seconds": 1.5938509507104754,
+            "cache_seconds": 0.06523810420185328,
+            "encoder_seconds": 5.096617164090276
+          },
+          "model_metrics": {
+            "image_decode_seconds": 6.55622801464051,
+            "image_preprocess_seconds": 2.9085842948406935,
+            "image_transfer_seconds": 0.07222609408199787,
+            "image_forward_calls": 4,
+            "image_forward_seconds": 0.21959078032523394,
+            "image_postprocess_seconds": 0.0014128247275948524,
+            "text_preprocess_seconds": 0.0,
+            "text_forward_calls": 0,
+            "text_forward_seconds": 0.0,
+            "text_postprocess_seconds": 0.0
+          },
+          "image_errors": {},
+          "text_errors": {}
+        },
+        "2d4392797a3e": {
+          "encoder": {
+            "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+            "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+          },
+          "batch_size": 8,
+          "encoded_vectors": {
+            "image": 24,
+            "text": 0
+          },
+          "cache_hits": {
+            "image": 0,
+            "text": 0
+          },
+          "encoder_calls": {
+            "image_batch": 2,
+            "image_single": 0,
+            "text_batch": 0,
+            "text_single": 0
+          },
+          "timings": {
+            "identity_seconds": 0.5269905738532543,
+            "hash_seconds": 1.3385232025757432,
+            "cache_seconds": 0.020519080571830273,
+            "encoder_seconds": 4.074734544381499
+          },
+          "model_metrics": {
+            "image_decode_seconds": 5.295712414197624,
+            "image_preprocess_seconds": 2.1141911577433348,
+            "image_transfer_seconds": 0.03441920317709446,
+            "image_forward_calls": 3,
+            "image_forward_seconds": 0.18067806772887707,
+            "image_postprocess_seconds": 0.0010682083666324615,
+            "text_preprocess_seconds": 0.0,
+            "text_forward_calls": 0,
+            "text_forward_seconds": 0.0,
+            "text_postprocess_seconds": 0.0
+          },
+          "image_errors": {},
+          "text_errors": {}
+        }
+      },
+      "feature_errors": {}
+    }
+  ],
+  "load_seconds": 3.460085114464164,
+  "signature_seconds": 4.55300307366997,
+  "environment": {
+    "device": "cuda:0",
+    "gpu": "NVIDIA GeForce RTX 3090",
+    "torch": "2.9.0+cu130",
+    "transformers": "5.15.0",
+    "pillow": "12.3.0",
+    "numpy": "2.2.6",
+    "cpu_count": 32,
+    "torch_cpu_threads": 16,
+    "decode_workers": 2,
+    "batch_size": 8,
+    "gpu_before": {
+      "device": "index, uuid, driver_version, memory.total [MiB], memory.used [MiB], utilization.gpu [%]\n1, GPU-d1ac7cb4-e2db-8963-1f69-40e675dd3af5, 580.126.09, 24576 MiB, 16041 MiB, 2 %",
+      "processes": "gpu_uuid, pid, process_name, used_gpu_memory [MiB]\nGPU-d1ac7cb4-e2db-8963-1f69-40e675dd3af5, 16354, /opt/conda/bin/python, 878 MiB\nGPU-d1ac7cb4-e2db-8963-1f69-40e675dd3af5, 1639148, python, 14888 MiB\nGPU-d1ac7cb4-e2db-8963-1f69-40e675dd3af5, 3841419, /home/huachenghao/.conda/envs/face_scrfd_arcface/bin/python, 256 MiB"
+    },
+    "before_load_gpu": {
+      "total": 25769803776,
+      "free": 8475967488,
+      "used": 17293836288
+    },
+    "memory_sampling_seconds": 0.05,
+    "gpu_after": {
+      "device": "index, uuid, driver_version, memory.total [MiB], memory.used [MiB], utilization.gpu [%]\n1, GPU-d1ac7cb4-e2db-8963-1f69-40e675dd3af5, 580.126.09, 24576 MiB, 20077 MiB, 0 %",
+      "processes": "gpu_uuid, pid, process_name, used_gpu_memory [MiB]\nGPU-d1ac7cb4-e2db-8963-1f69-40e675dd3af5, 16354, /opt/conda/bin/python, 878 MiB\nGPU-d1ac7cb4-e2db-8963-1f69-40e675dd3af5, 1639148, python, 14888 MiB\nGPU-d1ac7cb4-e2db-8963-1f69-40e675dd3af5, 3841419, /home/huachenghao/.conda/envs/face_scrfd_arcface/bin/python, 4292 MiB"
+    }
+  },
+  "pipeline_configuration": {
+    "shot_classifier": null,
+    "classify_role": false,
+    "keep_per_bucket": 2,
+    "face_device": "cuda",
+    "quality_decode_workers": 2,
+    "gallery": "isolated_copy",
+    "feature_cache": "empty_each_run"
+  },
+  "baseline_mode": "batch",
+  "image_backend": "pillow",
+  "cache_hit_run": {
+    "seconds": 10.506066446192563,
+    "forward": {
+      "calls": {
+        "image": 0,
+        "text": 0
+      },
+      "gpu_seconds": {
+        "image": 0.0,
+        "text": 0.0
+      }
+    },
+    "rss_peak_bytes": 2140200960,
+    "device_used_peak_bytes": 19198050304,
+    "torch_allocated_peak_bytes": 1511821312,
+    "torch_reserved_peak_bytes": 1847590912,
+    "features": {
+      "encoder": {
+        "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+        "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+      },
+      "batch_size": 8,
+      "encoded_vectors": {
+        "image": 0,
+        "text": 0
+      },
+      "cache_hits": {
+        "image": 200,
+        "text": 5
+      },
+      "encoder_calls": {
+        "image_batch": 0,
+        "image_single": 0,
+        "text_batch": 0,
+        "text_single": 0
+      },
+      "timings": {
+        "identity_seconds": 0.5362304607406259,
+        "hash_seconds": 9.814266312867403,
+        "cache_seconds": 0.13884157873690128,
+        "encoder_seconds": 0.0
+      },
+      "model_metrics": {
+        "image_decode_seconds": 0.0,
+        "image_preprocess_seconds": 0.0,
+        "image_transfer_seconds": 0.0,
+        "image_forward_calls": 0,
+        "image_forward_seconds": 0.0,
+        "image_postprocess_seconds": 0.0,
+        "text_preprocess_seconds": 0.0,
+        "text_forward_calls": 0,
+        "text_forward_seconds": 0.0,
+        "text_postprocess_seconds": 0.0
+      },
+      "image_errors": {},
+      "text_errors": {}
+    },
+    "vectors_equal": true
+  },
+  "face_providers": [
+    "CUDAExecutionProvider",
+    "CPUExecutionProvider"
+  ],
+  "pipeline_cache_hit_run": {
+    "seconds": 128.86452005337924,
+    "forward": {
+      "calls": {
+        "image": 0,
+        "text": 0
+      },
+      "gpu_seconds": {
+        "image": 0.0,
+        "text": 0.0
+      }
+    },
+    "rss_peak_bytes": 3524980736,
+    "device_used_peak_bytes": 21525889024,
+    "torch_allocated_peak_bytes": 1511821312,
+    "torch_reserved_peak_bytes": 1847590912,
+    "decisions_sha256": "99b23e27bee3aa1632ea3dd5bb5abcc8e5710aa891a01587ca2bee2c80a83265",
+    "features_by_directory": {
+      "a093afcea140": {
+        "encoder": {
+          "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+          "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+        },
+        "batch_size": 8,
+        "encoded_vectors": {
+          "image": 0,
+          "text": 0
+        },
+        "cache_hits": {
+          "image": 2,
+          "text": 0
+        },
+        "encoder_calls": {
+          "image_batch": 0,
+          "image_single": 0,
+          "text_batch": 0,
+          "text_single": 0
+        },
+        "timings": {
+          "identity_seconds": 0.5189493112266064,
+          "hash_seconds": 0.024607167579233646,
+          "cache_seconds": 0.0013671759516000748,
+          "encoder_seconds": 0.0
+        },
+        "model_metrics": {
+          "image_decode_seconds": 0.0,
+          "image_preprocess_seconds": 0.0,
+          "image_transfer_seconds": 0.0,
+          "image_forward_calls": 0,
+          "image_forward_seconds": 0.0,
+          "image_postprocess_seconds": 0.0,
+          "text_preprocess_seconds": 0.0,
+          "text_forward_calls": 0,
+          "text_forward_seconds": 0.0,
+          "text_postprocess_seconds": 0.0
+        },
+        "image_errors": {},
+        "text_errors": {}
+      },
+      "f06c56f094a9": {
+        "encoder": {
+          "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+          "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+        },
+        "batch_size": 8,
+        "encoded_vectors": {
+          "image": 0,
+          "text": 0
+        },
+        "cache_hits": {
+          "image": 31,
+          "text": 0
+        },
+        "encoder_calls": {
+          "image_batch": 0,
+          "image_single": 0,
+          "text_batch": 0,
+          "text_single": 0
+        },
+        "timings": {
+          "identity_seconds": 0.5207613138481975,
+          "hash_seconds": 0.9940688395872712,
+          "cache_seconds": 0.018968327902257442,
+          "encoder_seconds": 0.0
+        },
+        "model_metrics": {
+          "image_decode_seconds": 0.0,
+          "image_preprocess_seconds": 0.0,
+          "image_transfer_seconds": 0.0,
+          "image_forward_calls": 0,
+          "image_forward_seconds": 0.0,
+          "image_postprocess_seconds": 0.0,
+          "text_preprocess_seconds": 0.0,
+          "text_forward_calls": 0,
+          "text_forward_seconds": 0.0,
+          "text_postprocess_seconds": 0.0
+        },
+        "image_errors": {},
+        "text_errors": {}
+      },
+      "404a5e376ee5": {
+        "encoder": {
+          "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+          "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+        },
+        "batch_size": 8,
+        "encoded_vectors": {
+          "image": 0,
+          "text": 0
+        },
+        "cache_hits": {
+          "image": 9,
+          "text": 0
+        },
+        "encoder_calls": {
+          "image_batch": 0,
+          "image_single": 0,
+          "text_batch": 0,
+          "text_single": 0
+        },
+        "timings": {
+          "identity_seconds": 0.5447023874148726,
+          "hash_seconds": 0.49182346276938915,
+          "cache_seconds": 0.006327859126031399,
+          "encoder_seconds": 0.0
+        },
+        "model_metrics": {
+          "image_decode_seconds": 0.0,
+          "image_preprocess_seconds": 0.0,
+          "image_transfer_seconds": 0.0,
+          "image_forward_calls": 0,
+          "image_forward_seconds": 0.0,
+          "image_postprocess_seconds": 0.0,
+          "text_preprocess_seconds": 0.0,
+          "text_forward_calls": 0,
+          "text_forward_seconds": 0.0,
+          "text_postprocess_seconds": 0.0
+        },
+        "image_errors": {},
+        "text_errors": {}
+      },
+      "2c722183b1c2": {
+        "encoder": {
+          "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+          "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+        },
+        "batch_size": 8,
+        "encoded_vectors": {
+          "image": 0,
+          "text": 0
+        },
+        "cache_hits": {
+          "image": 40,
+          "text": 0
+        },
+        "encoder_calls": {
+          "image_batch": 0,
+          "image_single": 0,
+          "text_batch": 0,
+          "text_single": 0
+        },
+        "timings": {
+          "identity_seconds": 0.5818572090938687,
+          "hash_seconds": 1.7714002998545766,
+          "cache_seconds": 0.02578303311020136,
+          "encoder_seconds": 0.0
+        },
+        "model_metrics": {
+          "image_decode_seconds": 0.0,
+          "image_preprocess_seconds": 0.0,
+          "image_transfer_seconds": 0.0,
+          "image_forward_calls": 0,
+          "image_forward_seconds": 0.0,
+          "image_postprocess_seconds": 0.0,
+          "text_preprocess_seconds": 0.0,
+          "text_forward_calls": 0,
+          "text_forward_seconds": 0.0,
+          "text_postprocess_seconds": 0.0
+        },
+        "image_errors": {},
+        "text_errors": {}
+      },
+      "347a44705f7c": {
+        "encoder": {
+          "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+          "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+        },
+        "batch_size": 8,
+        "encoded_vectors": {
+          "image": 0,
+          "text": 0
+        },
+        "cache_hits": {
+          "image": 8,
+          "text": 0
+        },
+        "encoder_calls": {
+          "image_batch": 0,
+          "image_single": 0,
+          "text_batch": 0,
+          "text_single": 0
+        },
+        "timings": {
+          "identity_seconds": 0.5038022492080927,
+          "hash_seconds": 0.13893942907452583,
+          "cache_seconds": 0.005088483914732933,
+          "encoder_seconds": 0.0
+        },
+        "model_metrics": {
+          "image_decode_seconds": 0.0,
+          "image_preprocess_seconds": 0.0,
+          "image_transfer_seconds": 0.0,
+          "image_forward_calls": 0,
+          "image_forward_seconds": 0.0,
+          "image_postprocess_seconds": 0.0,
+          "text_preprocess_seconds": 0.0,
+          "text_forward_calls": 0,
+          "text_forward_seconds": 0.0,
+          "text_postprocess_seconds": 0.0
+        },
+        "image_errors": {},
+        "text_errors": {}
+      },
+      "b2ade129ce0f": {
+        "encoder": {
+          "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+          "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+        },
+        "batch_size": 8,
+        "encoded_vectors": {
+          "image": 0,
+          "text": 0
+        },
+        "cache_hits": {
+          "image": 11,
+          "text": 0
+        },
+        "encoder_calls": {
+          "image_batch": 0,
+          "image_single": 0,
+          "text_batch": 0,
+          "text_single": 0
+        },
+        "timings": {
+          "identity_seconds": 0.524453672580421,
+          "hash_seconds": 0.5528866229578853,
+          "cache_seconds": 0.0076371170580387115,
+          "encoder_seconds": 0.0
+        },
+        "model_metrics": {
+          "image_decode_seconds": 0.0,
+          "image_preprocess_seconds": 0.0,
+          "image_transfer_seconds": 0.0,
+          "image_forward_calls": 0,
+          "image_forward_seconds": 0.0,
+          "image_postprocess_seconds": 0.0,
+          "text_preprocess_seconds": 0.0,
+          "text_forward_calls": 0,
+          "text_forward_seconds": 0.0,
+          "text_postprocess_seconds": 0.0
+        },
+        "image_errors": {},
+        "text_errors": {}
+      },
+      "a46c9f500244": {
+        "encoder": {
+          "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+          "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+        },
+        "batch_size": 8,
+        "encoded_vectors": {
+          "image": 0,
+          "text": 0
+        },
+        "cache_hits": {
+          "image": 29,
+          "text": 0
+        },
+        "encoder_calls": {
+          "image_batch": 0,
+          "image_single": 0,
+          "text_batch": 0,
+          "text_single": 0
+        },
+        "timings": {
+          "identity_seconds": 0.5012246128171682,
+          "hash_seconds": 1.6028260122984648,
+          "cache_seconds": 0.020729665644466877,
+          "encoder_seconds": 0.0
+        },
+        "model_metrics": {
+          "image_decode_seconds": 0.0,
+          "image_preprocess_seconds": 0.0,
+          "image_transfer_seconds": 0.0,
+          "image_forward_calls": 0,
+          "image_forward_seconds": 0.0,
+          "image_postprocess_seconds": 0.0,
+          "text_preprocess_seconds": 0.0,
+          "text_forward_calls": 0,
+          "text_forward_seconds": 0.0,
+          "text_postprocess_seconds": 0.0
+        },
+        "image_errors": {},
+        "text_errors": {}
+      },
+      "2d4392797a3e": {
+        "encoder": {
+          "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+          "preprocessing": "016ff3d59b64ca46dd7b5f860977a232ef73cdb03829ef507a415ec7c6bfaaa5"
+        },
+        "batch_size": 8,
+        "encoded_vectors": {
+          "image": 0,
+          "text": 0
+        },
+        "cache_hits": {
+          "image": 24,
+          "text": 0
+        },
+        "encoder_calls": {
+          "image_batch": 0,
+          "image_single": 0,
+          "text_batch": 0,
+          "text_single": 0
+        },
+        "timings": {
+          "identity_seconds": 0.5311659723520279,
+          "hash_seconds": 1.3459921451285481,
+          "cache_seconds": 0.01702058408409357,
+          "encoder_seconds": 0.0
+        },
+        "model_metrics": {
+          "image_decode_seconds": 0.0,
+          "image_preprocess_seconds": 0.0,
+          "image_transfer_seconds": 0.0,
+          "image_forward_calls": 0,
+          "image_forward_seconds": 0.0,
+          "image_postprocess_seconds": 0.0,
+          "text_preprocess_seconds": 0.0,
+          "text_forward_calls": 0,
+          "text_forward_seconds": 0.0,
+          "text_postprocess_seconds": 0.0
+        },
+        "image_errors": {},
+        "text_errors": {}
+      }
+    }
+  }
+}

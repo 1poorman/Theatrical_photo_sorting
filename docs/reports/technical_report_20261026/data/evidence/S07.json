@@ -1,0 +1,1037 @@
+{
+  "status": "passed",
+  "checks": {
+    "all_sources_unchanged": true,
+    "all_schemas_valid": true,
+    "actual_worker_for_each_input": true,
+    "reconstructed_cache_no_worker": true,
+    "manifest_unchanged": true
+  },
+  "input_count": 5,
+  "with_text": 5,
+  "identity": {
+    "kind": "paddleocr_local",
+    "model_files_sha256": [
+      [
+        "detector/config.json",
+        "436bf19010fe3879477e8599a870a0ec8ccd14ca39056805ec4ed20ab318ec04"
+      ],
+      [
+        "detector/inference.json",
+        "af5876933d8806a1b50d895867e0781e135cd92ff37381992828fc8d1b842d28"
+      ],
+      [
+        "detector/inference.pdiparams",
+        "183146fe9d9910352f68482f623bcbbb9fa7b9e8fa1463b9ad288cef00524d2d"
+      ],
+      [
+        "detector/inference.yml",
+        "28fb721efc3634fc8aa677e474b9602cb815a91cf569ef357a7a553d7b3ce685"
+      ],
+      [
+        "recognizer/config.json",
+        "6a780e213d7a830058ae1b6899c62cc13ca9c1f0f04ae39a27ebb2610fae7c51"
+      ],
+      [
+        "recognizer/inference.json",
+        "8e6e12e5d42531840310977fffb58165bf889fc5061408c5a8afdb6985f47fcb"
+      ],
+      [
+        "recognizer/inference.pdiparams",
+        "63853f062a5f4089befc16f565a68277618e0da5cb45468b49d11079de0ada77"
+      ],
+      [
+        "recognizer/inference.yml",
+        "2c719dba044c4e2228aef8ff92f5f575394d75d24c16de096a33b7cfd902f66d"
+      ]
+    ],
+    "worker_sha256": "3e509d0b88c81fb0b62b1f2b6a94fb1039a147e18406ccf5c41e4a214321f586",
+    "adapter_sha256": "e16a5f11b88b0121dc830fa1ce466ff4377ef92c1f2e0424d7894db8f3d4cf8c",
+    "python": "/home/huachenghao/.conda/envs/paddle/bin/python3.9",
+    "device": "cpu",
+    "packages": {
+      "paddleocr": "3.3.2",
+      "paddlex": "3.4.1",
+      "Pillow": "11.3.0",
+      "numpy": "1.26.4",
+      "paddlepaddle-gpu": "3.2.2"
+    },
+    "preprocessing": [
+      "exif_rgb",
+      1600
+    ],
+    "schema": "ocr-lines-v1"
+  },
+  "results": [
+    {
+      "image_id": "4cf69ebee51ac3fe2030ea16d8b06abeb3e7859fdb04f02076435ca435ed9eb6",
+      "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/data/ncpa_test/舞剧《马可·波罗》/剧目信息/主演/高伶峤.jpg",
+      "sha256": "d18aa9e54773f202c2a42c1b59ee922b74b48716b07f27706ec0bbfe4da709a7",
+      "observation": {
+        "lines": [
+          {
+            "text": "高伶峤",
+            "score": 0.8488595485687256,
+            "polygon": [
+              [
+                112.0,
+                2.0
+              ],
+              [
+                167.0,
+                2.0
+              ],
+              [
+                167.0,
+                25.0
+              ],
+              [
+                112.0,
+                25.0
+              ]
+            ]
+          }
+        ],
+        "width": 174,
+        "height": 164
+      },
+      "trace": {
+        "called": true,
+        "cache_hit": false,
+        "cache_key": "b92c2253c1604bc0b67037d8f1cb15987819ed5865b9d88cf0997d855b6e5d42",
+        "identity": {
+          "kind": "paddleocr_local",
+          "model_files_sha256": [
+            [
+              "detector/config.json",
+              "436bf19010fe3879477e8599a870a0ec8ccd14ca39056805ec4ed20ab318ec04"
+            ],
+            [
+              "detector/inference.json",
+              "af5876933d8806a1b50d895867e0781e135cd92ff37381992828fc8d1b842d28"
+            ],
+            [
+              "detector/inference.pdiparams",
+              "183146fe9d9910352f68482f623bcbbb9fa7b9e8fa1463b9ad288cef00524d2d"
+            ],
+            [
+              "detector/inference.yml",
+              "28fb721efc3634fc8aa677e474b9602cb815a91cf569ef357a7a553d7b3ce685"
+            ],
+            [
+              "recognizer/config.json",
+              "6a780e213d7a830058ae1b6899c62cc13ca9c1f0f04ae39a27ebb2610fae7c51"
+            ],
+            [
+              "recognizer/inference.json",
+              "8e6e12e5d42531840310977fffb58165bf889fc5061408c5a8afdb6985f47fcb"
+            ],
+            [
+              "recognizer/inference.pdiparams",
+              "63853f062a5f4089befc16f565a68277618e0da5cb45468b49d11079de0ada77"
+            ],
+            [
+              "recognizer/inference.yml",
+              "2c719dba044c4e2228aef8ff92f5f575394d75d24c16de096a33b7cfd902f66d"
+            ]
+          ],
+          "worker_sha256": "3e509d0b88c81fb0b62b1f2b6a94fb1039a147e18406ccf5c41e4a214321f586",
+          "adapter_sha256": "e16a5f11b88b0121dc830fa1ce466ff4377ef92c1f2e0424d7894db8f3d4cf8c",
+          "python": "/home/huachenghao/.conda/envs/paddle/bin/python3.9",
+          "device": "cpu",
+          "packages": {
+            "paddleocr": "3.3.2",
+            "paddlex": "3.4.1",
+            "Pillow": "11.3.0",
+            "numpy": "1.26.4",
+            "paddlepaddle-gpu": "3.2.2"
+          },
+          "preprocessing": [
+            "exif_rgb",
+            1600
+          ],
+          "schema": "ocr-lines-v1"
+        },
+        "source_image_sha256": "d18aa9e54773f202c2a42c1b59ee922b74b48716b07f27706ec0bbfe4da709a7",
+        "worker": {
+          "elapsed_seconds": 50.36953950766474,
+          "paddleocr_version": "3.3.2",
+          "paddlex_version": "3.4.1",
+          "device": "cpu",
+          "input_size": [
+            174,
+            164
+          ]
+        }
+      },
+      "elapsed_seconds": 58.02999524585903,
+      "source_unchanged": true,
+      "cache_reconstruction": {
+        "cache_hit": true,
+        "called": false,
+        "value_equal": true
+      }
+    },
+    {
+      "image_id": "4d253465dab49cf7e04e4f31a5af15b16a42b3a4bdfd3c4937c8ab0b4c188f1a",
+      "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/data/ncpa_test/舞剧《马可·波罗》/剧目信息/主演/苏鹏.jpg",
+      "sha256": "add6d728eee20a7024acd0fbc0b5c4416ac57b2ce492b93985b52e7c44e356e3",
+      "observation": {
+        "lines": [
+          {
+            "text": "苏鹏",
+            "score": 0.9984350204467773,
+            "polygon": [
+              [
+                126.0,
+                1.0
+              ],
+              [
+                163.0,
+                1.0
+              ],
+              [
+                163.0,
+                22.0
+              ],
+              [
+                126.0,
+                22.0
+              ]
+            ]
+          }
+        ],
+        "width": 170,
+        "height": 168
+      },
+      "trace": {
+        "called": true,
+        "cache_hit": false,
+        "cache_key": "c8759a6363055e222306d46d9532d0f733e18549ffcef593fcaa7edc6264bcf9",
+        "identity": {
+          "kind": "paddleocr_local",
+          "model_files_sha256": [
+            [
+              "detector/config.json",
+              "436bf19010fe3879477e8599a870a0ec8ccd14ca39056805ec4ed20ab318ec04"
+            ],
+            [
+              "detector/inference.json",
+              "af5876933d8806a1b50d895867e0781e135cd92ff37381992828fc8d1b842d28"
+            ],
+            [
+              "detector/inference.pdiparams",
+              "183146fe9d9910352f68482f623bcbbb9fa7b9e8fa1463b9ad288cef00524d2d"
+            ],
+            [
+              "detector/inference.yml",
+              "28fb721efc3634fc8aa677e474b9602cb815a91cf569ef357a7a553d7b3ce685"
+            ],
+            [
+              "recognizer/config.json",
+              "6a780e213d7a830058ae1b6899c62cc13ca9c1f0f04ae39a27ebb2610fae7c51"
+            ],
+            [
+              "recognizer/inference.json",
+              "8e6e12e5d42531840310977fffb58165bf889fc5061408c5a8afdb6985f47fcb"
+            ],
+            [
+              "recognizer/inference.pdiparams",
+              "63853f062a5f4089befc16f565a68277618e0da5cb45468b49d11079de0ada77"
+            ],
+            [
+              "recognizer/inference.yml",
+              "2c719dba044c4e2228aef8ff92f5f575394d75d24c16de096a33b7cfd902f66d"
+            ]
+          ],
+          "worker_sha256": "3e509d0b88c81fb0b62b1f2b6a94fb1039a147e18406ccf5c41e4a214321f586",
+          "adapter_sha256": "e16a5f11b88b0121dc830fa1ce466ff4377ef92c1f2e0424d7894db8f3d4cf8c",
+          "python": "/home/huachenghao/.conda/envs/paddle/bin/python3.9",
+          "device": "cpu",
+          "packages": {
+            "paddleocr": "3.3.2",
+            "paddlex": "3.4.1",
+            "Pillow": "11.3.0",
+            "numpy": "1.26.4",
+            "paddlepaddle-gpu": "3.2.2"
+          },
+          "preprocessing": [
+            "exif_rgb",
+            1600
+          ],
+          "schema": "ocr-lines-v1"
+        },
+        "source_image_sha256": "add6d728eee20a7024acd0fbc0b5c4416ac57b2ce492b93985b52e7c44e356e3",
+        "worker": {
+          "elapsed_seconds": 8.179851952008903,
+          "paddleocr_version": "3.3.2",
+          "paddlex_version": "3.4.1",
+          "device": "cpu",
+          "input_size": [
+            170,
+            168
+          ]
+        }
+      },
+      "elapsed_seconds": 10.317469418980181,
+      "source_unchanged": true,
+      "cache_reconstruction": {
+        "cache_hit": true,
+        "called": false,
+        "value_equal": true
+      }
+    },
+    {
+      "image_id": "b06c6b027bb891ec6411cd9a7875f25eb628c620ac83234bfe294946ba4daba2",
+      "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/data/ncpa_test/舞剧《马可·波罗》/剧目信息/主演/玉米提.jpg",
+      "sha256": "5278519ad7a6ed64651d11d6f81f51b99f4c8a592374bd93dc3da8c55837cc41",
+      "observation": {
+        "lines": [
+          {
+            "text": "玉米提",
+            "score": 0.9967868328094482,
+            "polygon": [
+              [
+                114.0,
+                1.0
+              ],
+              [
+                166.0,
+                1.0
+              ],
+              [
+                166.0,
+                21.0
+              ],
+              [
+                114.0,
+                21.0
+              ]
+            ]
+          }
+        ],
+        "width": 172,
+        "height": 167
+      },
+      "trace": {
+        "called": true,
+        "cache_hit": false,
+        "cache_key": "50fdf73aa336bb4acecfe242dbaca6c824837a768339b4e381a247ebcfe32736",
+        "identity": {
+          "kind": "paddleocr_local",
+          "model_files_sha256": [
+            [
+              "detector/config.json",
+              "436bf19010fe3879477e8599a870a0ec8ccd14ca39056805ec4ed20ab318ec04"
+            ],
+            [
+              "detector/inference.json",
+              "af5876933d8806a1b50d895867e0781e135cd92ff37381992828fc8d1b842d28"
+            ],
+            [
+              "detector/inference.pdiparams",
+              "183146fe9d9910352f68482f623bcbbb9fa7b9e8fa1463b9ad288cef00524d2d"
+            ],
+            [
+              "detector/inference.yml",
+              "28fb721efc3634fc8aa677e474b9602cb815a91cf569ef357a7a553d7b3ce685"
+            ],
+            [
+              "recognizer/config.json",
+              "6a780e213d7a830058ae1b6899c62cc13ca9c1f0f04ae39a27ebb2610fae7c51"
+            ],
+            [
+              "recognizer/inference.json",
+              "8e6e12e5d42531840310977fffb58165bf889fc5061408c5a8afdb6985f47fcb"
+            ],
+            [
+              "recognizer/inference.pdiparams",
+              "63853f062a5f4089befc16f565a68277618e0da5cb45468b49d11079de0ada77"
+            ],
+            [
+              "recognizer/inference.yml",
+              "2c719dba044c4e2228aef8ff92f5f575394d75d24c16de096a33b7cfd902f66d"
+            ]
+          ],
+          "worker_sha256": "3e509d0b88c81fb0b62b1f2b6a94fb1039a147e18406ccf5c41e4a214321f586",
+          "adapter_sha256": "e16a5f11b88b0121dc830fa1ce466ff4377ef92c1f2e0424d7894db8f3d4cf8c",
+          "python": "/home/huachenghao/.conda/envs/paddle/bin/python3.9",
+          "device": "cpu",
+          "packages": {
+            "paddleocr": "3.3.2",
+            "paddlex": "3.4.1",
+            "Pillow": "11.3.0",
+            "numpy": "1.26.4",
+            "paddlepaddle-gpu": "3.2.2"
+          },
+          "preprocessing": [
+            "exif_rgb",
+            1600
+          ],
+          "schema": "ocr-lines-v1"
+        },
+        "source_image_sha256": "5278519ad7a6ed64651d11d6f81f51b99f4c8a592374bd93dc3da8c55837cc41",
+        "worker": {
+          "elapsed_seconds": 8.337037555873394,
+          "paddleocr_version": "3.3.2",
+          "paddlex_version": "3.4.1",
+          "device": "cpu",
+          "input_size": [
+            172,
+            167
+          ]
+        }
+      },
+      "elapsed_seconds": 10.798473984003067,
+      "source_unchanged": true,
+      "cache_reconstruction": {
+        "cache_hit": true,
+        "called": false,
+        "value_equal": true
+      }
+    },
+    {
+      "image_id": "4f384a13c4f2a5657ef941ce56d37a9bf95816e65505d61973de6ae860b08e67",
+      "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/data/ncpa_test/舞剧《马可·波罗》/剧目信息/剧照/中国公主作别马可波罗，大义和亲.jpg",
+      "sha256": "2bb360ec4b3a2d1a651021cf213fe0523ba69b5017e33b25e3630831dcc32ae3",
+      "observation": {
+        "lines": [
+          {
+            "text": "中国公主作别马可·波罗，大义和亲",
+            "score": 0.9827447533607483,
+            "polygon": [
+              [
+                18.0,
+                377.0
+              ],
+              [
+                325.0,
+                377.0
+              ],
+              [
+                325.0,
+                397.0
+              ],
+              [
+                18.0,
+                397.0
+              ]
+            ]
+          }
+        ],
+        "width": 970,
+        "height": 410
+      },
+      "trace": {
+        "called": true,
+        "cache_hit": false,
+        "cache_key": "d03c3535df575a55c68e17e0d2086b110ca49d40ff00c2ac3665a44352b7130c",
+        "identity": {
+          "kind": "paddleocr_local",
+          "model_files_sha256": [
+            [
+              "detector/config.json",
+              "436bf19010fe3879477e8599a870a0ec8ccd14ca39056805ec4ed20ab318ec04"
+            ],
+            [
+              "detector/inference.json",
+              "af5876933d8806a1b50d895867e0781e135cd92ff37381992828fc8d1b842d28"
+            ],
+            [
+              "detector/inference.pdiparams",
+              "183146fe9d9910352f68482f623bcbbb9fa7b9e8fa1463b9ad288cef00524d2d"
+            ],
+            [
+              "detector/inference.yml",
+              "28fb721efc3634fc8aa677e474b9602cb815a91cf569ef357a7a553d7b3ce685"
+            ],
+            [
+              "recognizer/config.json",
+              "6a780e213d7a830058ae1b6899c62cc13ca9c1f0f04ae39a27ebb2610fae7c51"
+            ],
+            [
+              "recognizer/inference.json",
+              "8e6e12e5d42531840310977fffb58165bf889fc5061408c5a8afdb6985f47fcb"
+            ],
+            [
+              "recognizer/inference.pdiparams",
+              "63853f062a5f4089befc16f565a68277618e0da5cb45468b49d11079de0ada77"
+            ],
+            [
+              "recognizer/inference.yml",
+              "2c719dba044c4e2228aef8ff92f5f575394d75d24c16de096a33b7cfd902f66d"
+            ]
+          ],
+          "worker_sha256": "3e509d0b88c81fb0b62b1f2b6a94fb1039a147e18406ccf5c41e4a214321f586",
+          "adapter_sha256": "e16a5f11b88b0121dc830fa1ce466ff4377ef92c1f2e0424d7894db8f3d4cf8c",
+          "python": "/home/huachenghao/.conda/envs/paddle/bin/python3.9",
+          "device": "cpu",
+          "packages": {
+            "paddleocr": "3.3.2",
+            "paddlex": "3.4.1",
+            "Pillow": "11.3.0",
+            "numpy": "1.26.4",
+            "paddlepaddle-gpu": "3.2.2"
+          },
+          "preprocessing": [
+            "exif_rgb",
+            1600
+          ],
+          "schema": "ocr-lines-v1"
+        },
+        "source_image_sha256": "2bb360ec4b3a2d1a651021cf213fe0523ba69b5017e33b25e3630831dcc32ae3",
+        "worker": {
+          "elapsed_seconds": 15.826051800511777,
+          "paddleocr_version": "3.3.2",
+          "paddlex_version": "3.4.1",
+          "device": "cpu",
+          "input_size": [
+            970,
+            410
+          ]
+        }
+      },
+      "elapsed_seconds": 18.042454875074327,
+      "source_unchanged": true,
+      "cache_reconstruction": {
+        "cache_hit": true,
+        "called": false,
+        "value_equal": true
+      }
+    },
+    {
+      "image_id": "eae0a3273e345dda6b37154f4614061c26eba383878aa290effb34526c4f3efa",
+      "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/data/ncpa_test/舞剧《马可·波罗》/剧目信息/剧照/意大利青年拜读《马可波罗游记》，对古老中国心驰神往.jpg",
+      "sha256": "00fa3a0fbf3f0a025c3b97d86c5bbd11f43e5dcdf612aaeb33cb1a5885a68c74",
+      "observation": {
+        "lines": [
+          {
+            "text": "hae fato fal",
+            "score": 0.8369520306587219,
+            "polygon": [
+              [
+                547.0,
+                10.0
+              ],
+              [
+                653.0,
+                0.0
+              ],
+              [
+                663.0,
+                30.0
+              ],
+              [
+                557.0,
+                53.0
+              ]
+            ]
+          },
+          {
+            "text": "liete; le sale",
+            "score": 0.7071752548217773,
+            "polygon": [
+              [
+                74.0,
+                38.0
+              ],
+              [
+                191.0,
+                1.0
+              ],
+              [
+                200.0,
+                27.0
+              ],
+              [
+                82.0,
+                65.0
+              ]
+            ]
+          },
+          {
+            "text": "iglio",
+            "score": 0.9640401601791382,
+            "polygon": [
+              [
+                146.0,
+                56.0
+              ],
+              [
+                186.0,
+                43.0
+              ],
+              [
+                194.0,
+                66.0
+              ],
+              [
+                153.0,
+                79.0
+              ]
+            ]
+          },
+          {
+            "text": "filla th ani.",
+            "score": 0.7902848124504089,
+            "polygon": [
+              [
+                342.0,
+                53.0
+              ],
+              [
+                454.0,
+                25.0
+              ],
+              [
+                461.0,
+                49.0
+              ],
+              [
+                348.0,
+                77.0
+              ]
+            ]
+          },
+          {
+            "text": "ricke pietre; te salale",
+            "score": 0.6467270851135254,
+            "polygon": [
+              [
+                564.0,
+                49.0
+              ],
+              [
+                759.0,
+                0.0
+              ],
+              [
+                769.0,
+                26.0
+              ],
+              [
+                574.0,
+                83.0
+              ]
+            ]
+          },
+          {
+            "text": "E i queste utte hee w",
+            "score": 0.6940706372261047,
+            "polygon": [
+              [
+                80.0,
+                92.0
+              ],
+              [
+                254.0,
+                39.0
+              ],
+              [
+                264.0,
+                70.0
+              ],
+              [
+                90.0,
+                123.0
+              ]
+            ]
+          },
+          {
+            "text": "bellishimo maravigliosamet",
+            "score": 0.7916198372840881,
+            "polygon": [
+              [
+                582.0,
+                89.0
+              ],
+              [
+                770.0,
+                29.0
+              ],
+              [
+                780.0,
+                60.0
+              ],
+              [
+                592.0,
+                120.0
+              ]
+            ]
+          },
+          {
+            "text": "i va tre giornate per",
+            "score": 0.8318842053413391,
+            "polygon": [
+              [
+                368.0,
+                100.0
+              ],
+              [
+                506.0,
+                57.0
+              ],
+              [
+                514.0,
+                81.0
+              ],
+              [
+                376.0,
+                124.0
+              ]
+            ]
+          },
+          {
+            "text": "esere Mare Pele",
+            "score": 0.6797205805778503,
+            "polygon": [
+              [
+                86.0,
+                130.0
+              ],
+              [
+                219.0,
+                87.0
+              ],
+              [
+                229.0,
+                117.0
+              ],
+              [
+                96.0,
+                161.0
+              ]
+            ]
+          },
+          {
+            "text": "bte di graede nurcattic",
+            "score": 0.6180973649024963,
+            "polygon": [
+              [
+                345.0,
+                138.0
+              ],
+              [
+                520.0,
+                85.0
+              ],
+              [
+                528.0,
+                108.0
+              ],
+              [
+                353.0,
+                162.0
+              ]
+            ]
+          },
+          {
+            "text": "E i questa att h   ",
+            "score": 0.6571826338768005,
+            "polygon": [
+              [
+                587.0,
+                134.0
+              ],
+              [
+                854.0,
+                55.0
+              ],
+              [
+                864.0,
+                86.0
+              ],
+              [
+                597.0,
+                164.0
+              ]
+            ]
+          },
+          {
+            "text": "s si truova la sopra ndbile",
+            "score": 0.758355438709259,
+            "polygon": [
+              [
+                347.0,
+                168.0
+              ],
+              [
+                527.0,
+                113.0
+              ],
+              [
+                535.0,
+                138.0
+              ],
+              [
+                355.0,
+                192.0
+              ]
+            ]
+          },
+          {
+            "text": "rse Wa Fol sigg",
+            "score": 0.5921652317047119,
+            "polygon": [
+              [
+                592.0,
+                170.0
+              ],
+              [
+                860.0,
+                89.0
+              ],
+              [
+                870.0,
+                123.0
+              ],
+              [
+                602.0,
+                203.0
+              ]
+            ]
+          },
+          {
+            "text": "Gcando l'uro",
+            "score": 0.6165618300437927,
+            "polygon": [
+              [
+                99.0,
+                193.0
+              ],
+              [
+                185.0,
+                163.0
+              ],
+              [
+                196.0,
+                196.0
+              ],
+              [
+                111.0,
+                226.0
+              ]
+            ]
+          },
+          {
+            "text": "dills ali",
+            "score": 0.6999608278274536,
+            "polygon": [
+              [
+                774.0,
+                194.0
+              ],
+              [
+                832.0,
+                177.0
+              ],
+              [
+                838.0,
+                196.0
+              ],
+              [
+                780.0,
+                213.0
+              ]
+            ]
+          },
+          {
+            "text": "franeno\"la atti l ciele\"",
+            "score": 0.6211885809898376,
+            "polygon": [
+              [
+                336.0,
+                204.0
+              ],
+              [
+                541.0,
+                142.0
+              ],
+              [
+                549.0,
+                169.0
+              ],
+              [
+                344.0,
+                230.0
+              ]
+            ]
+          },
+          {
+            "text": "molte bell a",
+            "score": 0.6974947452545166,
+            "polygon": [
+              [
+                100.0,
+                232.0
+              ],
+              [
+                204.0,
+                178.0
+              ],
+              [
+                221.0,
+                209.0
+              ],
+              [
+                117.0,
+                263.0
+              ]
+            ]
+          },
+          {
+            "text": "och'ella i la pi nobile itli del",
+            "score": 0.7261474132537842,
+            "polygon": [
+              [
+                319.0,
+                239.0
+              ],
+              [
+                543.0,
+                172.0
+              ],
+              [
+                550.0,
+                196.0
+              ],
+              [
+                327.0,
+                263.0
+              ]
+            ]
+          },
+          {
+            "text": "e autefet cape i",
+            "score": 0.5829567313194275,
+            "polygon": [
+              [
+                105.0,
+                264.0
+              ],
+              [
+                226.0,
+                200.0
+              ],
+              [
+                243.0,
+                231.0
+              ],
+              [
+                122.0,
+                295.0
+              ]
+            ]
+          },
+          {
+            "text": "意大利青年拜读《马可·波罗游记》，对古老中国心驰神往",
+            "score": 0.9971319437026978,
+            "polygon": [
+              [
+                16.0,
+                375.0
+              ],
+              [
+                518.0,
+                374.0
+              ],
+              [
+                518.0,
+                397.0
+              ],
+              [
+                16.0,
+                398.0
+              ]
+            ]
+          }
+        ],
+        "width": 970,
+        "height": 410
+      },
+      "trace": {
+        "called": true,
+        "cache_hit": false,
+        "cache_key": "c8d5ae4d1886427496cdb835332d3f012b5949136b487671b23348ad276ed1cf",
+        "identity": {
+          "kind": "paddleocr_local",
+          "model_files_sha256": [
+            [
+              "detector/config.json",
+              "436bf19010fe3879477e8599a870a0ec8ccd14ca39056805ec4ed20ab318ec04"
+            ],
+            [
+              "detector/inference.json",
+              "af5876933d8806a1b50d895867e0781e135cd92ff37381992828fc8d1b842d28"
+            ],
+            [
+              "detector/inference.pdiparams",
+              "183146fe9d9910352f68482f623bcbbb9fa7b9e8fa1463b9ad288cef00524d2d"
+            ],
+            [
+              "detector/inference.yml",
+              "28fb721efc3634fc8aa677e474b9602cb815a91cf569ef357a7a553d7b3ce685"
+            ],
+            [
+              "recognizer/config.json",
+              "6a780e213d7a830058ae1b6899c62cc13ca9c1f0f04ae39a27ebb2610fae7c51"
+            ],
+            [
+              "recognizer/inference.json",
+              "8e6e12e5d42531840310977fffb58165bf889fc5061408c5a8afdb6985f47fcb"
+            ],
+            [
+              "recognizer/inference.pdiparams",
+              "63853f062a5f4089befc16f565a68277618e0da5cb45468b49d11079de0ada77"
+            ],
+            [
+              "recognizer/inference.yml",
+              "2c719dba044c4e2228aef8ff92f5f575394d75d24c16de096a33b7cfd902f66d"
+            ]
+          ],
+          "worker_sha256": "3e509d0b88c81fb0b62b1f2b6a94fb1039a147e18406ccf5c41e4a214321f586",
+          "adapter_sha256": "e16a5f11b88b0121dc830fa1ce466ff4377ef92c1f2e0424d7894db8f3d4cf8c",
+          "python": "/home/huachenghao/.conda/envs/paddle/bin/python3.9",
+          "device": "cpu",
+          "packages": {
+            "paddleocr": "3.3.2",
+            "paddlex": "3.4.1",
+            "Pillow": "11.3.0",
+            "numpy": "1.26.4",
+            "paddlepaddle-gpu": "3.2.2"
+          },
+          "preprocessing": [
+            "exif_rgb",
+            1600
+          ],
+          "schema": "ocr-lines-v1"
+        },
+        "source_image_sha256": "00fa3a0fbf3f0a025c3b97d86c5bbd11f43e5dcdf612aaeb33cb1a5885a68c74",
+        "worker": {
+          "elapsed_seconds": 19.840029274113476,
+          "paddleocr_version": "3.3.2",
+          "paddlex_version": "3.4.1",
+          "device": "cpu",
+          "input_size": [
+            970,
+            410
+          ]
+        }
+      },
+      "elapsed_seconds": 22.074847110547125,
+      "source_unchanged": true,
+      "cache_reconstruction": {
+        "cache_hit": true,
+        "called": false,
+        "value_equal": true
+      }
+    }
+  ],
+  "quality_gate": "insufficient_data",
+  "verified_transcriptions": 0,
+  "limitations": [
+    "Selected visible-text development samples; no held-out accuracy claim.",
+    "OCR strings are machine observations and cannot confirm actor identities.",
+    "CPU worker time includes model loading; no throughput comparison."
+  ]
+}

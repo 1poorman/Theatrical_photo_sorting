@@ -1,0 +1,9 @@
+{
+  "sample_count": 32,
+  "repeats": 3,
+  "serial_median_seconds": 9.182754729874432,
+  "parallel_median_seconds": 4.891130045987666,
+  "speedup": 1.8774300915199156,
+  "entries_equal": true,
+  "scope": "CPU quality/decode only; not end-to-end performance or independent quality validation"
+}

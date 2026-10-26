@@ -1,0 +1,93 @@
+{
+  "status": "passed",
+  "checks": {
+    "all_inputs_processed": true,
+    "actual_image_requests": true,
+    "observation_schema_at_least_99_percent": true,
+    "all_observations_valid": true,
+    "no_illegal_choices": true,
+    "at_least_one_valid_choice": true,
+    "automatic_http_ratio_within_30_percent": true,
+    "actual_calls_equal_reserved": true,
+    "output_reservations_within_budget": true,
+    "replay_no_http": true,
+    "replay_results_equal": true,
+    "all_results_pending": true,
+    "neutral_images_unchanged": true,
+    "source_unchanged": true
+  },
+  "input_count": 100,
+  "processed": 100,
+  "unprocessed": 0,
+  "plays": {
+    "play-44d30ef70a47b7b6d4c8ccf5": 25,
+    "play-7f29e53c6e88c45fff40ce57": 25,
+    "play-93eda2b5016e4b7b7d50c52c": 25,
+    "play-e8b1c0e08a72cd6f64a245a5": 25
+  },
+  "observed_images": 15,
+  "observation_calls": 15,
+  "valid_schema_ratio": 1.0,
+  "accepted_model_choices": 15,
+  "unsafe_choices": 0,
+  "http_requests": 30,
+  "replay_extra_requests": 0,
+  "budget": {
+    "policy": {
+      "mode": "automatic",
+      "automatic_fraction": 0.3,
+      "max_images": 64,
+      "max_output_tokens_per_request": 1024,
+      "max_batch_output_tokens": 32768,
+      "candidate_margin": 0.03,
+      "max_prompt_characters": 24000
+    },
+    "input_images": 100,
+    "image_limit": 30,
+    "allocated_images": 15,
+    "automatic_image_fraction": 0.15,
+    "reserved_requests": 30,
+    "request_limit": 30,
+    "automatic_request_ratio": 0.3,
+    "reserved_max_output_tokens": 30720,
+    "requests_by_status": {
+      "valid": 30
+    },
+    "token_budget_kind": "hard_maximum_generated_output_tokens; input_usage_reported_separately"
+  },
+  "elapsed_seconds": 106.66021196637303,
+  "model_identity": {
+    "endpoint_sha256": "ec6994d0166f81f66d6a5ea3528aeeb7f6188666e61e7335ec64c2fe3a02d411",
+    "served_model": "Qwen3.6-27B",
+    "declared_model_identity": "Qwen3.8-27B",
+    "verified_weights_sha256": null,
+    "remote_weight_verification": "unverified",
+    "prompt_version": "visual-observation-v2",
+    "max_side": 1280,
+    "preview_format": "jpeg-q90-exif-rgb",
+    "observation_prompt_sha256": "fb3daa334b488ac29c7486c59c368f9ca56ce3fc507e4f6181404d4e78211741",
+    "temperature": 0.0,
+    "thinking": {
+      "enable_thinking": false
+    },
+    "private_process": "d2c78f10ee3b45c796931d17cb35e5d4",
+    "pillow_version": "12.3.0",
+    "source_sha256": {
+      "visual_evidence.py": "8dba2a2c5d6aa5430edbb0d104d0651332f4b5d12b288cf77f97b2acb943f203",
+      "scene_reasoner.py": "569b9378ceff133057d8d888a4a51335065e331111394d93a43322bf77c6b65a",
+      "llm_client.py": "93a6b5c7584f771f8c58ad599ab6b8345b472ce11c6b23ceaa8e4d04d4203c32"
+    },
+    "max_output_tokens_per_request": 1024
+  },
+  "quality_gate": "insufficient_data",
+  "fact_reviewers": 0,
+  "verified_fact_images": 0,
+  "final_test_locked": false,
+  "limitations": [
+    "Development images and previously frozen expanded-pool mean SigLIP2 scores.",
+    "Image bytes sent to the configured real endpoint; no query labels or actor lists sent.",
+    "Timing excludes retrieval encoding and remote model loading; not a U4/U5 speed comparison.",
+    "Unverified remote weights: cache replay is restricted to the current client process.",
+    "No dual-reviewer visual fact labels or independent final test; no fact-accuracy/Macro-F1 claim."
+  ]
+}

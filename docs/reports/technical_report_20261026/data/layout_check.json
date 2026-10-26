@@ -1,0 +1,266 @@
+{
+  "errors": [],
+  "layout": [
+    {
+      "id": "cover",
+      "page": 1,
+      "height": 1122.515625,
+      "contentBottom": null,
+      "footerTop": null,
+      "overflow": false,
+      "horizontal": false
+    },
+    {
+      "id": "executive",
+      "page": 2,
+      "height": 1122.515625,
+      "contentBottom": 873.875,
+      "footerTop": 1065.03125,
+      "overflow": false,
+      "horizontal": false
+    },
+    {
+      "id": "capabilities",
+      "page": 3,
+      "height": 1122.515625,
+      "contentBottom": 928.046875,
+      "footerTop": 1065.03125,
+      "overflow": false,
+      "horizontal": false
+    },
+    {
+      "id": "architecture",
+      "page": 4,
+      "height": 1122.515625,
+      "contentBottom": 885.375,
+      "footerTop": 1065.03125,
+      "overflow": false,
+      "horizontal": false
+    },
+    {
+      "id": "data",
+      "page": 5,
+      "height": 1122.515625,
+      "contentBottom": 824.90625,
+      "footerTop": 1065.03125,
+      "overflow": false,
+      "horizontal": false
+    },
+    {
+      "id": "face",
+      "page": 6,
+      "height": 1122.515625,
+      "contentBottom": 749.046875,
+      "footerTop": 1065.03125,
+      "overflow": false,
+      "horizontal": false
+    },
+    {
+      "id": "embeddings",
+      "page": 7,
+      "height": 1122.515625,
+      "contentBottom": 916.40625,
+      "footerTop": 1065.03125,
+      "overflow": false,
+      "horizontal": false
+    },
+    {
+      "id": "textblocks",
+      "page": 8,
+      "height": 1122.515625,
+      "contentBottom": 781.015625,
+      "footerTop": 1065.03125,
+      "overflow": false,
+      "horizontal": false
+    },
+    {
+      "id": "visualprinciple",
+      "page": 9,
+      "height": 1122.515625,
+      "contentBottom": 817.71875,
+      "footerTop": 1065.03125,
+      "overflow": false,
+      "horizontal": false
+    },
+    {
+      "id": "grouping",
+      "page": 10,
+      "height": 1122.515625,
+      "contentBottom": 860.1875,
+      "footerTop": 1065.03125,
+      "overflow": false,
+      "horizontal": false
+    },
+    {
+      "id": "reliability",
+      "page": 11,
+      "height": 1122.515625,
+      "contentBottom": 801.484375,
+      "footerTop": 1065.03125,
+      "overflow": false,
+      "horizontal": false
+    },
+    {
+      "id": "setup",
+      "page": 12,
+      "height": 1122.515625,
+      "contentBottom": 882.96875,
+      "footerTop": 1065.03125,
+      "overflow": false,
+      "horizontal": false
+    },
+    {
+      "id": "metrics",
+      "page": 13,
+      "height": 1122.515625,
+      "contentBottom": 808.40625,
+      "footerTop": 1065.03125,
+      "overflow": false,
+      "horizontal": false
+    },
+    {
+      "id": "fullresults",
+      "page": 14,
+      "height": 1122.515625,
+      "contentBottom": 919.515625,
+      "footerTop": 1065.03125,
+      "overflow": false,
+      "horizontal": false
+    },
+    {
+      "id": "retrievalanalysis",
+      "page": 15,
+      "height": 1122.515625,
+      "contentBottom": 843.828125,
+      "footerTop": 1065.03125,
+      "overflow": false,
+      "horizontal": false
+    },
+    {
+      "id": "poolanalysis",
+      "page": 16,
+      "height": 1122.515625,
+      "contentBottom": 846.375,
+      "footerTop": 1065.03125,
+      "overflow": false,
+      "horizontal": false
+    },
+    {
+      "id": "visualresults",
+      "page": 17,
+      "height": 1122.515625,
+      "contentBottom": 887.328125,
+      "footerTop": 1065.03125,
+      "overflow": false,
+      "horizontal": false
+    },
+    {
+      "id": "scale",
+      "page": 18,
+      "height": 1122.515625,
+      "contentBottom": 816.75,
+      "footerTop": 1065.03125,
+      "overflow": false,
+      "horizontal": false
+    },
+    {
+      "id": "responsiveness",
+      "page": 19,
+      "height": 1122.515625,
+      "contentBottom": 825.578125,
+      "footerTop": 1065.03125,
+      "overflow": false,
+      "horizontal": false
+    },
+    {
+      "id": "performance",
+      "page": 20,
+      "height": 1122.515625,
+      "contentBottom": 931.203125,
+      "footerTop": 1065.03125,
+      "overflow": false,
+      "horizontal": false
+    },
+    {
+      "id": "preprocessing",
+      "page": 21,
+      "height": 1122.515625,
+      "contentBottom": 799.671875,
+      "footerTop": 1065.03125,
+      "overflow": false,
+      "horizontal": false
+    },
+    {
+      "id": "performance_latest",
+      "page": 22,
+      "height": 1122.515625,
+      "contentBottom": 897.03125,
+      "footerTop": 1065.03125,
+      "overflow": false,
+      "horizontal": false
+    },
+    {
+      "id": "workflows",
+      "page": 23,
+      "height": 1122.515625,
+      "contentBottom": 880.046875,
+      "footerTop": 1065.03125,
+      "overflow": false,
+      "horizontal": false
+    },
+    {
+      "id": "review",
+      "page": 24,
+      "height": 1122.515625,
+      "contentBottom": 736.59375,
+      "footerTop": 1065.03125,
+      "overflow": false,
+      "horizontal": false
+    },
+    {
+      "id": "gates",
+      "page": 25,
+      "height": 1122.515625,
+      "contentBottom": 809.171875,
+      "footerTop": 1065.03125,
+      "overflow": false,
+      "horizontal": false
+    },
+    {
+      "id": "reproducibility",
+      "page": 26,
+      "height": 1122.515625,
+      "contentBottom": 952.140625,
+      "footerTop": 1065.03125,
+      "overflow": false,
+      "horizontal": false
+    },
+    {
+      "id": "sources",
+      "page": 27,
+      "height": 1122.515625,
+      "contentBottom": 689.125,
+      "footerTop": 1065.03125,
+      "overflow": false,
+      "horizontal": false
+    },
+    {
+      "id": "sources_more",
+      "page": 28,
+      "height": 1122.515625,
+      "contentBottom": 656.203125,
+      "footerTop": 1065.03125,
+      "overflow": false,
+      "horizontal": false
+    },
+    {
+      "id": "references",
+      "page": 29,
+      "height": 1122.515625,
+      "contentBottom": 848.015625,
+      "footerTop": 1065.03125,
+      "overflow": false,
+      "horizontal": false
+    }
+  ]
+}

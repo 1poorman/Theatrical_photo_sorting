@@ -1,0 +1,512 @@
+{
+  "mode": "baseline",
+  "status": "measured",
+  "identity": {
+    "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+    "preprocessing": "c86b4acd92ae17cbab265560c56a326f03ddb7497ed85eddccaf406913e32e0c"
+  },
+  "sample_count": 200,
+  "repeats": 5,
+  "feature_runs": [
+    {
+      "seconds": 58.25941384397447,
+      "forward": {
+        "calls": {
+          "image": 25,
+          "text": 1
+        },
+        "gpu_seconds": {
+          "image": 1.49713818359375,
+          "text": 0.006907904148101806
+        }
+      },
+      "rss_peak_bytes": 2589921280,
+      "device_used_peak_bytes": 19198050304,
+      "torch_allocated_peak_bytes": 1698467840,
+      "torch_reserved_peak_bytes": 1847590912,
+      "features": {
+        "encoder": {
+          "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+          "preprocessing": "c86b4acd92ae17cbab265560c56a326f03ddb7497ed85eddccaf406913e32e0c"
+        },
+        "batch_size": 8,
+        "encoded_vectors": {
+          "image": 200,
+          "text": 5
+        },
+        "cache_hits": {
+          "image": 0,
+          "text": 0
+        },
+        "encoder_calls": {
+          "image_batch": 25,
+          "image_single": 0,
+          "text_batch": 1,
+          "text_single": 0
+        },
+        "timings": {
+          "identity_seconds": 0.6065575946122408,
+          "hash_seconds": 9.958039352670312,
+          "cache_seconds": 0.20973619353026152,
+          "encoder_seconds": 47.4313223939389
+        },
+        "model_metrics": {
+          "image_decode_seconds": 44.68415014259517,
+          "image_preprocess_seconds": 39.67501875013113,
+          "image_transfer_seconds": 0.1461639916524291,
+          "image_forward_calls": 25,
+          "image_forward_seconds": 1.5072656879201531,
+          "image_postprocess_seconds": 0.01075117290019989,
+          "text_preprocess_seconds": 0.003017726354300976,
+          "text_forward_calls": 1,
+          "text_forward_seconds": 0.0073101213201880455,
+          "text_postprocess_seconds": 0.0003108195960521698
+        },
+        "image_errors": {},
+        "text_errors": {}
+      },
+      "repeat_min_cosine": {
+        "images": 1.0,
+        "texts": 1.0
+      }
+    },
+    {
+      "seconds": 59.321366207674146,
+      "forward": {
+        "calls": {
+          "image": 25,
+          "text": 1
+        },
+        "gpu_seconds": {
+          "image": 1.5143241233825684,
+          "text": 0.007568384170532226
+        }
+      },
+      "rss_peak_bytes": 2594414592,
+      "device_used_peak_bytes": 19198050304,
+      "torch_allocated_peak_bytes": 1698467840,
+      "torch_reserved_peak_bytes": 1847590912,
+      "features": {
+        "encoder": {
+          "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+          "preprocessing": "c86b4acd92ae17cbab265560c56a326f03ddb7497ed85eddccaf406913e32e0c"
+        },
+        "batch_size": 8,
+        "encoded_vectors": {
+          "image": 200,
+          "text": 5
+        },
+        "cache_hits": {
+          "image": 0,
+          "text": 0
+        },
+        "encoder_calls": {
+          "image_batch": 25,
+          "image_single": 0,
+          "text_batch": 1,
+          "text_single": 0
+        },
+        "timings": {
+          "identity_seconds": 0.5347591554746032,
+          "hash_seconds": 10.110987060703337,
+          "cache_seconds": 0.20528278034180403,
+          "encoder_seconds": 48.41195746976882
+        },
+        "model_metrics": {
+          "image_decode_seconds": 45.43975297641009,
+          "image_preprocess_seconds": 40.36720261070877,
+          "image_transfer_seconds": 0.1654381975531578,
+          "image_forward_calls": 25,
+          "image_forward_seconds": 1.5261325389146805,
+          "image_postprocess_seconds": 0.014602454379200935,
+          "text_preprocess_seconds": 0.0038851173594594,
+          "text_forward_calls": 1,
+          "text_forward_seconds": 0.007967549376189709,
+          "text_postprocess_seconds": 0.0003002006560564041
+        },
+        "image_errors": {},
+        "text_errors": {}
+      },
+      "repeat_min_cosine": {
+        "images": 1.0,
+        "texts": 1.0
+      }
+    },
+    {
+      "seconds": 59.90128063689917,
+      "forward": {
+        "calls": {
+          "image": 25,
+          "text": 1
+        },
+        "gpu_seconds": {
+          "image": 1.503858081817627,
+          "text": 0.00830463981628418
+        }
+      },
+      "rss_peak_bytes": 2592706560,
+      "device_used_peak_bytes": 19198050304,
+      "torch_allocated_peak_bytes": 1698467840,
+      "torch_reserved_peak_bytes": 1847590912,
+      "features": {
+        "encoder": {
+          "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+          "preprocessing": "c86b4acd92ae17cbab265560c56a326f03ddb7497ed85eddccaf406913e32e0c"
+        },
+        "batch_size": 8,
+        "encoded_vectors": {
+          "image": 200,
+          "text": 5
+        },
+        "cache_hits": {
+          "image": 0,
+          "text": 0
+        },
+        "encoder_calls": {
+          "image_batch": 25,
+          "image_single": 0,
+          "text_batch": 1,
+          "text_single": 0
+        },
+        "timings": {
+          "identity_seconds": 0.6673922287300229,
+          "hash_seconds": 10.054436599835753,
+          "cache_seconds": 0.1924671633169055,
+          "encoder_seconds": 48.93564139865339
+        },
+        "model_metrics": {
+          "image_decode_seconds": 45.44894852861762,
+          "image_preprocess_seconds": 41.44434399250895,
+          "image_transfer_seconds": 0.14637335948646069,
+          "image_forward_calls": 25,
+          "image_forward_seconds": 1.5117650283500552,
+          "image_postprocess_seconds": 0.015252715907990932,
+          "text_preprocess_seconds": 0.0037358999252319336,
+          "text_forward_calls": 1,
+          "text_forward_seconds": 0.008704707957804203,
+          "text_postprocess_seconds": 0.00031813792884349823
+        },
+        "image_errors": {},
+        "text_errors": {}
+      },
+      "repeat_min_cosine": {
+        "images": 1.0,
+        "texts": 1.0
+      }
+    },
+    {
+      "seconds": 59.08842625003308,
+      "forward": {
+        "calls": {
+          "image": 25,
+          "text": 1
+        },
+        "gpu_seconds": {
+          "image": 1.5009639701843263,
+          "text": 0.006747104167938232
+        }
+      },
+      "rss_peak_bytes": 2636566528,
+      "device_used_peak_bytes": 19198050304,
+      "torch_allocated_peak_bytes": 1698467840,
+      "torch_reserved_peak_bytes": 1847590912,
+      "features": {
+        "encoder": {
+          "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+          "preprocessing": "c86b4acd92ae17cbab265560c56a326f03ddb7497ed85eddccaf406913e32e0c"
+        },
+        "batch_size": 8,
+        "encoded_vectors": {
+          "image": 200,
+          "text": 5
+        },
+        "cache_hits": {
+          "image": 0,
+          "text": 0
+        },
+        "encoder_calls": {
+          "image_batch": 25,
+          "image_single": 0,
+          "text_batch": 1,
+          "text_single": 0
+        },
+        "timings": {
+          "identity_seconds": 0.6194581231102347,
+          "hash_seconds": 9.907298277132213,
+          "cache_seconds": 0.17857035249471664,
+          "encoder_seconds": 48.33014057017863
+        },
+        "model_metrics": {
+          "image_decode_seconds": 44.4007896091789,
+          "image_preprocess_seconds": 41.76347687933594,
+          "image_transfer_seconds": 0.12214010115712881,
+          "image_forward_calls": 25,
+          "image_forward_seconds": 1.5073412880301476,
+          "image_postprocess_seconds": 0.009486799128353596,
+          "text_preprocess_seconds": 0.004202483221888542,
+          "text_forward_calls": 1,
+          "text_forward_seconds": 0.0071163782849907875,
+          "text_postprocess_seconds": 0.00029916781932115555
+        },
+        "image_errors": {},
+        "text_errors": {}
+      },
+      "repeat_min_cosine": {
+        "images": 1.0,
+        "texts": 1.0
+      }
+    },
+    {
+      "seconds": 58.939177606254816,
+      "forward": {
+        "calls": {
+          "image": 25,
+          "text": 1
+        },
+        "gpu_seconds": {
+          "image": 1.500262565612793,
+          "text": 0.006273983955383301
+        }
+      },
+      "rss_peak_bytes": 2634907648,
+      "device_used_peak_bytes": 19198050304,
+      "torch_allocated_peak_bytes": 1698467840,
+      "torch_reserved_peak_bytes": 1847590912,
+      "features": {
+        "encoder": {
+          "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+          "preprocessing": "c86b4acd92ae17cbab265560c56a326f03ddb7497ed85eddccaf406913e32e0c"
+        },
+        "batch_size": 8,
+        "encoded_vectors": {
+          "image": 200,
+          "text": 5
+        },
+        "cache_hits": {
+          "image": 0,
+          "text": 0
+        },
+        "encoder_calls": {
+          "image_batch": 25,
+          "image_single": 0,
+          "text_batch": 1,
+          "text_single": 0
+        },
+        "timings": {
+          "identity_seconds": 0.6138705173507333,
+          "hash_seconds": 9.948370720259845,
+          "cache_seconds": 0.17666520550847054,
+          "encoder_seconds": 48.15130043029785
+        },
+        "model_metrics": {
+          "image_decode_seconds": 43.52156077232212,
+          "image_preprocess_seconds": 42.099150167778134,
+          "image_transfer_seconds": 0.12292893137782812,
+          "image_forward_calls": 25,
+          "image_forward_seconds": 1.5073428684845567,
+          "image_postprocess_seconds": 0.00981671642512083,
+          "text_preprocess_seconds": 0.0024476926773786545,
+          "text_forward_calls": 1,
+          "text_forward_seconds": 0.006479877978563309,
+          "text_postprocess_seconds": 0.0002112109214067459
+        },
+        "image_errors": {},
+        "text_errors": {}
+      },
+      "repeat_min_cosine": {
+        "images": 1.0,
+        "texts": 1.0
+      }
+    }
+  ],
+  "pipeline_runs": [
+    {
+      "seconds": 171.7545583024621,
+      "forward": {
+        "calls": {
+          "image": 22,
+          "text": 0
+        },
+        "gpu_seconds": {
+          "image": 1.2148995532989502,
+          "text": 0.0
+        }
+      },
+      "rss_peak_bytes": 3447709696,
+      "device_used_peak_bytes": 20485701632,
+      "torch_allocated_peak_bytes": 1698467840,
+      "torch_reserved_peak_bytes": 1847590912,
+      "decisions_sha256": "99b23e27bee3aa1632ea3dd5bb5abcc8e5710aa891a01587ca2bee2c80a83265",
+      "quality_sha256": "b53dc5278e014e2b987501da2cd101c3d5a78c08f5cdd2655add8811a92a1cf9",
+      "total_input": 200,
+      "kept": 154,
+      "errors": 0,
+      "face_errors": [],
+      "stage_timings": {
+        "dedup_seconds": 65.88810074515641,
+        "scene_features_seconds": 46.23979581147432,
+        "recognition_and_copy_seconds": 59.27747749816626,
+        "before_report_seconds": 171.73080541193485
+      }
+    },
+    {
+      "seconds": 171.3565177442506,
+      "forward": {
+        "calls": {
+          "image": 22,
+          "text": 0
+        },
+        "gpu_seconds": {
+          "image": 1.213926082611084,
+          "text": 0.0
+        }
+      },
+      "rss_peak_bytes": 3627003904,
+      "device_used_peak_bytes": 20485701632,
+      "torch_allocated_peak_bytes": 1698467840,
+      "torch_reserved_peak_bytes": 1847590912,
+      "decisions_sha256": "99b23e27bee3aa1632ea3dd5bb5abcc8e5710aa891a01587ca2bee2c80a83265",
+      "quality_sha256": "b53dc5278e014e2b987501da2cd101c3d5a78c08f5cdd2655add8811a92a1cf9",
+      "total_input": 200,
+      "kept": 154,
+      "errors": 0,
+      "face_errors": [],
+      "stage_timings": {
+        "dedup_seconds": 68.85326142143458,
+        "scene_features_seconds": 45.70088913012296,
+        "recognition_and_copy_seconds": 56.54180714022368,
+        "before_report_seconds": 171.33329866360873
+      }
+    },
+    {
+      "seconds": 166.54254319518805,
+      "forward": {
+        "calls": {
+          "image": 22,
+          "text": 0
+        },
+        "gpu_seconds": {
+          "image": 1.1794237184524536,
+          "text": 0.0
+        }
+      },
+      "rss_peak_bytes": 3435360256,
+      "device_used_peak_bytes": 20485701632,
+      "torch_allocated_peak_bytes": 1698467840,
+      "torch_reserved_peak_bytes": 1847590912,
+      "decisions_sha256": "99b23e27bee3aa1632ea3dd5bb5abcc8e5710aa891a01587ca2bee2c80a83265",
+      "quality_sha256": "b53dc5278e014e2b987501da2cd101c3d5a78c08f5cdd2655add8811a92a1cf9",
+      "total_input": 200,
+      "kept": 154,
+      "errors": 0,
+      "face_errors": [],
+      "stage_timings": {
+        "dedup_seconds": 62.49866990651935,
+        "scene_features_seconds": 46.12673116568476,
+        "recognition_and_copy_seconds": 57.65513366274536,
+        "before_report_seconds": 166.51835923828185
+      }
+    },
+    {
+      "seconds": 167.20924524310976,
+      "forward": {
+        "calls": {
+          "image": 22,
+          "text": 0
+        },
+        "gpu_seconds": {
+          "image": 1.1849253129959108,
+          "text": 0.0
+        }
+      },
+      "rss_peak_bytes": 3457908736,
+      "device_used_peak_bytes": 20485701632,
+      "torch_allocated_peak_bytes": 1698467840,
+      "torch_reserved_peak_bytes": 1847590912,
+      "decisions_sha256": "99b23e27bee3aa1632ea3dd5bb5abcc8e5710aa891a01587ca2bee2c80a83265",
+      "quality_sha256": "b53dc5278e014e2b987501da2cd101c3d5a78c08f5cdd2655add8811a92a1cf9",
+      "total_input": 200,
+      "kept": 154,
+      "errors": 0,
+      "face_errors": [],
+      "stage_timings": {
+        "dedup_seconds": 62.58688036631793,
+        "scene_features_seconds": 46.25070961844176,
+        "recognition_and_copy_seconds": 58.10943203512579,
+        "before_report_seconds": 167.1861544288695
+      }
+    },
+    {
+      "seconds": 165.4264188753441,
+      "forward": {
+        "calls": {
+          "image": 22,
+          "text": 0
+        },
+        "gpu_seconds": {
+          "image": 1.1826956129074098,
+          "text": 0.0
+        }
+      },
+      "rss_peak_bytes": 3381673984,
+      "device_used_peak_bytes": 20485701632,
+      "torch_allocated_peak_bytes": 1698467840,
+      "torch_reserved_peak_bytes": 1847590912,
+      "decisions_sha256": "99b23e27bee3aa1632ea3dd5bb5abcc8e5710aa891a01587ca2bee2c80a83265",
+      "quality_sha256": "b53dc5278e014e2b987501da2cd101c3d5a78c08f5cdd2655add8811a92a1cf9",
+      "total_input": 200,
+      "kept": 154,
+      "errors": 0,
+      "face_errors": [],
+      "stage_timings": {
+        "dedup_seconds": 62.12065819092095,
+        "scene_features_seconds": 45.64160397835076,
+        "recognition_and_copy_seconds": 57.401001466438174,
+        "before_report_seconds": 165.40314268134534
+      }
+    }
+  ],
+  "load_seconds": 3.217907886952162,
+  "signature_seconds": 4.632466987706721,
+  "environment": {
+    "device": "cuda:0",
+    "gpu": "NVIDIA GeForce RTX 3090",
+    "torch": "2.9.0+cu130",
+    "transformers": "5.15.0",
+    "pillow": "12.3.0",
+    "numpy": "2.2.6",
+    "cpu_count": 32,
+    "torch_cpu_threads": 16,
+    "decode_workers": 2,
+    "batch_size": 8,
+    "gpu_before": {
+      "device": "index, uuid, driver_version, memory.total [MiB], memory.used [MiB], utilization.gpu [%]\n1, GPU-d1ac7cb4-e2db-8963-1f69-40e675dd3af5, 580.126.09, 24576 MiB, 16041 MiB, 4 %",
+      "processes": "gpu_uuid, pid, process_name, used_gpu_memory [MiB]\nGPU-d1ac7cb4-e2db-8963-1f69-40e675dd3af5, 16354, /opt/conda/bin/python, 878 MiB\nGPU-d1ac7cb4-e2db-8963-1f69-40e675dd3af5, 1639148, python, 14888 MiB\nGPU-d1ac7cb4-e2db-8963-1f69-40e675dd3af5, 3776701, /home/huachenghao/.conda/envs/face_scrfd_arcface/bin/python, 256 MiB"
+    },
+    "before_load_gpu": {
+      "total": 25769803776,
+      "free": 8475967488,
+      "used": 17293836288
+    },
+    "memory_sampling_seconds": 0.05,
+    "gpu_after": {
+      "device": "index, uuid, driver_version, memory.total [MiB], memory.used [MiB], utilization.gpu [%]\n1, GPU-d1ac7cb4-e2db-8963-1f69-40e675dd3af5, 580.126.09, 24576 MiB, 19085 MiB, 0 %",
+      "processes": "gpu_uuid, pid, process_name, used_gpu_memory [MiB]\nGPU-d1ac7cb4-e2db-8963-1f69-40e675dd3af5, 16354, /opt/conda/bin/python, 878 MiB\nGPU-d1ac7cb4-e2db-8963-1f69-40e675dd3af5, 1639148, python, 14888 MiB\nGPU-d1ac7cb4-e2db-8963-1f69-40e675dd3af5, 3776701, /home/huachenghao/.conda/envs/face_scrfd_arcface/bin/python, 3300 MiB"
+    }
+  },
+  "pipeline_configuration": {
+    "shot_classifier": null,
+    "classify_role": false,
+    "keep_per_bucket": 2,
+    "face_device": "cuda",
+    "quality_decode_workers": 1,
+    "gallery": "isolated_copy",
+    "feature_cache": "empty_each_run"
+  },
+  "baseline_mode": "batch",
+  "image_backend": "processor",
+  "face_providers": [
+    "CUDAExecutionProvider",
+    "CPUExecutionProvider"
+  ]
+}

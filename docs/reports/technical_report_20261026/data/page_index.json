@@ -1,0 +1,147 @@
+[
+  {
+    "id": "cover",
+    "title": "封面",
+    "page": 1
+  },
+  {
+    "id": "executive",
+    "title": "技术摘要",
+    "page": 2
+  },
+  {
+    "id": "capabilities",
+    "title": "01 系统功能",
+    "page": 3
+  },
+  {
+    "id": "architecture",
+    "title": "02 系统架构",
+    "page": 4
+  },
+  {
+    "id": "data",
+    "title": "03 数据与样本范围",
+    "page": 5
+  },
+  {
+    "id": "face",
+    "title": "04 人脸模型原理",
+    "page": 6
+  },
+  {
+    "id": "embeddings",
+    "title": "05 图文模型原理",
+    "page": 7
+  },
+  {
+    "id": "textblocks",
+    "title": "06 有出处的文本与短块消融",
+    "page": 8
+  },
+  {
+    "id": "visualprinciple",
+    "title": "07 视觉证据与OCR",
+    "page": 9
+  },
+  {
+    "id": "grouping",
+    "title": "08 图聚类与时序分组",
+    "page": 10
+  },
+  {
+    "id": "reliability",
+    "title": "09 持久任务、缓存与复核事务",
+    "page": 11
+  },
+  {
+    "id": "setup",
+    "title": "10 实验环境与设计",
+    "page": 12
+  },
+  {
+    "id": "metrics",
+    "title": "11 指标定义",
+    "page": 13
+  },
+  {
+    "id": "fullresults",
+    "title": "12 幕次检索全量结果",
+    "page": 14
+  },
+  {
+    "id": "retrievalanalysis",
+    "title": "13 主结果与消融解释",
+    "page": 15
+  },
+  {
+    "id": "poolanalysis",
+    "title": "14 逐剧目差异与候选竞争",
+    "page": 16
+  },
+  {
+    "id": "visualresults",
+    "title": "15 视觉观察与OCR结果",
+    "page": 17
+  },
+  {
+    "id": "scale",
+    "title": "16 图聚类与时序研究结果",
+    "page": 18
+  },
+  {
+    "id": "responsiveness",
+    "title": "17 服务响应与复核存储",
+    "page": 19
+  },
+  {
+    "id": "performance",
+    "title": "18 历史U2性能与测量边界",
+    "page": 20
+  },
+  {
+    "id": "preprocessing",
+    "title": "19 U2预处理修复与DALI评价",
+    "page": 21
+  },
+  {
+    "id": "performance_latest",
+    "title": "20 U2同步选优与最新性能",
+    "page": 22
+  },
+  {
+    "id": "workflows",
+    "title": "21 真实整理与恢复验证",
+    "page": 23
+  },
+  {
+    "id": "review",
+    "title": "22 质量复核与评测工具",
+    "page": 24
+  },
+  {
+    "id": "gates",
+    "title": "23 局限、采用决策与研发建议",
+    "page": 25
+  },
+  {
+    "id": "reproducibility",
+    "title": "24 复现、代码与模型依据",
+    "page": 26
+  },
+  {
+    "id": "sources",
+    "title": "附录 证据索引",
+    "page": 27
+  },
+  {
+    "id": "sources_more",
+    "title": "附录 新增U2证据与版本",
+    "page": 28
+  },
+  {
+    "id": "references",
+    "title": "附录 方法参考与参数依据",
+    "page": 29
+  }
+]

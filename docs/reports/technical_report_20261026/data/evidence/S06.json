@@ -1,0 +1,98 @@
+{
+  "status": "passed",
+  "checks": {
+    "all_images_processed": true,
+    "all_images_have_valid_observations": true,
+    "one_actual_observation_request_per_image": true,
+    "actual_calls_equal_reservations": true,
+    "output_reservations_within_budget": true,
+    "replay_has_no_requests": true,
+    "replay_equal": true,
+    "neutral_sources_unchanged": true,
+    "input_manifest_unchanged": true,
+    "source_unchanged": true
+  },
+  "input_count": 100,
+  "observed_images": 100,
+  "http_requests": 100,
+  "replay_extra_requests": 0,
+  "elapsed_seconds": 429.5171889681369,
+  "policy": {
+    "mode": "on_demand",
+    "automatic_fraction": 0.3,
+    "max_images": 100,
+    "max_output_tokens_per_request": 1024,
+    "max_batch_output_tokens": 204800,
+    "candidate_margin": 0.03,
+    "max_prompt_characters": 24000
+  },
+  "budget": {
+    "policy": {
+      "mode": "on_demand",
+      "automatic_fraction": 0.3,
+      "max_images": 100,
+      "max_output_tokens_per_request": 1024,
+      "max_batch_output_tokens": 204800,
+      "candidate_margin": 0.03,
+      "max_prompt_characters": 24000
+    },
+    "input_images": 100,
+    "image_limit": 100,
+    "allocated_images": 100,
+    "automatic_image_fraction": 1.0,
+    "reserved_requests": 100,
+    "request_limit": 200,
+    "automatic_request_ratio": 1.0,
+    "reserved_max_output_tokens": 102400,
+    "requests_by_status": {
+      "valid": 100
+    },
+    "token_budget_kind": "hard_maximum_generated_output_tokens; input_usage_reported_separately"
+  },
+  "model_identity": {
+    "endpoint_sha256": "ec6994d0166f81f66d6a5ea3528aeeb7f6188666e61e7335ec64c2fe3a02d411",
+    "served_model": "Qwen3.6-27B",
+    "declared_model_identity": "Qwen3.8-27B",
+    "verified_weights_sha256": null,
+    "remote_weight_verification": "unverified",
+    "prompt_version": "visual-observation-v2",
+    "max_side": 1280,
+    "preview_format": "jpeg-q90-exif-rgb",
+    "observation_prompt_sha256": "fb3daa334b488ac29c7486c59c368f9ca56ce3fc507e4f6181404d4e78211741",
+    "temperature": 0.0,
+    "thinking": {
+      "enable_thinking": false
+    },
+    "private_process": "590a09da8c9d475e8fb8db19d9104cd3",
+    "pillow_version": "12.3.0",
+    "source_sha256": {
+      "visual_evidence.py": "8dba2a2c5d6aa5430edbb0d104d0651332f4b5d12b288cf77f97b2acb943f203",
+      "scene_reasoner.py": "671fd6f83fcbc4f66d57b0e2122362dd27e2a6ae05af79a9755e6e8f81a0bb4b",
+      "llm_client.py": "93a6b5c7584f771f8c58ad599ab6b8345b472ce11c6b23ceaa8e4d04d4203c32"
+    },
+    "max_output_tokens_per_request": 1024
+  },
+  "source_sha256": {
+    "tools/collect_visual_observations.py": "ed8fec7799eff1cf80d1abf9799a353532ffba207ca1356b909caea5141051c8",
+    "core_modules/organize/scene_reasoner.py": "671fd6f83fcbc4f66d57b0e2122362dd27e2a6ae05af79a9755e6e8f81a0bb4b",
+    "core_modules/organize/llm_client.py": "93a6b5c7584f771f8c58ad599ab6b8345b472ce11c6b23ceaa8e4d04d4203c32",
+    "core_modules/organize/visual_evidence.py": "8dba2a2c5d6aa5430edbb0d104d0651332f4b5d12b288cf77f97b2acb943f203",
+    "config/base.py": "ac5ceb8a61433032311fb0804e547cb34045bf45197474f9f983b9a450b0a07e"
+  },
+  "artifact_sha256": {
+    "input_manifest.json": "b1c579cf81e324c39ac858a1e65fe606adced83aa0d97452ddf3d9904511b42d",
+    "results.json": "1251f484fb83e16032a5a159973351f3d11b0a84f933c780648abb2acbea91c2",
+    "http_attempts.json": "006bf531526248469cfb8f316a7a3116979f4e5bccb26aa630a0caff58e29e7d"
+  },
+  "quality_gate": "insufficient_data",
+  "fact_reviewers": 0,
+  "human_verified_images": 0,
+  "final_test_locked": false,
+  "default_adoption": false,
+  "limitations": [
+    "Explicit on-demand observation collection; default automatic policy is unchanged.",
+    "Previously used neutral development images; no scene-choice calls or retrieval encoding.",
+    "Remote weights remain unverified; replay proves current-process reuse only.",
+    "No two-reviewer fact ground truth, final test, Macro-F1 or end-to-end performance claim."
+  ]
+}

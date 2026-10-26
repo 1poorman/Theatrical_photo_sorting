@@ -1,0 +1,133 @@
+{
+  "status": "measured",
+  "baseline_commit": "4194277655d35ff258c483463efaca1ec002c2a3",
+  "code_commit": "4194277655d35ff258c483463efaca1ec002c2a3",
+  "source_sha256": {
+    "core_modules/image_search.py": "c570fc2c00361682e90b0619209005772eb1738808dde980590b57b6ea56bc43",
+    "core_modules/organize/feature_cache.py": "075c2e7873f4aa34c5d841c1baf3b0d9fb10b3d6707dd6a34916d6166c144bac",
+    "core_modules/organize/smart_organizer.py": "cf684bc6f2ea7b44dc4801a27922c9749ffc350840c525eca1c26411a775eec6",
+    "core_modules/organize/burst_dedup.py": "bd580ab04edcb2e2b20c21c240aaff4a56b365e5f5d776d11a174e4c3801a588",
+    "core_modules/organize/multimodal_evidence.py": "643acda290949fac7695ccd6cd7643a496a8b07816af0607ec61fec133aa3825",
+    "core_modules/organize/filename_parser.py": "43551da0b05639dbe220e6f4c56d0fdc15568558e99b42d6585b3e9303868d01",
+    "core_modules/organize/scene_split.py": "26ec6e42e1fa4cf0a5d75bf0b51eba0c8a3c39fc07a90f14523c1633a4e783a4",
+    "core_modules/organize/face_db_builder.py": "9d718a061b2aae908dfac5d3d25c99e3f9b3d763e59327b57228e99cdd4cb023",
+    "core_modules/tools/image_io.py": "4bbcef4b45321ddad8baed47d16e1d498f2fb6392fe707e9531138479784c55f",
+    "core_modules/face_recognition/face_recognition.py": "ce7a10c85a86263663838c8aa5beef8dea136cec15c825053a1b49506ca5d23a",
+    "core_modules/face_recognition/scrfd/scrfd_det.py": "e9d9f14c24ff6816bfb330a4d73f1bfa985b0078ecdb0959c7b7034adce70330",
+    "core_modules/face_recognition/arcface/arcface_onnx.py": "0b01075ee75af7af859c86767f5d7ce0d80eaa2f7f2b7a4a29c17fcc93ec4180",
+    "config/base.py": "1f441b0ffe41df702b598d8b167684cf6f7b47be94e74ae15d767d0156eab112",
+    "tools/benchmark_feature_pipeline.py": "4179105ad620a74e68a52e684fedf23c22e71e82283493a2ea984a889e5f7218"
+  },
+  "inputs_sha256": "f7f0f6c38e6314282565930d0169e402b6034167df6b17cd9df53adad905d5e3",
+  "sample_count": 200,
+  "play_count": 4,
+  "directory_count": 8,
+  "text_count": 5,
+  "repeats": 5,
+  "comparison": {
+    "images": {
+      "min_cosine": 0.999998927116394,
+      "fraction_at_least_0999": 1.0,
+      "below_threshold_indices": []
+    },
+    "texts": {
+      "min_cosine": 1.0,
+      "fraction_at_least_0999": 1.0,
+      "below_threshold_indices": []
+    }
+  },
+  "timing": {
+    "feature_runs": {
+      "baseline_median_seconds": 64.07785985991359,
+      "batch_median_seconds": 42.27700103260577,
+      "speedup": 1.515667107288289,
+      "wall_time_reduction": 0.34022451553420563,
+      "images_per_second": {
+        "baseline": 3.1212028684671758,
+        "batch": 4.730704522909554
+      },
+      "rss_peak_bytes": {
+        "baseline": 2580369408,
+        "batch": 2091687936
+      },
+      "rss_peak_ratio": 0.8106156930535118,
+      "distribution": {
+        "baseline": {
+          "p95_seconds": 65.09480193760245,
+          "min_seconds": 61.52620129007846,
+          "max_seconds": 65.19517551735044
+        },
+        "batch": {
+          "p95_seconds": 42.48922760281712,
+          "min_seconds": 42.09883394930512,
+          "max_seconds": 42.51679503545165
+        }
+      }
+    },
+    "pipeline_runs": {
+      "baseline_median_seconds": 158.09913385100663,
+      "batch_median_seconds": 142.8831721227616,
+      "speedup": 1.1064923286779484,
+      "wall_time_reduction": 0.09624316944446143,
+      "images_per_second": {
+        "baseline": 1.2650290683343082,
+        "batch": 1.3997449596665243
+      },
+      "rss_peak_bytes": {
+        "baseline": 3506122752,
+        "batch": 3240427520
+      },
+      "rss_peak_ratio": 0.9242196435226236,
+      "distribution": {
+        "baseline": {
+          "p95_seconds": 243.81464397627857,
+          "min_seconds": 154.9015931179747,
+          "max_seconds": 264.07416115980595
+        },
+        "batch": {
+          "p95_seconds": 144.05838476531207,
+          "min_seconds": 142.22517584916204,
+          "max_seconds": 144.0750728342682
+        }
+      }
+    }
+  },
+  "baseline_mode": "batch",
+  "image_backend": "pillow",
+  "cache_hit_forward_calls": {
+    "image": 0,
+    "text": 0
+  },
+  "pipeline_cache_hit_forward_calls": {
+    "image": 0,
+    "text": 0
+  },
+  "pipeline_decisions_equal": true,
+  "quality_scores_equal": true,
+  "peak_fraction_of_initial_free_gpu": [
+    0.37657829015023236,
+    0.37657829015023236
+  ],
+  "quality": "not_evaluated_requires_verified_labels",
+  "limitations": [
+    "Stage-photo classification and performance grouping are provisional.",
+    "Pipeline uses real SCRFD/ArcFace and SigLIP2, without shot or role classifiers.",
+    "Device memory includes other processes and is sampled every 50 ms.",
+    "This benchmark does not measure HTTP/UI latency or DALI."
+  ],
+  "checks": {
+    "minimum_size": true,
+    "cosine": true,
+    "repeat_consistency": true,
+    "cache_zero_forwards": true,
+    "analysis_to_organizer_cache": true,
+    "feature_speedup": true,
+    "pipeline_speedup": false,
+    "pipeline_decisions_equal": true,
+    "quality_scores_equal": true,
+    "rss_increase": true,
+    "gpu_headroom": true,
+    "no_errors": true
+  },
+  "performance_status": "not_passed"
+}

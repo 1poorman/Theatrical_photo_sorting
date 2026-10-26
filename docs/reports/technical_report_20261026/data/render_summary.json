@@ -1,0 +1,13 @@
+{
+  "status": "passed",
+  "pages": 29,
+  "imagesLoaded": true,
+  "desktopOverflow": false,
+  "mobile": {
+    "width": 390,
+    "scrollWidth": 390
+  },
+  "zoom": true,
+  "errors": [],
+  "externalRequests": []
+}

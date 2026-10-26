@@ -1,0 +1,146 @@
+{
+  "schema_version": 1,
+  "status": "offline_review_prepared_with_open_annotation_gaps",
+  "file_count": 582,
+  "unique_decoded_images": 319,
+  "stage_unique_images_hint": 292,
+  "reference_unique_images_hint": 27,
+  "exact_copy_groups": 263,
+  "imported_labeled_images": 263,
+  "scene_labeled_images": 260,
+  "stage_images_without_imported_labels": 29,
+  "imported_images_without_scene": 3,
+  "possible_unimported_scene_hints": 2,
+  "stage_images_with_DateTimeOriginal": 286,
+  "stage_images_missing_DateTimeOriginal": 6,
+  "filename_capture_date_mismatches": 0,
+  "known_exposed_unique_images_lower_bound": 282,
+  "unlabeled_stage_known_exposed_images": 20,
+  "near_duplicate_review_pairs": 4,
+  "legacy_near_review_pairs": 1,
+  "camera_stream_hints": 14,
+  "time_neighbor_review_pairs": 1,
+  "boundary_review_pairs": 197,
+  "organized_order_inversion_hints": 14,
+  "filename_review_groups": 49,
+  "filename_groups_with_multiple_imported_scenes": 17,
+  "gallery_crops": 109,
+  "gallery_unique_filename_parent_images": 47,
+  "gallery_crops_with_unique_filename_parent": 109,
+  "gallery_filename_parent_u4_overlap_crops": 108,
+  "gallery_filename_parent_u4_overlap_images": 46,
+  "review_item_counts": {
+    "boundary": 197,
+    "filename_group": 49,
+    "gallery_provenance": 47,
+    "near_duplicate": 4,
+    "order": 14,
+    "performance": 4,
+    "reference_material": 27,
+    "time_neighbor": 1,
+    "unlabeled_stage": 32
+  },
+  "performance_review": [
+    {
+      "play_title": "京剧《天下归心》",
+      "date_hints": [
+        "20140304"
+      ],
+      "verified_performance_ids": [],
+      "stage_unique_images": 35,
+      "reference_unique_images": 14,
+      "scene_labeled_images": 34,
+      "stage_images_without_imported_labels": 0,
+      "observed_capture_dates": [
+        "2014-03-04"
+      ],
+      "independent_performance_available": "not_verified",
+      "proposed_usage": "development_review"
+    },
+    {
+      "play_title": "歌剧《假面舞会》",
+      "date_hints": [
+        "20170522"
+      ],
+      "verified_performance_ids": [],
+      "stage_unique_images": 119,
+      "reference_unique_images": 0,
+      "scene_labeled_images": 118,
+      "stage_images_without_imported_labels": 0,
+      "observed_capture_dates": [
+        "2017-05-22"
+      ],
+      "independent_performance_available": "not_verified",
+      "proposed_usage": "development_review"
+    },
+    {
+      "play_title": "舞剧《马可·波罗》",
+      "date_hints": [
+        "20141012"
+      ],
+      "verified_performance_ids": [],
+      "stage_unique_images": 59,
+      "reference_unique_images": 13,
+      "scene_labeled_images": 59,
+      "stage_images_without_imported_labels": 0,
+      "observed_capture_dates": [
+        "2014-10-12"
+      ],
+      "independent_performance_available": "not_verified",
+      "proposed_usage": "development_review"
+    },
+    {
+      "play_title": "话剧《样式雷》",
+      "date_hints": [
+        "20160609"
+      ],
+      "verified_performance_ids": [],
+      "stage_unique_images": 79,
+      "reference_unique_images": 0,
+      "scene_labeled_images": 49,
+      "stage_images_without_imported_labels": 29,
+      "observed_capture_dates": [
+        "2016-06-09"
+      ],
+      "independent_performance_available": "not_verified",
+      "proposed_usage": "development_review"
+    }
+  ],
+  "legacy_split_exposure": {
+    "development": {
+      "files": 369,
+      "unique_images": 191,
+      "known_exposed_unique_images": 178
+    },
+    "final_test_provisional": {
+      "files": 129,
+      "unique_images": 79,
+      "known_exposed_unique_images": 69
+    },
+    "validation": {
+      "files": 84,
+      "unique_images": 49,
+      "known_exposed_unique_images": 35
+    }
+  },
+  "final_test_locked": false,
+  "new_final_test_images": 0,
+  "verified_performances": 0,
+  "verified_near_duplicates": 0,
+  "verified_bursts": 0,
+  "verified_boundaries": 0,
+  "verified_gallery_crop_origins": 0,
+  "verified_face_boxes": 0,
+  "model_runs_started": 0,
+  "human_decisions_applied": false,
+  "limitations": [
+    "Exact copies share exposure; supplied manifests are a lower bound on prior use.",
+    "Filename date, camera stream, source category and crop provenance require human verification.",
+    "Camera model can represent several bodies if serial is absent; clocks are not synchronized.",
+    "Short time gaps and similar whole-image hashes do not establish bursts or safe gallery isolation.",
+    "Legacy final_test_provisional is preserved as history; exposed samples cannot be a fresh final test.",
+    "No face boxes, unknown identities, burst preferences or shooting boundaries were annotated."
+  ],
+  "protocol_sha256": "18ea348ae152fdf7e1d378e3986b7bcb875132c749db0b9d35b7b8c2e58c45f1",
+  "integrity_checks_passed": 20
+}

@@ -1,0 +1,367 @@
+{
+  "kind": "face_cluster",
+  "clients": 5,
+  "duration_seconds": 60,
+  "requests_per_second": 5,
+  "records": 10000,
+  "measurements": {
+    "health": {
+      "count": 150,
+      "median_seconds": 0.0030213110148906708,
+      "p95_seconds": 0.004576583625748751,
+      "max_seconds": 0.16127748135477304
+    },
+    "page": {
+      "count": 150,
+      "median_seconds": 0.00780344195663929,
+      "p95_seconds": 0.01099845287390053,
+      "max_seconds": 0.032036133110523224
+    },
+    "create": {
+      "count": 5,
+      "median_seconds": 0.08786954078823328,
+      "p95_seconds": 0.11977117359638213,
+      "max_seconds": 0.1244021700695157
+    },
+    "cancel": {
+      "count": 1,
+      "median_seconds": 0.006287990137934685,
+      "p95_seconds": 0.006287990137934685,
+      "max_seconds": 0.006287990137934685
+    }
+  },
+  "errors": [],
+  "checks": {
+    "query_p95": true,
+    "create_p95": true,
+    "cancel_ack": true,
+    "task_active_during_load": true,
+    "cancelled": true,
+    "no_next_item_after_cancel": true,
+    "idempotent_duplicate": true,
+    "no_query_errors": true,
+    "source_photos_and_copies_unchanged": true,
+    "measured_code_unchanged": true
+  },
+  "first_unique_create_seconds": 0.03808392118662596,
+  "task_initial": {
+    "task_id": "ea49f74d798e46b9a6c992b0b5a72c0e",
+    "kind": "face_cluster",
+    "status": "running",
+    "created_at": 1792720293.9864023,
+    "updated_at": 1792720294.511695,
+    "total": 0,
+    "succeeded": 0,
+    "failed": 0,
+    "pending": 0,
+    "preparing": 291,
+    "execution_contract": null,
+    "progress": 0,
+    "result": null,
+    "error": null
+  },
+  "task_before_cancel": {
+    "task_id": "ea49f74d798e46b9a6c992b0b5a72c0e",
+    "kind": "face_cluster",
+    "status": "running",
+    "created_at": 1792720293.9864023,
+    "updated_at": 1792720354.5159898,
+    "total": 292,
+    "succeeded": 47,
+    "failed": 0,
+    "pending": 245,
+    "preparing": 0,
+    "execution_contract": {
+      "clustering_backend": "legacy",
+      "code": {
+        "files": {
+          "app/organize_tasks.py": "d4ae1a0eaf776234464ca4782053e71890cbba4b3086648415882af5fef8edff",
+          "config/base.py": "ac5ceb8a61433032311fb0804e547cb34045bf45197474f9f983b9a450b0a07e",
+          "core_modules/face_recognition/arcface/arcface_onnx.py": "0b01075ee75af7af859c86767f5d7ce0d80eaa2f7f2b7a4a29c17fcc93ec4180",
+          "core_modules/face_recognition/scrfd/scrfd_det.py": "e9d9f14c24ff6816bfb330a4d73f1bfa985b0078ecdb0959c7b7034adce70330",
+          "core_modules/organize/face_cluster.py": "0835cd55e0e235e433d963722c2a24ba41828b36ab14807b72b7d2f5de60e12e",
+          "core_modules/organize/face_cluster_task.py": "1d577f04e070cdd148b597e6adb304fabd180ac147e4dc88210f6f7f24e886e5",
+          "core_modules/organize/face_graph_cluster.py": "059d25c68e4e12eb5192a17cf30ea425a1d5f4138fcd485b1c759bd2cce7604e",
+          "core_modules/organize/task_queue.py": "2f5bff3a7ed6fc7b08e8107ab56a9a9caedbd84f3c7c963cd752b1ef80070900",
+          "core_modules/organize/task_versions.py": "cb15de16972ec6ec7155be41d66a3c7de1c961ae8bf3fd0fbe07c2d2f84d8070",
+          "core_modules/tools/image_io.py": "4bbcef4b45321ddad8baed47d16e1d498f2fb6392fe707e9531138479784c55f"
+        },
+        "packages": {
+          "Pillow": "12.3.0",
+          "numpy": "2.2.6",
+          "onnxruntime": null,
+          "onnxruntime-gpu": "1.23.2",
+          "opencv-python": "4.13.0.92",
+          "torch": "2.9.0+cu130",
+          "transformers": "5.15.0",
+          "ultralytics": "8.4.120"
+        }
+      },
+      "face": {
+        "class": "types.SimpleNamespace",
+        "detector": {
+          "class": "core_modules.face_recognition.scrfd.scrfd_det.SCRFDDetector",
+          "det_thresh": 0.5,
+          "input_mean": 127.5,
+          "input_size": [
+            640,
+            640
+          ],
+          "input_std": 128.0,
+          "nms_thresh": 0.4,
+          "preprocessing": null,
+          "provider_options": {
+            "CPUExecutionProvider": {},
+            "CUDAExecutionProvider": {
+              "arena_extend_strategy": "kNextPowerOfTwo",
+              "cudnn_conv1d_pad_to_nc1d": "0",
+              "cudnn_conv_algo_search": "EXHAUSTIVE",
+              "cudnn_conv_use_max_workspace": "1",
+              "device_id": "0",
+              "do_copy_in_default_stream": "1",
+              "enable_cuda_graph": "0",
+              "enable_skip_layer_norm_strict_mode": "0",
+              "fuse_conv_bias": "0",
+              "gpu_external_alloc": "0",
+              "gpu_external_empty_cache": "0",
+              "gpu_external_free": "0",
+              "gpu_mem_limit": "18446744073709551615",
+              "has_user_compute_stream": "0",
+              "prefer_nhwc": "0",
+              "sdpa_kernel": "0",
+              "tunable_op_enable": "0",
+              "tunable_op_max_tuning_duration_ms": "0",
+              "tunable_op_tuning_enable": "0",
+              "use_ep_level_unified_stream": "0",
+              "use_tf32": "1",
+              "user_compute_stream": "0"
+            }
+          },
+          "providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ],
+          "weights": "731cbbfd269144e37a71d976f646dc4099dd2a232170316edb596b6a4943e5a2"
+        },
+        "extractor": {
+          "class": "core_modules.face_recognition.arcface.arcface_onnx.ArcFaceFeatureExtractor",
+          "input_mean": 127.5,
+          "input_size": [
+            112,
+            112
+          ],
+          "input_std": 127.5,
+          "preprocessing": null,
+          "provider_options": {
+            "CPUExecutionProvider": {},
+            "CUDAExecutionProvider": {
+              "arena_extend_strategy": "kNextPowerOfTwo",
+              "cudnn_conv1d_pad_to_nc1d": "0",
+              "cudnn_conv_algo_search": "EXHAUSTIVE",
+              "cudnn_conv_use_max_workspace": "1",
+              "device_id": "0",
+              "do_copy_in_default_stream": "1",
+              "enable_cuda_graph": "0",
+              "enable_skip_layer_norm_strict_mode": "0",
+              "fuse_conv_bias": "0",
+              "gpu_external_alloc": "0",
+              "gpu_external_empty_cache": "0",
+              "gpu_external_free": "0",
+              "gpu_mem_limit": "18446744073709551615",
+              "has_user_compute_stream": "0",
+              "prefer_nhwc": "0",
+              "sdpa_kernel": "0",
+              "tunable_op_enable": "0",
+              "tunable_op_max_tuning_duration_ms": "0",
+              "tunable_op_tuning_enable": "0",
+              "use_ep_level_unified_stream": "0",
+              "use_tf32": "1",
+              "user_compute_stream": "0"
+            }
+          },
+          "providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ],
+          "weights": "4ab1d6435d639628a6f3e5008dd4f929edf4c4124b1a7169e1048f9fef534cdf"
+        }
+      },
+      "graph_config": {
+        "max_cluster_size": 512,
+        "min_centroid_similarity": 0.65,
+        "min_similarity": 0.6,
+        "neighbors": 16
+      },
+      "sklearn": "1.7.2"
+    },
+    "progress": 16.1,
+    "result": null,
+    "error": null
+  },
+  "task_final": {
+    "task_id": "ea49f74d798e46b9a6c992b0b5a72c0e",
+    "kind": "face_cluster",
+    "status": "cancelled",
+    "created_at": 1792720293.9864023,
+    "updated_at": 1792720354.5315118,
+    "total": 292,
+    "succeeded": 47,
+    "failed": 0,
+    "pending": 245,
+    "preparing": 0,
+    "execution_contract": {
+      "clustering_backend": "legacy",
+      "code": {
+        "files": {
+          "app/organize_tasks.py": "d4ae1a0eaf776234464ca4782053e71890cbba4b3086648415882af5fef8edff",
+          "config/base.py": "ac5ceb8a61433032311fb0804e547cb34045bf45197474f9f983b9a450b0a07e",
+          "core_modules/face_recognition/arcface/arcface_onnx.py": "0b01075ee75af7af859c86767f5d7ce0d80eaa2f7f2b7a4a29c17fcc93ec4180",
+          "core_modules/face_recognition/scrfd/scrfd_det.py": "e9d9f14c24ff6816bfb330a4d73f1bfa985b0078ecdb0959c7b7034adce70330",
+          "core_modules/organize/face_cluster.py": "0835cd55e0e235e433d963722c2a24ba41828b36ab14807b72b7d2f5de60e12e",
+          "core_modules/organize/face_cluster_task.py": "1d577f04e070cdd148b597e6adb304fabd180ac147e4dc88210f6f7f24e886e5",
+          "core_modules/organize/face_graph_cluster.py": "059d25c68e4e12eb5192a17cf30ea425a1d5f4138fcd485b1c759bd2cce7604e",
+          "core_modules/organize/task_queue.py": "2f5bff3a7ed6fc7b08e8107ab56a9a9caedbd84f3c7c963cd752b1ef80070900",
+          "core_modules/organize/task_versions.py": "cb15de16972ec6ec7155be41d66a3c7de1c961ae8bf3fd0fbe07c2d2f84d8070",
+          "core_modules/tools/image_io.py": "4bbcef4b45321ddad8baed47d16e1d498f2fb6392fe707e9531138479784c55f"
+        },
+        "packages": {
+          "Pillow": "12.3.0",
+          "numpy": "2.2.6",
+          "onnxruntime": null,
+          "onnxruntime-gpu": "1.23.2",
+          "opencv-python": "4.13.0.92",
+          "torch": "2.9.0+cu130",
+          "transformers": "5.15.0",
+          "ultralytics": "8.4.120"
+        }
+      },
+      "face": {
+        "class": "types.SimpleNamespace",
+        "detector": {
+          "class": "core_modules.face_recognition.scrfd.scrfd_det.SCRFDDetector",
+          "det_thresh": 0.5,
+          "input_mean": 127.5,
+          "input_size": [
+            640,
+            640
+          ],
+          "input_std": 128.0,
+          "nms_thresh": 0.4,
+          "preprocessing": null,
+          "provider_options": {
+            "CPUExecutionProvider": {},
+            "CUDAExecutionProvider": {
+              "arena_extend_strategy": "kNextPowerOfTwo",
+              "cudnn_conv1d_pad_to_nc1d": "0",
+              "cudnn_conv_algo_search": "EXHAUSTIVE",
+              "cudnn_conv_use_max_workspace": "1",
+              "device_id": "0",
+              "do_copy_in_default_stream": "1",
+              "enable_cuda_graph": "0",
+              "enable_skip_layer_norm_strict_mode": "0",
+              "fuse_conv_bias": "0",
+              "gpu_external_alloc": "0",
+              "gpu_external_empty_cache": "0",
+              "gpu_external_free": "0",
+              "gpu_mem_limit": "18446744073709551615",
+              "has_user_compute_stream": "0",
+              "prefer_nhwc": "0",
+              "sdpa_kernel": "0",
+              "tunable_op_enable": "0",
+              "tunable_op_max_tuning_duration_ms": "0",
+              "tunable_op_tuning_enable": "0",
+              "use_ep_level_unified_stream": "0",
+              "use_tf32": "1",
+              "user_compute_stream": "0"
+            }
+          },
+          "providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ],
+          "weights": "731cbbfd269144e37a71d976f646dc4099dd2a232170316edb596b6a4943e5a2"
+        },
+        "extractor": {
+          "class": "core_modules.face_recognition.arcface.arcface_onnx.ArcFaceFeatureExtractor",
+          "input_mean": 127.5,
+          "input_size": [
+            112,
+            112
+          ],
+          "input_std": 127.5,
+          "preprocessing": null,
+          "provider_options": {
+            "CPUExecutionProvider": {},
+            "CUDAExecutionProvider": {
+              "arena_extend_strategy": "kNextPowerOfTwo",
+              "cudnn_conv1d_pad_to_nc1d": "0",
+              "cudnn_conv_algo_search": "EXHAUSTIVE",
+              "cudnn_conv_use_max_workspace": "1",
+              "device_id": "0",
+              "do_copy_in_default_stream": "1",
+              "enable_cuda_graph": "0",
+              "enable_skip_layer_norm_strict_mode": "0",
+              "fuse_conv_bias": "0",
+              "gpu_external_alloc": "0",
+              "gpu_external_empty_cache": "0",
+              "gpu_external_free": "0",
+              "gpu_mem_limit": "18446744073709551615",
+              "has_user_compute_stream": "0",
+              "prefer_nhwc": "0",
+              "sdpa_kernel": "0",
+              "tunable_op_enable": "0",
+              "tunable_op_max_tuning_duration_ms": "0",
+              "tunable_op_tuning_enable": "0",
+              "use_ep_level_unified_stream": "0",
+              "use_tf32": "1",
+              "user_compute_stream": "0"
+            }
+          },
+          "providers": [
+            "CUDAExecutionProvider",
+            "CPUExecutionProvider"
+          ],
+          "weights": "4ab1d6435d639628a6f3e5008dd4f929edf4c4124b1a7169e1048f9fef534cdf"
+        }
+      },
+      "graph_config": {
+        "max_cluster_size": 512,
+        "min_centroid_similarity": 0.65,
+        "min_similarity": 0.6,
+        "neighbors": 16
+      },
+      "sklearn": "1.7.2"
+    },
+    "progress": 16.1,
+    "result": null,
+    "error": null
+  },
+  "cancel_acknowledgement": "cancel_requested",
+  "cancel_final_seconds": 0.01050389464944601,
+  "limitations": [
+    "Real SCRFD/ArcFace on verified copies; official gallery and original photos read only.",
+    "Full main API; unrelated production startup disabled; no model quality evaluation.",
+    "Five unique creation samples while first task runs; each additional task is immediately cancelled.",
+    "Models loaded before requests; first real inference is not prewarmed.",
+    "One run on a shared GPU; no controlled performance comparison.",
+    "If the task completes before 60 seconds, active-load/cancellation checks fail explicitly."
+  ],
+  "source_sha256": {
+    "tools/benchmark_face_task_http.py": "0e3963d5a43c078b6c92b24bf70add020c465f097affca3c4d886c8f52c8d4d3",
+    "tools/benchmark_task_responsiveness.py": "6075b273bd2df53eb18411dc71a791172e58527c603af5f70d64541a96c0c6ba",
+    "app/main.py": "1cec83e005fbb60c5c0f5eaebd608a3a7a59710f8319205529bbc6901b885757",
+    "app/organize_tasks.py": "d4ae1a0eaf776234464ca4782053e71890cbba4b3086648415882af5fef8edff",
+    "core_modules/organize/task_queue.py": "2f5bff3a7ed6fc7b08e8107ab56a9a9caedbd84f3c7c963cd752b1ef80070900",
+    "core_modules/organize/task_artifacts.py": "9068f1707d69cffd057a3c81cf26c223af8f6a8192b59bfb7586741f3afea16b",
+    "core_modules/organize/task_versions.py": "cb15de16972ec6ec7155be41d66a3c7de1c961ae8bf3fd0fbe07c2d2f84d8070",
+    "core_modules/organize/face_cluster_task.py": "1d577f04e070cdd148b597e6adb304fabd180ac147e4dc88210f6f7f24e886e5",
+    "core_modules/organize/face_cluster.py": "0835cd55e0e235e433d963722c2a24ba41828b36ab14807b72b7d2f5de60e12e",
+    "core_modules/organize/face_database_task.py": "9dbe992419f72cd90b08e7e5b3beab61f63e1e5a90bc09e6ee3adee2f0586c0e",
+    "core_modules/organize/face_db_builder.py": "9d718a061b2aae908dfac5d3d25c99e3f9b3d763e59327b57228e99cdd4cb023",
+    "core_modules/organize/review_queue.py": "42ef9cb0acc9465d84a72ad9e54d86180f7fea5aa44b1cce477995b4b746367d",
+    "core_modules/organize/review_store.py": "38772804ed3ca1698a282fe9d199c2468ef7e434c42b9373a97f6b1028c330e1"
+  },
+  "physical_gpu": 1,
+  "image_items": 292,
+  "original_directories": 9
+}

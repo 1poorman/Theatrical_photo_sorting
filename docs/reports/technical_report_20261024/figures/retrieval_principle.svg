@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="390" viewBox="0 0 1040 390">
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="#899ba6"/></marker></defs>
+<rect width="100%" height="100%" fill="white"/>
+<path d="M270 75 H305 V140 H335" fill="none" stroke="#899ba6" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M270 250 H305 V195 H335" fill="none" stroke="#899ba6" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M615 145 H650 V75 H685" fill="none" stroke="#899ba6" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M615 195 H650 V250 H685" fill="none" stroke="#899ba6" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="15" y="25" width="255" height="95" rx="10" fill="#536c87"/>
+<text x="31" y="55" font-family="SimHei,sans-serif" font-size="18" fill="white">中性图像</text>
+<text x="31" y="78" font-family="SimHei,sans-serif" font-size="13" fill="#e4edf2">RGB / 去除标签路径线索</text>
+<text x="31" y="97" font-family="SimHei,sans-serif" font-size="13" fill="#e4edf2">图像编码器 → 归一化向量</text>
+<rect x="15" y="190" width="255" height="120" rx="10" fill="#007f83"/>
+<text x="31" y="220" font-family="SimHei,sans-serif" font-size="18" fill="white">有出处的场次文本</text>
+<text x="31" y="243" font-family="SimHei,sans-serif" font-size="13" fill="#e4edf2">保留原文跨度 / 冻结候选ID</text>
+<text x="31" y="262" font-family="SimHei,sans-serif" font-size="13" fill="#e4edf2">长文或≤64 token短块</text>
+<text x="31" y="281" font-family="SimHei,sans-serif" font-size="13" fill="#e4edf2">文本编码器 → 归一化向量</text>
+<rect x="335" y="100" width="280" height="130" rx="10" fill="#172e43"/>
+<text x="351" y="130" font-family="SimHei,sans-serif" font-size="18" fill="white">固定向量与点乘分数</text>
+<text x="351" y="153" font-family="SimHei,sans-serif" font-size="13" fill="#e4edf2">s(i,b) = v(i) · t(b)</text>
+<text x="351" y="172" font-family="SimHei,sans-serif" font-size="13" fill="#e4edf2">同一分数表聚合mean / max</text>
+<text x="351" y="191" font-family="SimHei,sans-serif" font-size="13" fill="#e4edf2">图像不重复编码</text>
+<rect x="685" y="25" width="325" height="100" rx="10" fill="#536c87"/>
+<text x="701" y="55" font-family="SimHei,sans-serif" font-size="18" fill="white">固定25候选池</text>
+<text x="701" y="78" font-family="SimHei,sans-serif" font-size="13" fill="#e4edf2">各剧目内排序 → Top-K</text>
+<text x="701" y="97" font-family="SimHei,sans-serif" font-size="13" fill="#e4edf2">文本方案消融与模型比较</text>
+<rect x="685" y="190" width="325" height="120" rx="10" fill="#007f83"/>
+<text x="701" y="220" font-family="SimHei,sans-serif" font-size="18" fill="white">扩展28候选池</text>
+<text x="701" y="243" font-family="SimHei,sans-serif" font-size="13" fill="#e4edf2">仅追加马可3个候选</text>
+<text x="701" y="262" font-family="SimHei,sans-serif" font-size="13" fill="#e4edf2">同分数表取列，隔离竞争影响</text>
+<text x="701" y="281" font-family="SimHei,sans-serif" font-size="13" fill="#e4edf2">新增候选暂无正例query</text>
+</svg>

@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="300" viewBox="0 0 1040 300">
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="#899ba6"/></marker></defs>
+<rect width="100%" height="100%" fill="white"/>
+<path d="M225 85 H280" fill="none" stroke="#899ba6" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M500 85 H560" fill="none" stroke="#899ba6" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M390 130 V185" fill="none" stroke="#899ba6" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M500 230 H560" fill="none" stroke="#899ba6" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M667 185 V153 H450 V130" fill="none" stroke="#899ba6" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="15" y="40" width="210" height="90" rx="10" fill="#536c87"/>
+<text x="31" y="70" font-family="SimHei,sans-serif" font-size="18" fill="white">排队 / 准备</text>
+<text x="31" y="93" font-family="SimHei,sans-serif" font-size="13" fill="#e4edf2">输入清单与执行契约</text>
+<text x="31" y="112" font-family="SimHei,sans-serif" font-size="13" fill="#e4edf2">检查内容与输出占用</text>
+<rect x="280" y="40" width="220" height="90" rx="10" fill="#007f83"/>
+<text x="296" y="70" font-family="SimHei,sans-serif" font-size="18" fill="white">运行</text>
+<text x="296" y="93" font-family="SimHei,sans-serif" font-size="13" fill="#e4edf2">逐图 / 裁剪 / 预览</text>
+<text x="296" y="112" font-family="SimHei,sans-serif" font-size="13" fill="#e4edf2">检查点落盘</text>
+<rect x="560" y="40" width="215" height="90" rx="10" fill="#536c87"/>
+<text x="576" y="70" font-family="SimHei,sans-serif" font-size="18" fill="white">发布 / 完成</text>
+<text x="576" y="93" font-family="SimHei,sans-serif" font-size="13" fill="#e4edf2">临时文件 → 原子替换</text>
+<text x="576" y="112" font-family="SimHei,sans-serif" font-size="13" fill="#e4edf2">已存在同内容文件复用</text>
+<rect x="280" y="185" width="220" height="90" rx="10" fill="#c38d38"/>
+<text x="296" y="215" font-family="SimHei,sans-serif" font-size="18" fill="white">取消 / 失败</text>
+<text x="296" y="238" font-family="SimHei,sans-serif" font-size="13" fill="#e4edf2">当前项结束后停止</text>
+<text x="296" y="257" font-family="SimHei,sans-serif" font-size="13" fill="#e4edf2">保存已完成结果</text>
+<rect x="560" y="185" width="215" height="90" rx="10" fill="#007f83"/>
+<text x="576" y="215" font-family="SimHei,sans-serif" font-size="18" fill="white">恢复</text>
+<text x="576" y="238" font-family="SimHei,sans-serif" font-size="13" fill="#e4edf2">核对代码、模型与输入</text>
+<text x="576" y="257" font-family="SimHei,sans-serif" font-size="13" fill="#e4edf2">跳过已完成项目</text>
+<text x="20" y="170" font-family="SimHei,sans-serif" font-size="13" fill="#647987">恢复必须匹配原执行契约；版本变化时新建任务。</text>
+</svg>

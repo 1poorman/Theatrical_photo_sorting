@@ -2,7 +2,7 @@
 
 技术评审与研发版 · 2026-10-24 · 代码基线 `ad68c89`
 
-[阅读PDF](../outputs/reports/technical_report_20261024/technical_report.pdf) · [离线HTML](../outputs/reports/technical_report_20261024/technical_report.html) · [图表与数据](../outputs/reports/technical_report_20261024/)
+[阅读PDF](reports/technical_report_20261024/technical_report.pdf) · [离线HTML](reports/technical_report_20261024/technical_report.html) · [图表与数据](reports/technical_report_20261024/)
 
 <!-- PAGE: executive | 技术摘要 -->
 # 从舞台影像到可追溯档案
@@ -29,7 +29,7 @@
 
 工作台以项目为单位共享照片目录、剧情知识库、人脸库和复核状态，减少在多个工具之间搬运标签与路径。入口`/organize`与`/ui`共用新版工作台，旧版功能仍可从`/legacy`进入。
 
-![图1 工作台中的剧照浏览、候选场景和复核操作（局部）。来自既有浏览器验收截图；其中脚本决定仅验证交互。](../outputs/reports/technical_report_20261024/figures/workspace.jpg)
+![图1 工作台中的剧照浏览、候选场景和复核操作（局部）。来自既有浏览器验收截图；其中脚本决定仅验证交互。](reports/technical_report_20261024/figures/workspace.jpg)
 
 | 功能域 | 输入与主要处理 | 输出及使用方式 |
 |---|---|---|
@@ -49,7 +49,7 @@
 
 系统采用Python服务端与轻量浏览器界面。FastAPI提供工作台与业务API；任务执行器承接长操作；共享特征服务减少重复编码；SQLite保存复核和任务状态。算法模块通过带版本的输入、输出和证据对象连接。
 
-![图2 当前模块架构。视觉模型与实验分组按配置触发，图中连线表达数据依赖，不表示每批任务都会运行全部模型。](../outputs/reports/technical_report_20261024/figures/architecture.svg)
+![图2 当前模块架构。视觉模型与实验分组按配置触发，图中连线表达数据依赖，不表示每批任务都会运行全部模型。](reports/technical_report_20261024/figures/architecture.png)
 
 ## 三条相互约束的处理链
 
@@ -66,7 +66,7 @@
 
 原始清单覆盖582份文件，包含原始照片、整理后副本及资料图。内容去重后有319张可解码图像，其中292张具有舞台照线索、27张具有资料图线索；类别线索仍有待人工复核，不能把文件副本当作独立样本。[S01]
 
-![图3 本地数据范围与262张幕次开发集分布。四部剧目样本不均衡，假面舞会占118张。](../outputs/reports/technical_report_20261024/figures/dataset_scope.svg)
+![图3 本地数据范围与262张幕次开发集分布。四部剧目样本不均衡，假面舞会占118张。](reports/technical_report_20261024/figures/dataset_scope.png)
 
 | 数据对象 | 当前数量 | 可支持的结论 |
 |---|---:|---|
@@ -140,7 +140,7 @@ y取正负配对标签，α、β为训练中的尺度与偏置。上式解释匹
 
 原25候选中仅5个有分幕正文，其余20个主要是标签。来源增补后增加12个有出处的场次正文，另保留8项正文缺口；扩展28池追加《马可·波罗》的3个明确候选。来源正文与照片演出版是否完全等价仍需核验，尤其2014与2015巡演文本的调整不能静默合并。[S02][S03]
 
-![图4 冻结向量与短文本块研究。25/28池从相同分数表取列，避免把重新编码漂移误当成候选竞争效应。](../outputs/reports/technical_report_20261024/figures/retrieval_principle.svg)
+![图4 冻结向量与短文本块研究。25/28池从相同分数表取列，避免把重新编码漂移误当成候选竞争效应。](reports/technical_report_20261024/figures/retrieval_principle.png)
 
 ## 两种聚合、一个主方案
 
@@ -212,7 +212,7 @@ PaddleOCR以独立worker处理明确含字图片，返回文字行、位置和�
 
 每个长任务保存输入清单、模型与源码契约、逐项状态及阶段检查点。人脸任务将检测、对齐裁剪和预览分别持久化；恢复时复用已完成文件，避免重跑检测或裁剪。复制前后验证源文件摘要，输出采用临时文件与原子替换。[S12]
 
-![图5 简化任务状态与恢复路径。取消确认表示已接受停止请求，实际停止仍需等待当前项结束。](../outputs/reports/technical_report_20261024/figures/task_lifecycle.svg)
+![图5 简化任务状态与恢复路径。取消确认表示已接受停止请求，实际停止仍需等待当前项结束。](reports/technical_report_20261024/figures/task_lifecycle.png)
 
 ## 内容缓存的有效性条件
 
@@ -316,7 +316,7 @@ PaddleOCR以独立worker处理明确含字图片，返回文字行、位置和�
 <!-- PAGE: retrievalanalysis | 13 主结果与消融解释 -->
 # 更完整的短文本覆盖改善候选召回
 
-![图6 两模型七种文本/候选配置的R@1与R@3。颜色区分模型，不同池和聚合方法分别展示，未将次方案作为主方案。](../outputs/reports/technical_report_20261024/figures/retrieval_variants.svg)
+![图6 两模型七种文本/候选配置的R@1与R@3。颜色区分模型，不同池和聚合方法分别展示，未将次方案作为主方案。](reports/technical_report_20261024/figures/retrieval_variants.png)
 
 25池内，SigLIP2从增补长文的61.07% R@3提升到短块均值的69.85%，增加23张命中；Gemma从72.52%提升到76.34%，增加10张。分块缓解短窗口截断，并使不同内容段分别进入候选评分，但收益随剧目和聚合方式变化。
 
@@ -334,11 +334,11 @@ PaddleOCR以独立worker处理明确含字图片，返回文字行、位置和�
 <!-- PAGE: poolanalysis | 14 逐剧目差异与候选竞争 -->
 # 总体提升掩盖了明显的剧目差异
 
-![图7 各剧目R@3热图（%）。马可在25池仅3候选，Top-3必然覆盖整个池；扩池后的下降揭示竞争敏感性。](../outputs/reports/technical_report_20261024/figures/per_play_heatmap.svg)
+![图7 各剧目R@3热图（%）。马可在25池仅3候选，Top-3必然覆盖整个池；扩池后的下降揭示竞争敏感性。](reports/technical_report_20261024/figures/per_play_heatmap.png)
 
 《样式雷》是当前明显短板：Gemma增补长文25池R@3=38.0%，短块均值降至30.0%；SigLIP2相应为24.0%与28.0%。平均收益不能替代对困难剧目、缺失正文和特定场次的诊断。[S02]
 
-![图8 短块均值从25扩展到28候选后的命中数变化。相同图文分数，仅增加候选列。](../outputs/reports/technical_report_20261024/figures/candidate_expansion.svg)
+![图8 短块均值从25扩展到28候选后的命中数变化。相同图文分数，仅增加候选列。](reports/technical_report_20261024/figures/candidate_expansion.png)
 
 扩池时，SigLIP2 Top-3从183降至140（−43张），Gemma从200降至188（−12张）；新增竞争全部作用于马可。该剧59图的均值R@3从两模型均为100%降为27.12%与79.66%。新增第三/第四幕及尾声候选缺少对应正例query，因此当前测试不能证明完整候选池上的分类能力。
 
@@ -356,7 +356,7 @@ PaddleOCR以独立worker处理明确含字图片，返回文字行、位置和�
 
 schema只验证字段类型、枚举、候选ID与引用是否合法；一个格式正确的描述仍可能认错道具、动作或文字。现有100图共1352条可复核事实，A/B两位实际复核人数为0，因此事实错误率必须为`null`，而不是0%。[S18]
 
-![图9 实际双人事实复核页面（局部）。测试中的临时姓名和决定仅为脚本交互，不产生人工事实标注。](../outputs/reports/technical_report_20261024/figures/fact_review.jpg)
+![图9 实际双人事实复核页面（局部）。测试中的临时姓名和决定仅为脚本交互，不产生人工事实标注。](reports/technical_report_20261024/figures/fact_review.jpg)
 
 5图PaddleOCR实验完成真实处理与缓存重建检查，但尚无一致参考转录，CER同样为空。复核工具把不确定、不可评价、分歧、重复描述及遗漏分别记录；不以丢弃困难项的方式提高结果。
 
@@ -365,7 +365,7 @@ schema只验证字段类型、枚举、候选ID与引用是否合法；一个格
 <!-- PAGE: scale | 16 图聚类与时序研究结果 -->
 # 规模检查通过，身份与边界质量未定
 
-![图10 10000条固定合成特征的CPU规模观察。特征生成在计时前完成，每方法独立进程仅运行一次，不能当作端到端模型加速。](../outputs/reports/technical_report_20261024/figures/cpu_scale.svg)
+![图10 10000条固定合成特征的CPU规模观察。特征生成在计时前完成，每方法独立进程仅运行一次，不能当作端到端模型加速。](reports/technical_report_20261024/figures/cpu_scale.png)
 
 | 方法 | 输入维度 | 耗时 | 进程峰值RSS | 数据与结论范围 |
 |---|---:|---:|---:|---|
@@ -386,7 +386,7 @@ schema只验证字段类型、枚举、候选ID与引用是否合法；一个格
 <!-- PAGE: responsiveness | 17 服务响应与复核存储 -->
 # 长任务期间保持可查询、可取消、可复核
 
-![图11 左：真实292图任务运行时的HTTP延迟；查询/创建显示P95，取消显示单次确认耗时。右：万条合成复核队列的本地保存及摘要中位耗时。两图属于不同实验。](../outputs/reports/technical_report_20261024/figures/review_responsiveness.svg)
+![图11 左：真实292图任务运行时的HTTP延迟；查询/创建显示P95，取消显示单次确认耗时。右：万条合成复核队列的本地保存及摘要中位耗时。两图属于不同实验。](reports/technical_report_20261024/figures/review_responsiveness.png)
 
 ## 真实HTTP任务响应
 
@@ -406,7 +406,7 @@ schema只验证字段类型、枚举、候选ID与引用是否合法；一个格
 <!-- PAGE: performance | 18 U2性能：收益与未达标项 -->
 # 分阶段结果不能替代完整验收
 
-![图12 历史200图×5次实验的阶段耗时中位数。两个面板采用各自纵轴，分别解释特征阶段与报告定义的分析/整理阶段。](../outputs/reports/technical_report_20261024/figures/u2_performance.svg)
+![图12 历史200图×5次实验的阶段耗时中位数。两个面板采用各自纵轴，分别解释特征阶段与报告定义的分析/整理阶段。](reports/technical_report_20261024/figures/u2_performance.png)
 
 | 指标 | corrected baseline | 批量/缓存方案 | 比较 |
 |---|---:|---:|---:|
@@ -431,7 +431,7 @@ R@K、身份GT、偏好GT等正式质量数据仍不足，因此“输出决定�
 
 真实流程以4个项目共200张图，执行分析→脚本复核/冲突→导出→重分析保护→整理。每项目16项检查，加6项跨项目检查，共70项；使用实际本地模型、隔离图库，`use_llm=false`。脚本复核用于验证行为，不新增人工标注。[S15][S16]
 
-![图13 原始200图流程的复制与明确跳过数，所有项目失败数均为0。跳过来源于该配置的分组/选优策略，不能自动解释为人工认可的淘汰。](../outputs/reports/technical_report_20261024/figures/workflow_outputs.svg)
+![图13 原始200图流程的复制与明确跳过数，所有项目失败数均为0。跳过来源于该配置的分组/选优策略，不能自动解释为人工认可的淘汰。](reports/technical_report_20261024/figures/workflow_outputs.png)
 
 | 输入范围 | 输入 | 复制 | 明确跳过 | 失败 | 检查 |
 |---|---:|---:|---:|---:|---:|

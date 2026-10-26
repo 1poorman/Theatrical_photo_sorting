@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="340" viewBox="0 0 1040 340">
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="#899ba6"/></marker></defs>
+<rect width="1040" height="340" fill="white"/>
+<g fill="none" stroke="#899ba6" stroke-width="2" marker-end="url(#arrow)">
+<path d="M250 67 H282"/><path d="M537 67 H567"/><path d="M822 67 H852"/>
+<path d="M128 115 V203 H282" stroke-dasharray="5 4"/>
+<path d="M537 203 H567" stroke-dasharray="5 4"/>
+<path d="M696 155 V137 H930 V115" stroke-dasharray="5 4"/>
+</g>
+<g font-family="SimHei, Noto Sans CJK SC, sans-serif">
+<rect x="10" y="20" width="240" height="95" rx="9" fill="#536c87"/>
+<text x="26" y="51" font-size="19" fill="white">原始图片</text>
+<text x="26" y="77" font-size="14" fill="#e4edf2">完整内容哈希</text>
+<text x="26" y="98" font-size="14" fill="#e4edf2">EXIF方向校正 / RGB转换</text>
+<rect x="282" y="20" width="255" height="95" rx="9" fill="#007f83"/>
+<text x="298" y="51" font-size="19" fill="white">可选Pillow缩放</text>
+<text x="298" y="77" font-size="14" fill="#e4edf2">SizeDict统一尺寸 / 原插值方法</text>
+<text x="298" y="98" font-size="14" fill="#e4edf2">缓存签名：pillow-resize-v2</text>
+<rect x="567" y="20" width="255" height="95" rx="9" fill="#007f83"/>
+<text x="583" y="51" font-size="19" fill="white">保留原处理器后续步骤</text>
+<text x="583" y="77" font-size="14" fill="#e4edf2">关闭重复resize</text>
+<text x="583" y="98" font-size="14" fill="#e4edf2">rescale / normalize</text>
+<rect x="852" y="20" width="178" height="95" rx="9" fill="#172e43"/>
+<text x="868" y="51" font-size="19" fill="white">模型编码与缓存</text>
+<text x="868" y="77" font-size="14" fill="#e4edf2">批大小≤8</text>
+<text x="868" y="98" font-size="14" fill="#e4edf2">发布前重验内容</text>
+<rect x="282" y="155" width="255" height="110" rx="9" fill="#c38d38"/>
+<text x="298" y="187" font-size="19" fill="white">DALI独立研究入口</text>
+<text x="298" y="213" font-size="14" fill="white">RGB JPEG / 无旋转 / 无需放大</text>
+<text x="298" y="237" font-size="14" fill="white">其他输入与失败逐图回退Pillow</text>
+<rect x="567" y="155" width="463" height="110" rx="9" fill="#536c87"/>
+<text x="583" y="187" font-size="19" fill="white">先一致性预检，再完整五次测量</text>
+<text x="583" y="213" font-size="14" fill="#e4edf2">EXIF / 颜色 / 大小 / 坏图 → 200图真实向量</text>
+<text x="583" y="237" font-size="14" fill="#e4edf2">仅再快3.30%、RSS增加、9张场景名变化 → 不采用</text>
+<text x="14" y="302" font-size="15" fill="#536777">实线：可选Pillow路径；虚线：离线DALI评价。默认仍为原processor，DALI不接入应用。</text>
+<text x="14" y="327" font-size="14" fill="#536777">批量推理失败复用已准备张量；有界预取与内容校验保持。图示不表示性能或独立质量验收已通过。</text>
+</g></svg>

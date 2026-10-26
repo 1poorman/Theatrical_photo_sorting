@@ -1,0 +1,27 @@
+{
+  "at": "2026-10-22T07:01:59.237705+00:00",
+  "protocol_rebuild_exit_code": 0,
+  "protocol_hash_matches": true,
+  "bound_files": 11,
+  "unique_documents": 102,
+  "duplicate_document_indices_within_candidate": [],
+  "block_unit_tests": {
+    "passed": 10,
+    "log": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u4_text_blocks_20261022/block_tests.log",
+    "log_sha256": "5d8261cf898498c793ded8b183789473149073ed74d597c56969951733ddfca2",
+    "test_sha256": "bef62a51ee74ad2f35cb04a58d7a323cce6261aac3d7625894f3b5398c5bd6db"
+  },
+  "preparation_log_sha256": "7160fa6b013e6144db80f9a570f15bd085ad1e78de89cb9e0f04033ac0ece379",
+  "sandbox_cuda": {
+    "available": false,
+    "device_count": 0,
+    "torch": "2.9.0+cu130",
+    "error": "Cannot initialize NVML; torch CUDA unavailable inside workspace sandbox"
+  },
+  "physical_gpu1_observation": {
+    "name": "NVIDIA GeForce RTX 3090",
+    "memory_used_mib": 11398,
+    "memory_free_mib": 12727,
+    "shared": true
+  }
+}

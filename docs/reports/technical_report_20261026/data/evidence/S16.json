@@ -1,0 +1,1974 @@
+{
+  "status": "passed",
+  "checks": {
+    "all_project_checks": true,
+    "originals_unchanged": true,
+    "official_gallery_unchanged": true,
+    "gallery_copy_unchanged": true,
+    "registry_unchanged": true,
+    "measured_code_unchanged": true
+  },
+  "projects": [
+    {
+      "play_id": "play-44d30ef70a47b7b6d4c8ccf5",
+      "checks": {
+        "reason_count": true,
+        "reason_real_visual_retrieval": true,
+        "input_conservation": true,
+        "copy_count": true,
+        "output_bytes_equal_sources": true,
+        "source_paths_unique": true,
+        "output_names_unique": true,
+        "raw_date_venue_play_event_preserved": true,
+        "output_filename_format": true,
+        "approved_label_and_unreviewed_placeholders": true,
+        "approved_and_rejected_probes_both_published": true,
+        "locked_records_survived_reanalysis": true,
+        "concurrent_review_one_success_one_conflict": true,
+        "export_only_approved": true,
+        "rejected_not_used_as_label": true,
+        "no_failed_images": true
+      },
+      "input_count": 58,
+      "reason_task": "255fd8466cf641feacbb52b04b77deb4",
+      "replay_task": "ad7715fbb6dd48e58fa2671c6448ddb0",
+      "organize_task": "66865581aa814cfbbeab61ead064f355",
+      "kept": 58,
+      "discarded": 0,
+      "copied": 58,
+      "failed": 0,
+      "scripted_reviews": 2,
+      "artifact_audit": [
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/02-20170522-歌剧院-歌剧《假面舞会》A组彩排 序曲-玛丽亚·穆德拉克饰奥斯卡-王小京.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/01-20170522-歌剧院-歌剧《假面舞会》A组彩排 序曲-王小京.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/03-20170522-歌剧院-歌剧《假面舞会》A组彩排 第1幕1场-左2起：王猛饰和恩、梅杰饰瑞宾-王小京.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/02-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-01-王小京.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/07-20170522-歌剧院-歌剧《假面舞会》A组彩排 第1幕1场-前左起：玛丽亚·穆德拉克饰奥斯卡、朱塞佩·季帕里饰古斯塔夫三世-王小京.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/03-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-01-王小京.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/08-20170522-歌剧院-歌剧《假面舞会》A组彩排 第1幕1场-前左起：朱塞佩·季帕里饰古斯塔夫三世、玛丽亚·穆德拉克饰奥斯卡-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/04-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-01-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/10-20170522-歌剧院-歌剧《假面舞会》A组彩排 第1幕1场-左起：朱塞佩·季帕里饰古斯塔夫三世、谢尔盖·穆尔扎耶夫饰雷纳托-王小京.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/05-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-01-王小京.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/102-20170522-歌剧院-歌剧《假面舞会》A组彩排 第3幕3场-谢尔盖·穆尔扎耶夫饰雷纳托（前右1）、国家大剧院合唱团-王小京.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/06-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-08-a-王小京.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/107-20170522-歌剧院-歌剧《假面舞会》A组彩排 第3幕3场-前左起：玛丽亚·穆德拉克饰奥斯卡、谢尔盖·穆尔扎耶夫饰雷纳托-王小京.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/07-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-08-a-王小京.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/109-20170522-歌剧院-歌剧《假面舞会》A组彩排 第3幕3场-前中左起：芭芭拉·哈维曼饰阿米莉亚、朱塞佩·季帕里饰古斯塔夫三世-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/08-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-08-a-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/111-20170522-歌剧院-歌剧《假面舞会》A组彩排 第3幕3场-前左起：朱塞佩·季帕里饰古斯塔夫三世、芭芭拉·哈维曼饰阿米莉亚-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/09-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-08-a-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/112-20170522-歌剧院-歌剧《假面舞会》A组彩排 第3幕3场-前中左起：朱塞佩·季帕里饰古斯塔夫三世、芭芭拉·哈维曼饰阿米莉亚-王小京.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/10-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-08-a-王小京.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/114-20170522-歌剧院-歌剧《假面舞会》A组彩排 第3幕3场-前：芭芭拉·哈维曼饰阿米莉亚-牛小北.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/11-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-08-a-牛小北.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/115-20170522-歌剧院-歌剧《假面舞会》A组彩排 第3幕3场-中前起：芭芭拉·哈维曼饰阿米莉亚、谢尔盖·穆尔扎耶夫饰雷纳托-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/12-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-08-a-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/116-20170522-歌剧院-歌剧《假面舞会》A组彩排 第3幕3场-前：朱塞佩·季帕里饰古斯塔夫三世-王小京.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/13-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-09-王小京.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/117-20170522-歌剧院-歌剧《假面舞会》A组彩排 第3幕3场-前左起：朱塞佩·季帕里饰古斯塔夫三世、谢尔盖·穆尔扎耶夫饰雷纳托-王小京.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/14-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-09-王小京.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/118-20170522-歌剧院-歌剧《假面舞会》A组彩排 第3幕3场-前左起：朱塞佩·季帕里饰古斯塔夫三世、谢尔盖·穆尔扎耶夫饰雷纳托、芭芭拉·哈维曼饰阿米莉亚-王小京.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/15-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-09-王小京.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/12-20170522-歌剧院-歌剧《假面舞会》A组彩排 第1幕1场-左起：朱塞佩·季帕里饰古斯塔夫三世、玛丽亚·穆德拉克饰奥斯卡、谢尔盖·穆尔扎耶夫饰雷纳托-王小京.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/16-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-01-王小京.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/14-20170522-歌剧院-歌剧《假面舞会》A组彩排 第1幕1场-右起：玛丽亚·穆德拉克饰奥斯卡、毛伟钊饰法官-王小京.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/17-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-01-王小京.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/18-20170522-歌剧院-歌剧《假面舞会》A组彩排 第1幕1场-左起：朱塞佩·季帕里饰古斯塔夫三世、谢尔盖·穆尔扎耶夫饰雷纳托-王小京.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/18-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-02-c-王小京.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/19-20170522-歌剧院-歌剧《假面舞会》A组彩排 第1幕1场-前中：朱塞佩·季帕里饰古斯塔夫三世-王小京.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/19-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-02-c-王小京.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/22-20170522-歌剧院-歌剧《假面舞会》A彩排 第1幕2场-中：安娜·玛丽亚·齐乌力饰乌丽卡-牛小北.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/20-20170522-歌剧院-歌剧《假面舞会》A彩排 scene-02-b-牛小北.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/24-20170522-歌剧院-歌剧《假面舞会》A组彩排 第1幕2场-安娜·玛丽亚·齐乌利饰乌丽卡-王小京.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/21-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-02-b-王小京.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/25-20170522-歌剧院-歌剧《假面舞会》A组彩排 第1幕2场-安娜·玛丽亚·齐乌利饰乌丽卡（中）、国家大剧院合唱团-王小京.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/22-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-02-a-王小京.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/26-20170522-歌剧院-歌剧《假面舞会》A组彩排 第1幕2场-中左起：安娜·玛丽亚·齐乌利饰乌丽卡、王鹤翔饰克里斯蒂亚诺-王小京.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/23-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-02-b-王小京.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/29-20170522-歌剧院-歌剧《假面舞会》A组彩排 第1幕2场-左起：芭芭拉·哈维曼饰阿米莉亚、安娜·玛丽亚·齐乌利饰乌丽卡-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/24-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-02-b-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/31-20170522-歌剧院-歌剧《假面舞会》A组彩排 第1幕2场-左起：安娜·玛丽亚·齐乌利饰乌丽卡、芭芭拉·哈维曼饰阿米莉亚-牛小北.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/25-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-10-牛小北.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/37-20170522-歌剧院-歌剧《假面舞会》A组彩排 第1幕2场-前中左起：玛丽亚·穆德拉克饰奥斯卡、朱塞佩·季帕里饰古斯塔夫三世-王小京.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/26-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-02-b-王小京.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/41-20170522-歌剧院-歌剧《假面舞会》A组彩排 第1幕2场-左起：安娜·玛丽亚·齐乌利饰乌丽卡、朱塞佩·季帕里饰古斯塔夫三世-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/27-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-02-b-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/42-20170522-歌剧院-歌剧《假面舞会》A组彩排 第1幕2场-中左起：安娜·玛丽亚·齐乌利饰乌丽卡、朱塞佩·季帕里饰古斯塔夫三世、玛丽亚·穆德拉克饰奥斯卡（前）-王小京.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/28-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-02-a-王小京.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/43-20170522-歌剧院-歌剧《假面舞会》A组彩排 第1幕2场-左起：安娜·玛丽亚·齐乌利饰乌丽卡、朱塞佩·季帕里饰古斯塔夫三世、玛丽亚·穆德拉克饰奥斯卡-王小京.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/29-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-03-王小京.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/45-20170522-歌剧院-歌剧《假面舞会》A组彩排 第1幕2场-前左起：安娜·玛丽亚·齐乌利饰乌丽卡、朱塞佩·季帕里饰古斯塔夫三世-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/30-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-02-b-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/49-20170522-歌剧院-歌剧《假面舞会》A组彩排 第1幕2场-中前起：谢尔盖·穆尔扎耶夫饰雷纳托、玛丽亚·穆德拉克饰奥斯卡、朱塞佩·季帕里饰古斯塔夫三世-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/31-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-02-c-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/52-20170522-歌剧院-歌剧《假面舞会》A组彩排 第2幕-芭芭拉·哈维曼饰阿米莉亚-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/32-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-04-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/53-20170522-歌剧院-歌剧《假面舞会》A组彩排 第2幕-芭芭拉·哈维曼饰阿米莉亚-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/33-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-04-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/54-20170522-歌剧院-歌剧《假面舞会》A组彩排 第2幕-芭芭拉·哈维曼饰阿米莉亚-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/34-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-04-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/56-20170522-歌剧院-歌剧《假面舞会》A组彩排 第2幕-左起：朱塞佩·季帕里饰古斯塔夫三世、芭芭拉·哈维曼饰阿米莉亚-王小京.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/35-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-05-a-王小京.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/57-20170522-歌剧院-歌剧《假面舞会》A组彩排 第2幕-左起：朱塞佩·季帕里饰古斯塔夫三世、芭芭拉·哈维曼饰阿米莉亚-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/36-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-05-a-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/58-20170522-歌剧院-歌剧《假面舞会》A组彩排 第2幕-左起：朱塞佩·季帕里饰古斯塔夫三世、芭芭拉·哈维曼饰阿米莉亚-王小京.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/37-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-05-a-王小京.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/59-20170522-歌剧院-歌剧《假面舞会》A组彩排 第2幕-左起：朱塞佩·季帕里饰古斯塔夫三世、芭芭拉·哈维曼饰阿米莉亚-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/38-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-05-a-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/63-20170522-歌剧院-歌剧《假面舞会》A组彩排 第2幕-左起：芭芭拉·哈维曼饰阿米莉亚、朱塞佩·季帕里饰古斯塔夫三世-王小京.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/39-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-05-a-王小京.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/64-20170522-歌剧院-歌剧《假面舞会》A组彩排 第2幕-左起：芭芭拉·哈维曼饰阿米莉亚、朱塞佩·季帕里饰古斯塔夫三世-王小京.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/40-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-05-a-王小京.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/67-20170522-歌剧院-歌剧《假面舞会》A组彩排 第2幕-左起：朱塞佩·季帕里饰古斯塔夫三世、谢尔盖·穆尔扎耶夫饰雷纳托-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/41-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-05-a-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/70-20170522-歌剧院-歌剧《假面舞会》A组彩排 第2幕-左起：芭芭拉·哈维曼饰阿米莉亚、谢尔盖·穆尔扎耶夫饰雷纳托-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/42-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-05-a-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/72-20170522-歌剧院-歌剧《假面舞会》A组彩排 第2幕-左起：谢尔盖·穆尔扎耶夫饰雷纳托、芭芭拉·哈维曼饰阿米莉亚、梅杰饰瑞宾-王小京.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/43-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-05-a-王小京.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/73-20170522-歌剧院-歌剧《假面舞会》A组彩排 第2幕-左起：谢尔盖·穆尔扎耶夫饰雷纳托、芭芭拉·哈维曼饰阿米莉亚-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/44-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-05-a-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/75-20170522-歌剧院-歌剧《假面舞会》A组彩排 第2幕-左起：芭芭拉·哈维曼饰阿米莉亚、谢尔盖·穆尔扎耶夫饰雷纳托、梅杰饰瑞宾（前右4）、王猛饰和恩（前右3）-王小京.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/45-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-05-a-王小京.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/76-20170522-歌剧院-歌剧《假面舞会》A组彩排 第2幕-左起：谢尔盖·穆尔扎耶夫饰雷纳托、芭芭拉·哈维曼饰阿米莉亚-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/46-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-05-b-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/77-20170522-歌剧院-歌剧《假面舞会》A组彩排 第2幕-左起：谢尔盖·穆尔扎耶夫饰雷纳托、芭芭拉·哈维曼饰阿米莉亚-王小京.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/47-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-05-b-王小京.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/79-20170522-歌剧院-歌剧《假面舞会》A组彩排 第3幕1场-芭芭拉·哈维曼饰阿米莉亚-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/48-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-06-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/84-20170522-歌剧院-歌剧《假面舞会》A组彩排 第3幕1场-芭芭拉·哈维曼饰阿米莉亚-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/49-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-08-c-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/85-20170522-歌剧院-歌剧《假面舞会》A组彩排 第3幕1场-左起：芭芭拉·哈维曼饰阿米莉亚、谢尔盖·穆尔扎耶夫饰雷纳托-王小京.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/50-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-07-王小京.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/87-20170522-歌剧院-歌剧《假面舞会》A组彩排 第3幕1场-左起：谢尔盖·穆尔扎耶夫饰雷纳托、梅杰饰瑞宾、王猛饰和恩-王小京.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/51-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-08-c-王小京.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/90-20170522-歌剧院-歌剧《假面舞会》A组彩排 第3幕1场-左起：王猛饰和恩、梅杰饰瑞宾、谢尔盖·穆尔扎耶夫饰雷纳托-王小京.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/52-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-08-c-王小京.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/92-20170522-歌剧院-歌剧《假面舞会》A组彩排 第3幕1场-左起：谢尔盖·穆尔扎耶夫饰雷纳托、芭芭拉·哈维曼饰阿米莉亚-王小京.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/53-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-08-c-王小京.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/93-20170522-歌剧院-歌剧《假面舞会》A组彩排 第3幕1场-玛丽亚·穆德拉克饰奥斯卡-王小京.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/54-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-08-c-王小京.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/95-20170522-歌剧院-歌剧《假面舞会》A组彩排 第3幕2场-朱塞佩·季帕里饰古斯塔夫三世-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/55-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-08-b-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/96-20170522-歌剧院-歌剧《假面舞会》A组彩排 第3幕2场-朱塞佩·季帕里饰古斯塔夫三世-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/56-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-08-b-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/97-20170522-歌剧院-歌剧《假面舞会》A组彩排 第3幕2场-朱塞佩·季帕里饰古斯塔夫三世-王小京.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/57-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-08-b-王小京.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/98-20170522-歌剧院-歌剧《假面舞会》A组彩排 第3幕2场-朱塞佩·季帕里饰古斯塔夫三世-王小京.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/organized/organized/58-20170522-歌剧院-歌剧《假面舞会》A组彩排 scene-08-b-王小京.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        }
+      ],
+      "review_images": [
+        "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/02-20170522-歌剧院-歌剧《假面舞会》A组彩排 序曲-玛丽亚·穆德拉克饰奥斯卡-王小京.JPG",
+        "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_0/photos/03-20170522-歌剧院-歌剧《假面舞会》A组彩排 第1幕1场-左2起：王猛饰和恩、梅杰饰瑞宾-王小京.JPG"
+      ],
+      "elapsed_seconds": 606.6240545194596
+    },
+    {
+      "play_id": "play-7f29e53c6e88c45fff40ce57",
+      "checks": {
+        "reason_count": true,
+        "reason_real_visual_retrieval": true,
+        "input_conservation": true,
+        "copy_count": true,
+        "output_bytes_equal_sources": true,
+        "source_paths_unique": true,
+        "output_names_unique": true,
+        "raw_date_venue_play_event_preserved": true,
+        "output_filename_format": true,
+        "approved_label_and_unreviewed_placeholders": true,
+        "approved_and_rejected_probes_both_published": true,
+        "locked_records_survived_reanalysis": true,
+        "concurrent_review_one_success_one_conflict": true,
+        "export_only_approved": true,
+        "rejected_not_used_as_label": true,
+        "no_failed_images": true
+      },
+      "input_count": 57,
+      "reason_task": "e1bc0950f8cb4f51a1c1a4e802ece687",
+      "replay_task": "5f1425018608494aa957bdd9ce205c88",
+      "organize_task": "5688e9e04e584de89b6fc905f0ca2b40",
+      "kept": 57,
+      "discarded": 0,
+      "copied": 57,
+      "failed": 0,
+      "scripted_reviews": 2,
+      "artifact_audit": [
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/01-20141012-歌剧院-舞剧《马可·波罗》B组 序：东方奇遇-苏鹏饰马可·波罗-牛小北.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/01-20141012-歌剧院-舞剧《马可·波罗》B组 序：东方奇遇-牛小北.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/02-20141012-歌剧院-舞剧《马可·波罗》B组 序：东方奇遇-苏鹏饰马可·波罗-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/02-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-a-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/03-20141012-歌剧院-舞剧《马可·波罗》B组 序：东方奇遇-苏鹏饰马可·波罗-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/03-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-a-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/04-20141012-歌剧院-舞剧《马可·波罗》B组 序：东方奇遇-苏鹏饰马可·波罗-牛小北.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/04-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-a-牛小北.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/05-20141012-歌剧院-舞剧《马可·波罗》B组 序：东方奇遇-苏鹏饰马可·波罗-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/05-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-a-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/07-20141012-歌剧院-舞剧《马可·波罗》B组 第1幕：元都之恋-李祎然饰中国公主-肖翊.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/06-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-b-肖翊.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/08-20141012-歌剧院-舞剧《马可·波罗》B组 第1幕：元都之恋-金手饰舞：总政歌舞团-牛小北.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/07-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-b-牛小北.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/09-20141012-歌剧院-舞剧《马可·波罗》B组 第1幕：元都之恋-前：苏鹏饰马可·波罗-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/08-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-b-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/10-20141012-歌剧院-舞剧《马可·波罗》B组 第1幕：元都之恋-金手饰舞：总政歌舞团-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/09-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-b-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/11-20141012-歌剧院-舞剧《马可·波罗》B组 第1幕：元都之恋-金手饰舞：总政歌舞团-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/10-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-b-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/12-20141012-歌剧院-舞剧《马可·波罗》B组 第1幕：元都之恋-中：李祎然饰中国公主-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/11-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-b-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/13-20141012-歌剧院-舞剧《马可·波罗》B组 第1幕：元都之恋-李祎然饰中国公主-肖翊.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/12-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-b-肖翊.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/15-20141012-歌剧院-舞剧《马可·波罗》B组 第1幕：元都之恋-前：李志饰忽必烈-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/13-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-b-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/16-20141012-歌剧院-舞剧《马可·波罗》B组 第1幕：元都之恋-盅碗哈达舞：总政歌舞团-牛小北.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/14-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-b-牛小北.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/17-20141012-歌剧院-舞剧《马可·波罗》B组 第1幕：元都之恋-盅碗哈达舞：总政歌舞团-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/15-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-b-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/18-20141012-歌剧院-舞剧《马可·波罗》B组 第1幕：元都之恋-前左：苏鹏饰马可·波罗-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/16-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-b-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/19-20141012-歌剧院-舞剧《马可·波罗》B组 第1幕：元都之恋-威尼斯面具舞：苏鹏饰马可·波罗（前）-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/17-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-b-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/20-20141012-歌剧院-舞剧《马可·波罗》B组 第1幕：元都之恋-前：苏鹏饰马可·波罗、李祎然饰中国公主-肖翊.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/18-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-b-肖翊.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/21-20141012-歌剧院-舞剧《马可·波罗》B组 第1幕：元都之恋-前：李祎然饰中国公主-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/19-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-b-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/22-20141012-歌剧院-舞剧《马可·波罗》B组 第1幕：元都之恋-前右：苏鹏饰马可·波罗-肖翊.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/20-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-b-刘思妤-肖翊.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/23-20141012-歌剧院-舞剧《马可·波罗》B组 第1幕：元都之恋-前右5：苏鹏饰马可·波罗-牛小北.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/21-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-b-牛小北.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/24-20141012-歌剧院-舞剧《马可·波罗》B组 第1幕：元都之恋-前右起：苏鹏饰马可·波罗、李祎然饰中国公主-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/22-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-b-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/25-20141012-歌剧院-舞剧《马可·波罗》B组 第1幕：元都之恋-前：苏鹏饰马可·波罗、李祎然饰中国公主-肖翊.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/23-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-b-肖翊.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/26-20141012-歌剧院-舞剧《马可·波罗》B组 第1幕：元都之恋-前右起：李志饰忽必烈、李祎然饰中国公主-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/24-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-b-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/27-20141012-歌剧院-舞剧《马可·波罗》B组 第1幕：元都之恋-苏鹏饰马可波罗（前中）、李志饰忽必烈（前右）-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/25-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-b-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/28-20141012-歌剧院-舞剧《马可·波罗》B组 第1幕：元都之恋-前中：李志饰忽必烈-牛小北.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/26-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-b-牛小北.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/29-20141012-歌剧院-舞剧《马可·波罗》B组 第1幕：元都之恋-前：李祎然饰中国公主、李志饰忽必烈-肖翊.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/27-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-b-肖翊.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/30-20141012-歌剧院-舞剧《马可·波罗》B组 第2幕：古国情韵-苏鹏饰马可·波罗、李祎然饰中国公主-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/28-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-a-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/31-20141012-歌剧院-舞剧《马可·波罗》B组 第2幕：古国情韵-苏鹏饰马可·波罗、李祎然饰中国公主-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/29-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-a-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/32-20141012-歌剧院-舞剧《马可·波罗》B组 第2幕：古国情韵-苏鹏饰马可·波罗、李祎然饰中国公主-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/30-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-a-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/33-20141012-歌剧院-舞剧《马可·波罗》B组 第2幕：古国情韵-苏鹏饰马可·波罗、李祎然饰中国公主-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/31-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-a-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/34-20141012-歌剧院-舞剧《马可·波罗》B组 第2幕：古国情韵-苏鹏饰马可·波罗、李祎然饰中国公主-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/32-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-a-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/35-20141012-歌剧院-舞剧《马可·波罗》B组 第2幕：古国情韵-苏鹏饰马可·波罗、李祎然饰中国公主-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/33-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-a-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/36-20141012-歌剧院-舞剧《马可·波罗》B组 第2幕：古国情韵-苏鹏饰马可·波罗、李祎然饰中国公主-肖翊.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/34-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-c-肖翊.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/37-20141012-歌剧院-舞剧《马可·波罗》B组 第2幕：古国情韵-总政歌舞团-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/35-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-c-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/38-20141012-歌剧院-舞剧《马可·波罗》B组 第2幕：古国情韵-总政歌舞团-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/36-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-c-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/39-20141012-歌剧院-舞剧《马可·波罗》B组 第2幕：古国情韵-墨韵之舞：总政歌舞团-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/37-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-c-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/40-20141012-歌剧院-舞剧《马可·波罗》B组 第2幕：古国情韵-中：苏鹏饰马可·波罗-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/38-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-c-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/41-20141012-歌剧院-舞剧《马可·波罗》B组 第2幕：古国情韵-中：苏鹏饰马可·波罗-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/39-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-c-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/42-20141012-歌剧院-舞剧《马可·波罗》B组 第2幕：古国情韵-中：苏鹏饰马可·波罗、李祎然饰中国公主-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/40-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-c-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/43-20141012-歌剧院-舞剧《马可·波罗》B组 第2幕：古国情韵-右起：苏鹏饰马可·波罗、李祎然饰中国公主-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/41-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-c-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/44-20141012-歌剧院-舞剧《马可·波罗》B组 第2幕：古国情韵-针灸舞：总政歌舞团-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/42-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-a-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/45-20141012-歌剧院-舞剧《马可·波罗》B组 第2幕：古国情韵-右起：苏鹏饰马可·波罗、李祎然饰中国公主-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/43-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-c-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/46-20141012-歌剧院-舞剧《马可·波罗》B组 第2幕：古国情韵-左起：苏鹏饰马可·波罗、食堂厨师荣鹏飞饰拉面师傅-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/44-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-c-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/47-20141012-歌剧院-舞剧《马可·波罗》B组 第2幕：古国情韵-左起：李祎然饰中国公主、苏鹏饰马可·波罗、食堂厨师荣鹏飞饰拉面师傅-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/45-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-c-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/48-20141012-歌剧院-舞剧《马可·波罗》B组 第2幕：古国情韵-中：苏鹏饰马可·波罗-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/46-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-c-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/49-20141012-歌剧院-舞剧《马可·波罗》B组 第2幕：古国情韵-前：李祎然饰中国公主-牛小北.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/47-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-c-牛小北.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/50-20141012-歌剧院-舞剧《马可·波罗》B组 第2幕：古国情韵-中后：李祎然饰中国公主-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/48-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-c-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/51-20141012-歌剧院-舞剧《马可·波罗》B组 第2幕：古国情韵-左：李祎然饰中国公主-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/49-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-c-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/52-20141012-歌剧院-舞剧《马可·波罗》B组 第2幕：古国情韵-前：李祎然饰中国公主-牛小北.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/50-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-c-牛小北.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/53-20141012-歌剧院-舞剧《马可·波罗》B组 第2幕：古国情韵-前：苏鹏饰马可·波罗、李祎然饰中国公主-牛小北.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/51-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-c-牛小北.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/54-20141012-歌剧院-舞剧《马可·波罗》B组 第2幕：古国情韵-前：苏鹏饰马可·波罗、李祎然饰中国公主-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/52-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-a-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/55-20141012-歌剧院-舞剧《马可·波罗》B组 第2幕：古国情韵-前：苏鹏饰马可·波罗、李祎然饰中国公主-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/53-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-a-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/56-20141012-歌剧院-舞剧《马可·波罗》B组 第2幕：古国情韵-前：苏鹏饰马可·波罗、李祎然饰中国公主-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/54-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-a-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/57-20141012-歌剧院-舞剧《马可·波罗》B组 第2幕：古国情韵-中：李祎然饰中国公主-肖翊.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/55-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-c-肖翊.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/58-20141012-歌剧院-舞剧《马可·波罗》B组 第2幕：古国情韵-总政歌舞团-牛小北.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/56-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-c-牛小北.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/59-20141012-歌剧院-舞剧《马可·波罗》B组 第2幕：古国情韵-左起：苏鹏饰马可·波罗、李祎然饰中国公主-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/organized/organized/57-20141012-歌剧院-舞剧《马可·波罗》B组 scene-01-a-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        }
+      ],
+      "review_images": [
+        "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/01-20141012-歌剧院-舞剧《马可·波罗》B组 序：东方奇遇-苏鹏饰马可·波罗-牛小北.jpg",
+        "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_1/photos/02-20141012-歌剧院-舞剧《马可·波罗》B组 序：东方奇遇-苏鹏饰马可·波罗-凌风.JPG"
+      ],
+      "elapsed_seconds": 595.1815153537318
+    },
+    {
+      "play_id": "play-93eda2b5016e4b7b7d50c52c",
+      "checks": {
+        "reason_count": true,
+        "reason_real_visual_retrieval": true,
+        "input_conservation": true,
+        "copy_count": true,
+        "output_bytes_equal_sources": true,
+        "source_paths_unique": true,
+        "output_names_unique": true,
+        "raw_date_venue_play_event_preserved": true,
+        "output_filename_format": true,
+        "approved_label_and_unreviewed_placeholders": true,
+        "approved_and_rejected_probes_both_published": true,
+        "locked_records_survived_reanalysis": true,
+        "concurrent_review_one_success_one_conflict": true,
+        "export_only_approved": true,
+        "rejected_not_used_as_label": true,
+        "no_failed_images": true
+      },
+      "input_count": 35,
+      "reason_task": "2595845971b841c592434e6716d69b60",
+      "replay_task": "e444bb474b554f3c89f9dbcf23157586",
+      "organize_task": "464b36ac54564a5a9ceedf0c2d2ce928",
+      "kept": 35,
+      "discarded": 0,
+      "copied": 35,
+      "failed": 0,
+      "scripted_reviews": 2,
+      "artifact_audit": [
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/photos/01-20140304-戏剧场-京剧《天下归心》彩排 第1幕克段-前左起：朱世慧饰公子吕、孟广禄饰郑庄公、陈少云饰颍考叔-苏岩.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/organized/organized/01-20140304-戏剧场-京剧《天下归心》彩排 第1幕克段-苏岩.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/photos/02-20140304-戏剧场-京剧《天下归心》彩排 第1幕克段-前左起：朱世慧饰公子吕、孟广禄饰郑庄公-苏岩.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/organized/organized/02-20140304-戏剧场-京剧《天下归心》彩排 scene-01-苏岩.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/photos/03-20140304-戏剧场-京剧《天下归心》彩排 第1幕克段-左起：孟广禄饰郑庄公、陈少云饰颍考叔-苏岩.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/organized/organized/03-20140304-戏剧场-京剧《天下归心》彩排 scene-01-苏岩.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/photos/04-20140304-戏剧场-京剧《天下归心》彩排 第1幕克段-陈少云饰颍考叔-苏岩.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/organized/organized/04-20140304-戏剧场-京剧《天下归心》彩排 scene-01-苏岩.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/photos/05-20140304-戏剧场-京剧《天下归心》彩排 第1幕克段-左起：陈少云饰颍考叔、朱世慧饰公子吕-苏岩.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/organized/organized/05-20140304-戏剧场-京剧《天下归心》彩排 scene-01-苏岩.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/photos/06-20140304-戏剧场-京剧《天下归心》彩排 第2幕庆功-前右起：陈少云饰颍考叔、孟广禄饰郑庄公、史依弘饰庄后、朱世慧饰公子吕-苏岩.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/organized/organized/06-20140304-戏剧场-京剧《天下归心》彩排 scene-02-苏岩.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/photos/07-20140304-戏剧场-京剧《天下归心》彩排 第2幕庆功-孟广禄饰郑庄公（左3）、史依弘饰庄后（左2）-苏岩.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/organized/organized/07-20140304-戏剧场-京剧《天下归心》彩排 scene-02-苏岩.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/photos/08-20140304-戏剧场-京剧《天下归心》彩排 第2幕庆功-陈少云饰颍考叔-肖翊.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/organized/organized/08-20140304-戏剧场-京剧《天下归心》彩排 scene-02-肖翊.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/photos/09-20140304-戏剧场-京剧《天下归心》彩排 第2幕庆功-前右起：朱世慧饰公子吕、陈少云饰颍考叔-苏岩.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/organized/organized/09-20140304-戏剧场-京剧《天下归心》彩排 scene-02-苏岩.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/photos/10-20140304-戏剧场-京剧《天下归心》彩排 第2幕庆功-左起：陈少云饰颍考叔、朱世慧饰公子吕-肖翊.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/organized/organized/10-20140304-戏剧场-京剧《天下归心》彩排 scene-02-肖翊.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/photos/11-20140304-戏剧场-京剧《天下归心》彩排 第2幕庆功-孟广禄饰郑庄公（中右）、陈少云饰颍考叔（前右）-苏岩.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/organized/organized/11-20140304-戏剧场-京剧《天下归心》彩排 scene-02-苏岩.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/photos/12-20140304-戏剧场-京剧《天下归心》彩排 第2幕庆功-陈少云饰颍考叔（右1）-苏岩.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/organized/organized/12-20140304-戏剧场-京剧《天下归心》彩排 scene-02-苏岩.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/photos/13-20140304-戏剧场-京剧《天下归心》彩排 第3幕私访-前：朱世慧饰公子吕-苏岩.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/organized/organized/13-20140304-戏剧场-京剧《天下归心》彩排 scene-03-苏岩.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/photos/14-20140304-戏剧场-京剧《天下归心》彩排 第3幕私访-孟广禄饰郑庄公（右）、朱世慧饰公子吕-苏岩.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/organized/organized/14-20140304-戏剧场-京剧《天下归心》彩排 scene-03-苏岩.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/photos/15-20140304-戏剧场-京剧《天下归心》彩排 第3幕私访-前左起：康静饰颍母、孟广禄饰郑庄公、朱世慧饰公子吕-苏岩.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/organized/organized/15-20140304-戏剧场-京剧《天下归心》彩排 scene-04-苏岩.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/photos/16-20140304-戏剧场-京剧《天下归心》彩排 第3幕私访-前左起：康静饰颍母、孟广禄饰郑庄公-苏岩.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/organized/organized/16-20140304-戏剧场-京剧《天下归心》彩排 scene-05-苏岩.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/photos/17-20140304-戏剧场-京剧《天下归心》彩排 第4幕天问-前：史依弘饰庄后-苏岩.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/organized/organized/17-20140304-戏剧场-京剧《天下归心》彩排 scene-05-苏岩.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/photos/18-20140304-戏剧场-京剧《天下归心》彩排 第4幕天问-前：史依弘饰庄后-苏岩.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/organized/organized/18-20140304-戏剧场-京剧《天下归心》彩排 scene-05-苏岩.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/photos/19-20140304-戏剧场-京剧《天下归心》彩排 第4幕天问-前：史依弘饰庄后-苏岩.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/organized/organized/19-20140304-戏剧场-京剧《天下归心》彩排 scene-05-苏岩.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/photos/20-20140304-戏剧场-京剧《天下归心》彩排 第4幕天问-左起：史依弘饰庄后、陈少云饰颍考叔-苏岩.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/organized/organized/20-20140304-戏剧场-京剧《天下归心》彩排 scene-05-苏岩.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/photos/21-20140304-戏剧场-京剧《天下归心》彩排 第4幕天问-左起：史依弘饰庄后、陈少云饰颍考叔-苏岩.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/organized/organized/21-20140304-戏剧场-京剧《天下归心》彩排 scene-05-苏岩.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/photos/22-20140304-戏剧场-京剧《天下归心》彩排 第4幕天问-孟广禄饰郑庄公-苏岩.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/organized/organized/22-20140304-戏剧场-京剧《天下归心》彩排 scene-06-苏岩.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/photos/23-20140304-戏剧场-京剧《天下归心》彩排 第4幕天问-李鸣岩饰武姜-苏岩.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/organized/organized/23-20140304-戏剧场-京剧《天下归心》彩排 scene-07-苏岩.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/photos/24-20140304-戏剧场-京剧《天下归心》彩排 第4幕天问-孟广禄饰郑庄公-苏岩.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/organized/organized/24-20140304-戏剧场-京剧《天下归心》彩排 scene-08-苏岩.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/photos/25-20140304-戏剧场-京剧《天下归心》彩排 第4幕天问-左起：史依弘饰庄后、孟广禄饰郑庄公-苏岩.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/organized/organized/25-20140304-戏剧场-京剧《天下归心》彩排 scene-08-苏岩.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/photos/26-20140304-戏剧场-京剧《天下归心》彩排 第4幕天问-左起：史依弘饰庄后、孟广禄饰郑庄公-苏岩.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/organized/organized/26-20140304-戏剧场-京剧《天下归心》彩排 scene-08-苏岩.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/photos/27-20140304-戏剧场-京剧《天下归心》彩排 第4幕天问-左起：史依弘饰庄后、孟广禄饰郑庄公、陈少云饰颍考叔-苏岩.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/organized/organized/27-20140304-戏剧场-京剧《天下归心》彩排 scene-09-苏岩.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/photos/28-20140304-戏剧场-京剧《天下归心》彩排 第5幕见母-陈少云饰颍考叔（中前）、王博文饰鬼判（中后）-苏岩.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/organized/organized/28-20140304-戏剧场-京剧《天下归心》彩排 scene-10-苏岩.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/photos/29-20140304-戏剧场-京剧《天下归心》彩排 第5幕见母-孟广禄饰郑庄公-苏岩.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/organized/organized/29-20140304-戏剧场-京剧《天下归心》彩排 scene-11-苏岩.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/photos/30-20140304-戏剧场-京剧《天下归心》彩排 第5幕见母-左起：李鸣岩饰武姜、孟广禄饰郑庄公-苏岩.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/organized/organized/30-20140304-戏剧场-京剧《天下归心》彩排 scene-11-苏岩.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/photos/31-20140304-戏剧场-京剧《天下归心》彩排 第5幕见母-左起：李鸣岩饰武姜、孟广禄饰郑庄公-苏岩.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/organized/organized/31-20140304-戏剧场-京剧《天下归心》彩排 scene-12-苏岩.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/photos/32-20140304-戏剧场-京剧《天下归心》彩排 第5幕见母-左起：陈少云饰颍考叔、史依弘饰庄后、李鸣岩饰武姜、孟广禄饰郑庄公-苏岩.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/organized/organized/32-20140304-戏剧场-京剧《天下归心》彩排 scene-12-苏岩.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/photos/33-20140304-戏剧场-京剧《天下归心》彩排-第5幕见母-左起：李鸣岩饰武姜、孟广禄饰郑庄公-苏岩.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/organized/organized/33-20140304-戏剧场-京剧《天下归心》彩排 scene-12-苏岩.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/photos/34-20140304-戏剧场-京剧《天下归心》彩排 第5幕见母-左起：史依弘饰庄后、李鸣岩饰武姜、陈少云饰颍考叔、孟广禄饰郑庄公-苏岩.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/organized/organized/34-20140304-戏剧场-京剧《天下归心》彩排 scene-13-苏岩.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/photos/35-20140304-戏剧场-京剧《天下归心》彩排 第5幕见母-前左3起：朱世慧饰公子吕、史依弘饰庄后、李鸣岩饰武姜、孟广禄饰郑庄公，陈少云饰颍考叔、康静饰颍母-苏岩.jpg",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/organized/organized/35-20140304-戏剧场-京剧《天下归心》彩排 scene-13-苏岩.jpg",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        }
+      ],
+      "review_images": [
+        "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/photos/01-20140304-戏剧场-京剧《天下归心》彩排 第1幕克段-前左起：朱世慧饰公子吕、孟广禄饰郑庄公、陈少云饰颍考叔-苏岩.jpg",
+        "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_2/photos/02-20140304-戏剧场-京剧《天下归心》彩排 第1幕克段-前左起：朱世慧饰公子吕、孟广禄饰郑庄公-苏岩.jpg"
+      ],
+      "elapsed_seconds": 301.230603935197
+    },
+    {
+      "play_id": "play-e8b1c0e08a72cd6f64a245a5",
+      "checks": {
+        "reason_count": true,
+        "reason_real_visual_retrieval": true,
+        "input_conservation": true,
+        "copy_count": true,
+        "output_bytes_equal_sources": true,
+        "source_paths_unique": true,
+        "output_names_unique": true,
+        "raw_date_venue_play_event_preserved": true,
+        "output_filename_format": true,
+        "approved_label_and_unreviewed_placeholders": true,
+        "approved_and_rejected_probes_both_published": true,
+        "locked_records_survived_reanalysis": true,
+        "concurrent_review_one_success_one_conflict": true,
+        "export_only_approved": true,
+        "rejected_not_used_as_label": true,
+        "no_failed_images": true
+      },
+      "input_count": 50,
+      "reason_task": "e8c6d4f34f30463f8425c10ac1d288f0",
+      "replay_task": "5142d268edcd4230a5ec3bf273ef45d1",
+      "organize_task": "327e1c6f9e9441e394b31b9754e5d9b6",
+      "kept": 50,
+      "discarded": 0,
+      "copied": 50,
+      "failed": 0,
+      "scripted_reviews": 2,
+      "artifact_audit": [
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/01-20160609-戏剧场-话剧《样式雷》彩排 第1场-张硕饰说书人-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/01-20160609-戏剧场-话剧《样式雷》彩排 第1场-张硕饰说书人-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/02-20160609-戏剧场-话剧《样式雷》彩排 第1场-左起：彭国斌饰雷廷昌、薛天智饰雷思起-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/02-20160609-戏剧场-话剧《样式雷》彩排 scene-01-a-彭国斌饰雷廷昌、薛天智饰雷思起-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/03-20160609-戏剧场-话剧《样式雷》彩排 第1场-左起：泰然饰贵宝、薛天智饰雷思起-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/03-20160609-戏剧场-话剧《样式雷》彩排 scene-01-a-泰然饰贵宝、薛天智饰雷思起-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/04-20160609-戏剧场-话剧《样式雷》彩排 第1场-左起：彭国斌饰雷廷昌、薛天智饰雷思起-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/04-20160609-戏剧场-话剧《样式雷》彩排 scene-01-a-薛天智饰雷思起、彭国斌饰雷廷昌-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/05-20160609-戏剧场-话剧《样式雷》彩排 第2场-张硕饰说书人-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/05-20160609-戏剧场-话剧《样式雷》彩排 scene-01-b-张硕饰说书人-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/06-20160609-戏剧场-话剧《样式雷》彩排 第2场-右2起：朱冠霖饰万事不求人、朱俊达饰算命人、王浩伟饰烩五哥-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/06-20160609-戏剧场-话剧《样式雷》彩排 scene-01-a-王浩伟、朱冠霖饰万事不求人-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/07-20160609-戏剧场-话剧《样式雷》彩排 第2场-左起：王吉饰桃儿、刘思妤饰杏儿、王文杰饰桂枝儿、彭国斌饰雷廷昌-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/07-20160609-戏剧场-话剧《样式雷》彩排 scene-01-a-刘思妤饰杏儿、王文杰饰桂枝儿-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/08-20160609-戏剧场-话剧《样式雷》彩排 第2场-左起：董汶亮饰李光昭、彭国斌饰雷廷昌-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/08-20160609-戏剧场-话剧《样式雷》彩排 scene-01-a-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/09-20160609-戏剧场-话剧《样式雷》彩排 第2场-左起：董汶亮饰李光昭、彭国斌饰雷廷昌-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/09-20160609-戏剧场-话剧《样式雷》彩排 scene-01-a-彭国斌饰雷廷昌-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/10-20160609-戏剧场-话剧《样式雷》彩排 第2场-左起：董汶亮饰李光昭、彭国斌饰雷廷昌-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/10-20160609-戏剧场-话剧《样式雷》彩排 scene-01-a-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/11-20160609-戏剧场-话剧《样式雷》彩排 第3场-中：杨淇饰慈禧-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/11-20160609-戏剧场-话剧《样式雷》彩排 scene-02-杨淇饰慈禧-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/12-20160609-戏剧场-话剧《样式雷》彩排 第3场-左起：彭国斌饰雷廷昌、薛天智饰雷思起-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/12-20160609-戏剧场-话剧《样式雷》彩排 scene-03-b-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/13-20160609-戏剧场-话剧《样式雷》彩排 第4场-左起：刘思妤饰杏儿、王文杰饰桂枝儿、彭国斌饰雷廷昌-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/13-20160609-戏剧场-话剧《样式雷》彩排 scene-03-c-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/14-20160609-戏剧场-话剧《样式雷》彩排 第4场-左起：彭国斌饰雷廷昌、王文杰饰桂枝儿-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/14-20160609-戏剧场-话剧《样式雷》彩排 scene-03-c-王文杰饰桂枝儿-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/15-20160609-戏剧场-话剧《样式雷》彩排 第4场-左起：彭国斌饰雷廷昌、王文杰饰桂枝儿-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/15-20160609-戏剧场-话剧《样式雷》彩排 scene-03-c-彭国斌饰雷廷昌-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/16-20160609-戏剧场-话剧《样式雷》彩排 第4场-左起：王文杰饰桂枝儿、彭国斌饰雷廷昌-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/16-20160609-戏剧场-话剧《样式雷》彩排 scene-03-c-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/17-20160609-戏剧场-话剧《样式雷》彩排 第4场-左起：刘思妤饰杏儿、王文杰饰桂枝儿、彭国斌饰雷廷昌-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/17-20160609-戏剧场-话剧《样式雷》彩排 scene-03-c-彭国斌饰雷廷昌、王文杰饰桂枝儿、刘思妤饰杏儿-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/18-20160609-戏剧场-话剧《样式雷》彩排 第4场-左起：刘思妤饰杏儿、王文杰饰桂枝儿、彭国斌饰雷廷昌-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/18-20160609-戏剧场-话剧《样式雷》彩排 scene-03-c-王文杰饰桂枝儿-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/19-20160609-戏剧场-话剧《样式雷》彩排 第4场-前右起：彭国斌饰雷廷昌、胡博宇饰税吏、王文杰饰桂枝儿-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/19-20160609-戏剧场-话剧《样式雷》彩排 scene-03-b-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/20-20160609-戏剧场-话剧《样式雷》彩排 第5场-前中左起：彭国斌饰雷廷昌、薛天智饰雷思起-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/20-20160609-戏剧场-话剧《样式雷》彩排 scene-03-a-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/21-20160609-戏剧场-话剧《样式雷》彩排 第5场-左起：薛天智饰雷思起、彭国斌饰雷廷昌、泰然饰贵宝-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/21-20160609-戏剧场-话剧《样式雷》彩排 scene-03-b-泰然饰贵宝、彭国斌饰雷廷昌、薛天智饰雷思起-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/22-20160609-戏剧场-话剧《样式雷》彩排 第5场-左起：薛天智饰雷思起、泰然饰贵宝-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/22-20160609-戏剧场-话剧《样式雷》彩排 scene-03-b-泰然饰贵宝、薛天智饰雷思起-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/23-20160609-戏剧场-话剧《样式雷》彩排 第5场-左起：彭国斌饰雷廷昌、薛天智饰雷思起-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/23-20160609-戏剧场-话剧《样式雷》彩排 scene-03-b-薛天智饰雷思起-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/24-20160609-戏剧场-话剧《样式雷》彩排 第5场-左起：彭国斌饰雷廷昌、薛天智饰雷思起-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/24-20160609-戏剧场-话剧《样式雷》彩排 scene-03-b-薛天智饰雷思起-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/25-20160609-戏剧场-话剧《样式雷》彩排 第6场-左起：王文杰饰桂枝儿、王吉饰桃儿、刘思妤饰杏儿、彭国斌饰雷廷昌-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/25-20160609-戏剧场-话剧《样式雷》彩排 scene-03-a-王文杰饰桂枝儿、王吉饰桃儿-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/26-20160609-戏剧场-话剧《样式雷》彩排 第6场-左起：王文杰饰桂枝儿、彭国斌饰雷廷昌-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/26-20160609-戏剧场-话剧《样式雷》彩排 scene-03-a-王文杰饰桂枝儿-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/27-20160609-戏剧场-话剧《样式雷》彩排 第6场-左起：彭国斌饰雷廷昌、王文杰饰桂枝儿-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/27-20160609-戏剧场-话剧《样式雷》彩排 scene-03-b-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/28-20160609-戏剧场-话剧《样式雷》彩排 第6场-左起：彭国斌饰雷廷昌、王文杰饰桂枝儿-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/28-20160609-戏剧场-话剧《样式雷》彩排 scene-03-b-彭国斌饰雷廷昌、王文杰饰桂枝儿-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/29-20160609-戏剧场-话剧《样式雷》彩排 第7场-左起：孟宇饰茶叶贩、彭国斌饰雷廷昌-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/29-20160609-戏剧场-话剧《样式雷》彩排 scene-04-彭国斌饰雷廷昌-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/30-20160609-戏剧场-话剧《样式雷》彩排 第7场-左起：孟宇饰茶叶贩、彭国斌饰雷廷昌-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/30-20160609-戏剧场-话剧《样式雷》彩排 scene-04-王浩伟-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/31-20160609-戏剧场-话剧《样式雷》彩排 第7场-左起：彭国斌饰雷廷昌、王浩伟饰播威利-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/31-20160609-戏剧场-话剧《样式雷》彩排 scene-04-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/32-20160609-戏剧场-话剧《样式雷》彩排 第7场-左起：彭国斌饰雷廷昌、王浩伟饰播威利-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/32-20160609-戏剧场-话剧《样式雷》彩排 scene-05-b-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/33-20160609-戏剧场-话剧《样式雷》彩排 第7场-前左起：薛天智饰雷思起（跪）、泰然饰贵宝、彭国斌饰雷廷昌（跪）-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/33-20160609-戏剧场-话剧《样式雷》彩排 scene-05-a-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/34-20160609-戏剧场-话剧《样式雷》彩排 第8场-前左起：彭国斌饰雷廷昌、薛天智饰雷思起、杨淇饰慈禧-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/34-20160609-戏剧场-话剧《样式雷》彩排 scene-05-a-杨淇饰慈禧、薛天智饰雷思起、彭国斌饰雷廷昌-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/35-20160609-戏剧场-话剧《样式雷》彩排 第8场-前左起：薛天智饰雷思起、彭国斌饰雷廷昌、杨淇饰慈禧-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/35-20160609-戏剧场-话剧《样式雷》彩排 scene-05-a-杨淇饰慈禧、彭国斌饰雷廷昌-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/36-20160609-戏剧场-话剧《样式雷》彩排 第8场-前左起：杨淇饰慈禧、彭国斌饰雷廷昌-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/36-20160609-戏剧场-话剧《样式雷》彩排 scene-05-a-杨淇饰慈禧、彭国斌饰雷廷昌-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/37-20160609-戏剧场-话剧《样式雷》彩排 第8场-前左起：薛天智饰雷思起、杨淇饰慈禧、彭国斌饰雷廷昌-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/37-20160609-戏剧场-话剧《样式雷》彩排 scene-05-a-杨淇饰慈禧、彭国斌饰雷廷昌-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/38-20160609-戏剧场-话剧《样式雷》彩排 第8场-前左起：薛天智饰雷思起、杨淇饰慈禧、彭国斌饰雷廷昌-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/38-20160609-戏剧场-话剧《样式雷》彩排 scene-05-a-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/39-20160609-戏剧场-话剧《样式雷》彩排-第8场-中：杨淇饰慈禧-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/39-20160609-戏剧场-话剧《样式雷》彩排 scene-05-a-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/40-20160609-戏剧场-话剧《样式雷》彩排 第8场-前左起：彭国斌饰雷廷昌、杨淇饰慈禧-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/40-20160609-戏剧场-话剧《样式雷》彩排 scene-05-a-杨淇饰慈禧-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/41-20160609-戏剧场-话剧《样式雷》彩排 尾声-张硕饰说书人-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/41-20160609-戏剧场-话剧《样式雷》彩排 scene-05-b-张硕饰说书人-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/42-20160609-戏剧场-话剧《样式雷》彩排 尾声-左起：王文杰饰桂枝儿、薛天智饰雷思起（前）、彭国斌饰雷廷昌-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/42-20160609-戏剧场-话剧《样式雷》彩排 scene-05-b-王文杰饰桂枝儿、彭国斌饰雷廷昌、薛天智饰雷思起-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/43-20160609-戏剧场-话剧《样式雷》彩排 尾声-左起：薛天智饰雷思起、王文杰饰桂枝儿、彭国斌饰雷廷昌-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/43-20160609-戏剧场-话剧《样式雷》彩排 scene-05-b-王文杰饰桂枝儿、彭国斌饰雷廷昌、薛天智饰雷思起-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/44-20160609-戏剧场-话剧《样式雷》彩排 尾声-左起：王文杰饰桂枝儿、彭国斌饰雷廷昌-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/44-20160609-戏剧场-话剧《样式雷》彩排 scene-05-b-王文杰饰桂枝儿、彭国斌饰雷廷昌-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/45-20160609-戏剧场-话剧《样式雷》彩排 尾声-左起：薛天智饰雷思起、王文杰饰桂枝儿、彭国斌饰雷廷昌-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/45-20160609-戏剧场-话剧《样式雷》彩排 scene-05-b-王文杰饰桂枝儿、彭国斌饰雷廷昌、薛天智饰雷思起-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/46-20160609-戏剧场-话剧《样式雷》彩排 尾声-左起：王文杰饰桂枝儿、彭国斌饰雷廷昌、薛天智饰雷思起-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/46-20160609-戏剧场-话剧《样式雷》彩排 scene-05-b-薛天智饰雷思起、彭国斌饰雷廷昌、王文杰饰桂枝儿-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/47-20160609-戏剧场-话剧《样式雷》彩排 尾声-左起：彭国斌饰雷廷昌、薛天智饰雷思起-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/47-20160609-戏剧场-话剧《样式雷》彩排 scene-05-b-薛天智饰雷思起、彭国斌饰雷廷昌-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/48-20160609-戏剧场-话剧《样式雷》彩排 尾声-左起：王文杰饰桂枝儿、彭国斌饰雷廷昌、薛天智饰雷思起-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/48-20160609-戏剧场-话剧《样式雷》彩排 scene-05-b-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/49-20160609-戏剧场-话剧《样式雷》彩排 尾声-张硕饰说书人-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/49-20160609-戏剧场-话剧《样式雷》彩排 scene-05-b-张硕饰说书人-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        },
+        {
+          "source": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/50-20160609-戏剧场-话剧《样式雷》彩排 谢幕-前左起：董汶亮、泰然、张硕、薛天智、彭国斌、王文杰、杨淇、王吉、刘思妤、孟宇、王浩伟-凌风.JPG",
+          "output": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/organized/organized/50-20160609-戏剧场-话剧《样式雷》彩排 scene-05-a-王浩伟、杨淇饰慈禧、朱冠霖饰万事不求人-凌风.JPG",
+          "content_equal": true,
+          "metadata_equal": true,
+          "name_prefix_valid": true,
+          "scene_name_valid": true,
+          "safe_basename": true
+        }
+      ],
+      "review_images": [
+        "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/01-20160609-戏剧场-话剧《样式雷》彩排 第1场-张硕饰说书人-凌风.JPG",
+        "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/project_3/photos/02-20160609-戏剧场-话剧《样式雷》彩排 第1场-左起：彭国斌饰雷廷昌、薛天智饰雷思起-凌风.JPG"
+      ],
+      "elapsed_seconds": 477.8022520877421
+    }
+  ],
+  "input_count": 200,
+  "project_count": 4,
+  "physical_gpu": 1,
+  "input_kind": "organized_photo_filenames",
+  "formal_u8_gate": "not_passed",
+  "quality_gate": "insufficient_data",
+  "limitations": [
+    "Functional replay of actual SigLIP2, SCRFD/ArcFace, pose and role paths, with use_llm=false.",
+    "Scripted review decisions in isolated copies are not new human annotations.",
+    "Existing gallery/query overlap is retained only for workflow testing, not identity accuracy.",
+    "One run; no controlled U2 throughput comparison or final-test quality claim.",
+    "Full production startup is disabled; only the models needed for this workflow are loaded."
+  ]
+}

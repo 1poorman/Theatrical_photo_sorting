@@ -1,0 +1,67 @@
+{
+  "status": "not_adopted_preprocessing_consistency",
+  "reference_run": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/core_upgrade/u2_pillow_fixed_200x5_20261026",
+  "source_sha256": {
+    "core_modules/image_search.py": "c570fc2c00361682e90b0619209005772eb1738808dde980590b57b6ea56bc43",
+    "core_modules/organize/feature_cache.py": "075c2e7873f4aa34c5d841c1baf3b0d9fb10b3d6707dd6a34916d6166c144bac",
+    "core_modules/organize/smart_organizer.py": "cf684bc6f2ea7b44dc4801a27922c9749ffc350840c525eca1c26411a775eec6",
+    "core_modules/organize/burst_dedup.py": "bd580ab04edcb2e2b20c21c240aaff4a56b365e5f5d776d11a174e4c3801a588",
+    "core_modules/organize/multimodal_evidence.py": "643acda290949fac7695ccd6cd7643a496a8b07816af0607ec61fec133aa3825",
+    "core_modules/organize/filename_parser.py": "43551da0b05639dbe220e6f4c56d0fdc15568558e99b42d6585b3e9303868d01",
+    "core_modules/organize/scene_split.py": "26ec6e42e1fa4cf0a5d75bf0b51eba0c8a3c39fc07a90f14523c1633a4e783a4",
+    "core_modules/organize/face_db_builder.py": "9d718a061b2aae908dfac5d3d25c99e3f9b3d763e59327b57228e99cdd4cb023",
+    "core_modules/tools/image_io.py": "4bbcef4b45321ddad8baed47d16e1d498f2fb6392fe707e9531138479784c55f",
+    "core_modules/face_recognition/face_recognition.py": "ce7a10c85a86263663838c8aa5beef8dea136cec15c825053a1b49506ca5d23a",
+    "core_modules/face_recognition/scrfd/scrfd_det.py": "e9d9f14c24ff6816bfb330a4d73f1bfa985b0078ecdb0959c7b7034adce70330",
+    "core_modules/face_recognition/arcface/arcface_onnx.py": "0b01075ee75af7af859c86767f5d7ce0d80eaa2f7f2b7a4a29c17fcc93ec4180",
+    "config/base.py": "1f441b0ffe41df702b598d8b167684cf6f7b47be94e74ae15d767d0156eab112",
+    "tools/benchmark_feature_pipeline.py": "4179105ad620a74e68a52e684fedf23c22e71e82283493a2ea984a889e5f7218"
+  },
+  "evaluator_sha256": "8e6910fb143d0d2e58d9b23002b2571bd06a0e456809d3561ca5041a4011bc89",
+  "reference_artifacts": {
+    "provenance.json": "a840d9d60c0874fc5a4d84c64ee57ebe3829afb00ba73c23efb355fba2a322f3",
+    "inputs.json": "f7f0f6c38e6314282565930d0169e402b6034167df6b17cd9df53adad905d5e3",
+    "batch.json": "178f7c2711a4ea3dc90db0b8c814c44e39bc374fdeb220dd35fdd7e07e11af6b",
+    "batch_vectors.npz": "eab1890c33c824378a0eab7d7824197de96ec59b3b7097766511c80979d3e0c3"
+  },
+  "dali_version": "1.53.0",
+  "limitations": [
+    "Sequential measurements on a shared GPU.",
+    "No independent quality labels; no HTTP/UI measurement."
+  ],
+  "fixtures": {
+    "mapping_equal": true,
+    "bad_image_isolated": true,
+    "statistics": {
+      "decoded": 1,
+      "fallback": 12,
+      "decoder_failures": 0
+    },
+    "decoder_errors": [],
+    "comparison": {
+      "min_cosine": 0.9974623322486877,
+      "fraction_at_least_0999": 0.9166666666666666,
+      "below_threshold_indices": [
+        0
+      ]
+    },
+    "passed": false
+  },
+  "preflight_identity": {
+    "model": "334a1c5dc94a97b713b03952f047c3fb16c0a7e3b954e510112f432266beb37b",
+    "preprocessing": "608376f03301aedbcd762703582fd34f2a2e9609cb14c90f14b707706c565424"
+  },
+  "comparison": {
+    "min_cosine": 0.9994617700576782,
+    "fraction_at_least_0999": 1.0,
+    "below_threshold_indices": []
+  },
+  "statistics": {
+    "decoded": 161,
+    "fallback": 39,
+    "decoder_failures": 0
+  },
+  "decoder_errors": [],
+  "feature_errors": {},
+  "consistency_passed": false
+}

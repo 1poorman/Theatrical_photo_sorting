@@ -1,0 +1,77 @@
+{
+  "status": "passed",
+  "checks": {
+    "both_modes_preserve_records": true,
+    "no_deferred_snapshot_replacement": true,
+    "deferred_restarted_reads_no_snapshot": true,
+    "eager_compatibility_snapshots_written": true,
+    "deferred_snapshot_unchanged_until_export": true,
+    "exports_equal": true,
+    "snapshots_match_SQLite": true,
+    "counts_and_history_match": true,
+    "source_unchanged": true
+  },
+  "records": 10000,
+  "repeats": 5,
+  "results": {
+    "eager": {
+      "write_and_summary_seconds": [
+        0.18225441966205835,
+        0.2652119882404804,
+        0.24934489652514458,
+        0.13661428354680538,
+        0.21470611821860075
+      ],
+      "median_seconds": 0.21470611821860075,
+      "snapshot_file_replacements": 10,
+      "restarted_read_snapshot_replacements": 0,
+      "snapshot_unchanged_until_export": false,
+      "latest_records_correct": true,
+      "export_count": 5,
+      "final_labels": {
+        "photo-00000.jpg": "human-0",
+        "photo-00001.jpg": "human-1",
+        "photo-00002.jpg": "human-2",
+        "photo-00003.jpg": "human-3",
+        "photo-00004.jpg": "human-4"
+      },
+      "snapshots_match_authority": true,
+      "revisions": 5
+    },
+    "deferred": {
+      "write_and_summary_seconds": [
+        0.0024403994902968407,
+        0.001850220374763012,
+        0.0018378542736172676,
+        0.0017254110425710678,
+        0.001887001097202301
+      ],
+      "median_seconds": 0.001850220374763012,
+      "snapshot_file_replacements": 0,
+      "restarted_read_snapshot_replacements": 0,
+      "snapshot_unchanged_until_export": true,
+      "latest_records_correct": true,
+      "export_count": 5,
+      "final_labels": {
+        "photo-00000.jpg": "human-0",
+        "photo-00001.jpg": "human-1",
+        "photo-00002.jpg": "human-2",
+        "photo-00003.jpg": "human-3",
+        "photo-00004.jpg": "human-4"
+      },
+      "snapshots_match_authority": true,
+      "revisions": 5
+    }
+  },
+  "source_sha256": {
+    "tools/benchmark_review_snapshots.py": "a1d3086f161d97e7eeb13a7af8102c976972c51d69ddf4813cbd9279dc5c5972",
+    "core_modules/organize/review_store.py": "f1b01faa5571b62e2b21160fdde0b1a6290e0a9d17e7e9ddfcc71329abd7049e",
+    "core_modules/organize/review_queue.py": "538de7159628a3e7e6954c825eb39b1fa8cbac0074572c914f8c27033046e0f8"
+  },
+  "U2": "paused; no feature/decode/DALI work",
+  "limitations": [
+    "Synthetic review payloads; same-version local function calls including summary.",
+    "Sequential modes on shared CPU/storage; timings are observations, not a controlled end-to-end gain.",
+    "No GPU inference, HTTP concurrency or quality ground truth."
+  ]
+}

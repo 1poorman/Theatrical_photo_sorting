@@ -1,0 +1,38 @@
+{
+  "results": [
+    {
+      "test_file": "tests/test_quality_parallelism.py",
+      "passed": 4,
+      "exit_code": 0,
+      "source_sha256": "12fc3e8e6ab0ec30667f03877d530a2bbe3039ae366afae333b8313090cc900d"
+    },
+    {
+      "test_file": "tests/test_feature_cache.py",
+      "passed": 29,
+      "exit_code": 0,
+      "source_sha256": "398ef31ac8950b2abaab1083a439f685213684b489612d83865552f419dc0ffc"
+    },
+    {
+      "test_file": "tests/test_quality_statistics.py",
+      "passed": 2,
+      "exit_code": 0,
+      "source_sha256": "c8c1208ed1f0e44c1f933d9f956d178ad6f961858feb1ceadfef713526cccfa5"
+    },
+    {
+      "test_file": "tests/test_core_upgrade.py",
+      "passed": 28,
+      "exit_code": 0,
+      "source_sha256": "8516b36575c5c88d31c13eedef23b897ad4851bfa3c1cfdc56a2127014112d73"
+    },
+    {
+      "test_file": "tests/test_organize_tasks.py",
+      "passed": 18,
+      "exit_code": 0,
+      "source_sha256": "e7176b5a5b4ac2404f3aab7132e5ef78570aaa9833a504a9ba1a56a2af4ba399"
+    }
+  ],
+  "total_passed": 81,
+  "result_source": "unittest tool output in this session; core/organize raw logs in integration_tests_final.json",
+  "expected_pre_fix_failure": "fallback_reproduction.json",
+  "initial_core_simulation_failure": "test_core_upgrade.log"
+}

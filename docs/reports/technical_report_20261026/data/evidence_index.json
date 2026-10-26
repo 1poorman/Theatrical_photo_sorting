@@ -1,0 +1,219 @@
+[
+  {
+    "id": "S01",
+    "title": "照片清单与复核范围",
+    "path": "outputs/acceptance/core_upgrade/u0_partition_review_20261022/artifacts/summary.json",
+    "sha256": "a420a528e8d1450ae8b4b19977a801388acb11188f54a0d710e64ffa3f4df1db",
+    "snapshot": "data/evidence/S01.json"
+  },
+  {
+    "id": "S02",
+    "title": "262图检索比较与配对分析",
+    "path": "outputs/acceptance/core_upgrade/u4_retrieval_study_262_gpu_retry_20261022/summary.json",
+    "sha256": "cbed224ac9b1aebf7f10eda01a08aaeb22a8bceff94f726ece627a0b41846462",
+    "snapshot": "data/evidence/S02.json"
+  },
+  {
+    "id": "S03",
+    "title": "冻结262图研究协议",
+    "path": "outputs/acceptance/core_upgrade/u4_retrieval_study_262_20261022/prepared/protocol.json",
+    "sha256": "e8519c7e0f58c6b9494d3ae317a7c93bff4de5e3e3a5e064acb97bed42268103",
+    "snapshot": "data/evidence/S03.json"
+  },
+  {
+    "id": "S04",
+    "title": "短块实验硬件预检",
+    "path": "outputs/acceptance/core_upgrade/u4_text_blocks_20261022/preflight.json",
+    "sha256": "1d5bce0236a5945334db7f1179bce7a7271239354ba8de4f22728627bafaa040",
+    "snapshot": "data/evidence/S04.json"
+  },
+  {
+    "id": "S05",
+    "title": "自动视觉预算100图",
+    "path": "outputs/acceptance/core_upgrade/u5_visual_budget_host_20261023/summary.json",
+    "sha256": "017af9ebe4b2d0e22252595c6d93ea9e2e6cc908ad4b3cab73c1eaa5a5ec1f30",
+    "snapshot": "data/evidence/S05.json"
+  },
+  {
+    "id": "S06",
+    "title": "按需视觉观察100图",
+    "path": "outputs/acceptance/core_upgrade/u5_fact_observations_host_20261024/summary.json",
+    "sha256": "30cf01147a95fd7e281bce59ea0d80e8609a7b92e3f1272e7f6074ba486550c6",
+    "snapshot": "data/evidence/S06.json"
+  },
+  {
+    "id": "S07",
+    "title": "真实OCR五图",
+    "path": "outputs/acceptance/core_upgrade/u5_ocr_verified_20261023/summary.json",
+    "sha256": "46a2d1fdb1af27357194ee2a326249c00d949fe53d59fe1f4b290480c158e9ea",
+    "snapshot": "data/evidence/S07.json"
+  },
+  {
+    "id": "S08",
+    "title": "CPU万条特征规模检查",
+    "path": "outputs/acceptance/core_upgrade/u6_u7_cpu_scale_20261023/summary.json",
+    "sha256": "2ab32f90a8cc7b1569111ff510e6821e6133868776c56189d0f8667bc33704e7",
+    "snapshot": "data/evidence/S08.json"
+  },
+  {
+    "id": "S09",
+    "title": "1095脸真实图聚类",
+    "path": "outputs/acceptance/core_upgrade/u7_graph_real_1095_20261023/summary.json",
+    "sha256": "b21f0f029d2a2b6ce5966f8bfb56d015ded8171d412b36c183880c46a494fb92",
+    "snapshot": "data/evidence/S09.json"
+  },
+  {
+    "id": "S10",
+    "title": "262图时序/连拍探索",
+    "path": "outputs/acceptance/core_upgrade/u6_u7_temporal_real_20261023/summary.json",
+    "sha256": "fd70ea4ed378652cfee911d814541930b4b3476b30e98feb679ea54ca9cb92bc",
+    "snapshot": "data/evidence/S10.json"
+  },
+  {
+    "id": "S11",
+    "title": "292图真实任务HTTP响应",
+    "path": "outputs/acceptance/core_upgrade/u3_cluster_http_292_20261023/summary.json",
+    "sha256": "9ad3fa782247335c0fa28aade36696824c62ee439d4351084fd73e7eeb8414b3",
+    "snapshot": "data/evidence/S11.json"
+  },
+  {
+    "id": "S12",
+    "title": "292图四次服务恢复",
+    "path": "outputs/acceptance/core_upgrade/u3_cluster_recovery_292_20261023/summary.json",
+    "sha256": "0eec99f70bb3dba08c8d50cf241005ec56b8d069257ca06d56742b176dcc3ca6",
+    "snapshot": "data/evidence/S12.json"
+  },
+  {
+    "id": "S13",
+    "title": "复核快照一万条记录",
+    "path": "outputs/acceptance/core_upgrade/u3_review_snapshot_scale_20261023/summary.json",
+    "sha256": "664090da9f2bca6bc69da95e6799243b4021bed2ba2af7a5fad8a83b9cf3b338",
+    "snapshot": "data/evidence/S13.json"
+  },
+  {
+    "id": "S14",
+    "title": "U2两百图五次基准",
+    "path": "outputs/acceptance/core_upgrade/u2_publication_200x5_20261021/summary.json",
+    "sha256": "618488860413e20598d69549fd5fae7cdd7d984a72e4b620cf1971f1cb08faa8",
+    "snapshot": "data/evidence/S14.json"
+  },
+  {
+    "id": "S15",
+    "title": "原始200图全流程",
+    "path": "outputs/acceptance/core_upgrade/u8_raw_workflow_200_20261023/summary.json",
+    "sha256": "91e87f1c6905e6257772e6c19ce47a52d3f5b22c03b07fd535184839fbf2de47",
+    "snapshot": "data/evidence/S15.json"
+  },
+  {
+    "id": "S16",
+    "title": "已整理200图重处理",
+    "path": "outputs/acceptance/core_upgrade/u8_organized_reprocessing_200_host_20261023/summary.json",
+    "sha256": "85b921d8ff911d4eb6ed39ee654c5dbd679f2967b3d5deaf40a999c0a773e4bd",
+    "snapshot": "data/evidence/S16.json"
+  },
+  {
+    "id": "S17",
+    "title": "1095脸待定评测",
+    "path": "outputs/acceptance/core_upgrade/u1_face_quality_pending_20261024/summary.json",
+    "sha256": "c2d74d36be01cec47d7fe98bc269666777157c3be16f7f9ec6a73b1f8ca05b51",
+    "snapshot": "data/evidence/S17.json"
+  },
+  {
+    "id": "S18",
+    "title": "双人事实待定评测",
+    "path": "outputs/acceptance/core_upgrade/completion_audit_20261024/pending_fact_review.json",
+    "sha256": "dbcc66185bb1bb9a91b32ed8a923bcac10617ebb95614db380f2ab3663e26868",
+    "snapshot": "data/evidence/S18.json"
+  },
+  {
+    "id": "S19",
+    "title": "最终文件与验证核查",
+    "path": "outputs/acceptance/core_upgrade/completion_audit_20261024/summary.json",
+    "sha256": "014a2228b25d78a7c9eb6d1ec1a65a40ef770c7ce84c9efee01dbea7d06673f6",
+    "snapshot": "data/evidence/S19.json"
+  },
+  {
+    "id": "S20",
+    "title": "远端模型元数据",
+    "path": "outputs/acceptance/core_upgrade/remote_model_metadata_host_20261023/summary.json",
+    "sha256": "9b18852e137f452aaf821d5ef1a1913f72c75e60e3524e658b106a0e53fbd8c4",
+    "snapshot": "data/evidence/S20.json"
+  },
+  {
+    "id": "S21",
+    "title": "U2实际执行环境",
+    "path": "outputs/acceptance/core_upgrade/u2_publication_200x5_20261021/batch.json",
+    "sha256": "ed3ad1e4e15b18629ea00ee9ff77d67712764f106ec2ae81dbdda5156aa07a4e",
+    "snapshot": "data/evidence/S21.json"
+  },
+  {
+    "id": "S22",
+    "title": "Pillow尺寸修复后200图五次对照",
+    "path": "outputs/acceptance/core_upgrade/u2_pillow_fixed_200x5_20261026/summary.json",
+    "sha256": "b3f7ed32c4ac05fc19f5e1e0d65085437a3dcbd6cbdeabf457e36ad55a228291",
+    "snapshot": "data/evidence/S22.json"
+  },
+  {
+    "id": "S23",
+    "title": "DALI初版小图放大一致性失败",
+    "path": "outputs/acceptance/core_upgrade/u2_dali_200_20261026/evaluation.json",
+    "sha256": "569b87eab43a249d68005b6237bf447439c2c6110b72d2152e62c75b6d5a4b0a",
+    "snapshot": "data/evidence/S23.json"
+  },
+  {
+    "id": "S24",
+    "title": "DALI回退变体完整评价与采用结论",
+    "path": "outputs/acceptance/core_upgrade/u2_dali_no_upscale_200_20261026/evaluation.json",
+    "sha256": "9662c5cd60af59cb3b971fcab8d4aa61c23a482039654e08f199f5a37857d9fc",
+    "snapshot": "data/evidence/S24.json"
+  },
+  {
+    "id": "S25",
+    "title": "同步并行选优最新200图五次比较",
+    "path": "outputs/acceptance/core_upgrade/u2_pillow_quality_200x5_20261026/summary.json",
+    "sha256": "2eaa982824323e29393433e33222ab9515ab6ddd51661f76eb207a9713debb69",
+    "snapshot": "data/evidence/S25.json"
+  },
+  {
+    "id": "S26",
+    "title": "最新同期基线逐轮/阶段结果",
+    "path": "outputs/acceptance/core_upgrade/u2_pillow_quality_200x5_20261026/baseline.json",
+    "sha256": "f6cf5380d82835345ddb7f5e6e9ef0bbdb45758f001d7a60e91004c5b2662388",
+    "snapshot": "data/evidence/S26.json"
+  },
+  {
+    "id": "S27",
+    "title": "最新候选逐轮/阶段及热缓存结果",
+    "path": "outputs/acceptance/core_upgrade/u2_pillow_quality_200x5_20261026/batch.json",
+    "sha256": "5a6520e63e55a1354fd5cd9e0b6d90f95fc1ae2d917fc3c3a68cdd1d13abd82d",
+    "snapshot": "data/evidence/S27.json"
+  },
+  {
+    "id": "S28",
+    "title": "32图三次CPU质量评分诊断",
+    "path": "outputs/acceptance/core_upgrade/u2_cpu_quality_20261026/quality_probe_summary.json",
+    "sha256": "b511e3b5cb426b2138fc6cf3ed590e54b88a2c8f533a0bb3de51c03ac08e9ee3",
+    "snapshot": "data/evidence/S28.json"
+  },
+  {
+    "id": "S29",
+    "title": "最新538项只读核查",
+    "path": "outputs/acceptance/core_upgrade/u2_cpu_quality_20261026/final_audit.json",
+    "sha256": "bf87a11fe5ba1d34192e73bc9dc1e927586511cc2e8c44fceac3b0a8c1153790",
+    "snapshot": "data/evidence/S29.json"
+  },
+  {
+    "id": "S30",
+    "title": "最新81项回归记录",
+    "path": "outputs/acceptance/core_upgrade/u2_cpu_quality_20261026/regression_receipt.json",
+    "sha256": "7f09615c0f488c22f365f4a2dd2850c4ea73749e53f440dd5db0bf624a68b386",
+    "snapshot": "data/evidence/S30.json"
+  },
+  {
+    "id": "S31",
+    "title": "DALI九张场景命名差异",
+    "path": "outputs/acceptance/core_upgrade/u2_resume_20261026/dali_decision_differences.json",
+    "sha256": "940597df2bfd0f03f7935478927a616b21a3cdd2e6ea208b59f6f16d2d5a127c",
+    "snapshot": "data/evidence/S31.json"
+  }
+]

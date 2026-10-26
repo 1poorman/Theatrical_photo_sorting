@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040" height="590" viewBox="0 0 1040 590">
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="#899ba6"/></marker></defs>
+<rect width="100%" height="100%" fill="white"/>
+<path d="M520 95 V117 H165 V135" fill="none" stroke="#899ba6" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M520 95 V135" fill="none" stroke="#899ba6" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M520 117 H875 V135" fill="none" stroke="#899ba6" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M165 225 V275" fill="none" stroke="#899ba6" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M520 225 V250 H165 V275" fill="none" stroke="#899ba6" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M875 225 V250 H520 V275" fill="none" stroke="#899ba6" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M315 320 H365" fill="none" stroke="#899ba6" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M675 320 H725" fill="none" stroke="#899ba6" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M165 365 V420" fill="none" stroke="#899ba6" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M520 365 V420" fill="none" stroke="#899ba6" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M875 365 V420" fill="none" stroke="#899ba6" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="15" y="15" width="1010" height="80" rx="10" fill="#172e43"/>
+<text x="31" y="45" font-family="SimHei,sans-serif" font-size="18" fill="white">幕间工作台 / FastAPI</text>
+<text x="31" y="68" font-family="SimHei,sans-serif" font-size="13" fill="#e4edf2">影像资料 → 剧目与剧情 → 演员与角色 → 场景复核 → 整理导出</text>
+<rect x="15" y="135" width="300" height="90" rx="10" fill="#536c87"/>
+<text x="31" y="165" font-family="SimHei,sans-serif" font-size="18" fill="white">知识与身份</text>
+<text x="31" y="188" font-family="SimHei,sans-serif" font-size="13" fill="#e4edf2">剧目来源 / 分幕正文 / 稳定identity_id</text>
+<text x="31" y="207" font-family="SimHei,sans-serif" font-size="13" fill="#e4edf2">角色映射与来源摘要</text>
+<rect x="365" y="135" width="310" height="90" rx="10" fill="#007f83"/>
+<text x="381" y="165" font-family="SimHei,sans-serif" font-size="18" fill="white">共享特征服务</text>
+<text x="381" y="188" font-family="SimHei,sans-serif" font-size="13" fill="#e4edf2">内容哈希 / 模型与预处理签名</text>
+<text x="381" y="207" font-family="SimHei,sans-serif" font-size="13" fill="#e4edf2">SigLIP2、ArcFace；Gemma可选</text>
+<rect x="725" y="135" width="300" height="90" rx="10" fill="#536c87"/>
+<text x="741" y="165" font-family="SimHei,sans-serif" font-size="18" fill="white">持久任务执行器</text>
+<text x="741" y="188" font-family="SimHei,sans-serif" font-size="13" fill="#e4edf2">排队 / 逐项检查点 / 取消与恢复</text>
+<text x="741" y="207" font-family="SimHei,sans-serif" font-size="13" fill="#e4edf2">代码、输入、权重版本绑定</text>
+<rect x="15" y="275" width="300" height="90" rx="10" fill="#007f83"/>
+<text x="31" y="305" font-family="SimHei,sans-serif" font-size="18" fill="white">候选召回与画面证据</text>
+<text x="31" y="328" font-family="SimHei,sans-serif" font-size="13" fill="#e4edf2">全幕次图文检索 / 可选视觉观察</text>
+<text x="31" y="347" font-family="SimHei,sans-serif" font-size="13" fill="#e4edf2">闭集scene_id + 引用校验</text>
+<rect x="365" y="275" width="310" height="90" rx="10" fill="#007f83"/>
+<text x="381" y="305" font-family="SimHei,sans-serif" font-size="18" fill="white">复核事务</text>
+<text x="381" y="328" font-family="SimHei,sans-serif" font-size="13" fill="#e4edf2">SQLite权威状态 / revision冲突检测</text>
+<text x="381" y="347" font-family="SimHei,sans-serif" font-size="13" fill="#e4edf2">人工锁定 / 草稿 / 延后JSONL快照</text>
+<rect x="725" y="275" width="300" height="90" rx="10" fill="#536c87"/>
+<text x="741" y="305" font-family="SimHei,sans-serif" font-size="18" fill="white">分组与归档</text>
+<text x="741" y="328" font-family="SimHei,sans-serif" font-size="13" fill="#e4edf2">身份专辑 / 场景分段 / 规范命名</text>
+<text x="741" y="347" font-family="SimHei,sans-serif" font-size="13" fill="#e4edf2">图聚类、时序选优保留实验入口</text>
+<rect x="15" y="420" width="1010" height="95" rx="10" fill="#172e43"/>
+<text x="31" y="450" font-family="SimHei,sans-serif" font-size="18" fill="white">可追溯的存储与产物</text>
+<text x="31" y="473" font-family="SimHei,sans-serif" font-size="13" fill="#e4edf2">原图与正式图库保留；特征缓存、任务数据库、观察记录、复核修订、输出映射</text>
+<text x="31" y="492" font-family="SimHei,sans-serif" font-size="13" fill="#e4edf2">图示为当前模块连接关系；视觉观察与实验分组均由显式配置触发</text>
+</svg>
