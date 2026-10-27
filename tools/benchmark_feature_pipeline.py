@@ -42,6 +42,11 @@ def source_hashes():
     return {path: hashlib.sha256((ROOT / path).read_bytes()).hexdigest() for path in SOURCE_FILES}
 
 
+def physical_device(index):
+    visible = os.environ.get('CUDA_VISIBLE_DEVICES')
+    return visible.split(',')[index].strip() if visible else str(index)
+
+
 def gpu_environment(index):
     """Record competing GPU work without collecting process command lines."""
     result = {}
@@ -49,7 +54,7 @@ def gpu_environment(index):
                         ('processes', '--query-compute-apps=gpu_uuid,pid,process_name,used_gpu_memory')]:
         try:
             result[name] = subprocess.check_output(
-                ['nvidia-smi', '-i', str(index), query, '--format=csv'],
+                ['nvidia-smi', '-i', physical_device(index), query, '--format=csv'],
                 text=True, timeout=10).strip()
         except (OSError, subprocess.SubprocessError) as exc:
             result[name] = {'unavailable': type(exc).__name__}
@@ -67,7 +72,11 @@ class Resources:
             if self.nvml.nvmlInit_v2() != 0:
                 raise RuntimeError('NVML initialization failed')
             self.handle = ctypes.c_void_p()
-            if self.nvml.nvmlDeviceGetHandleByIndex_v2(index, ctypes.byref(self.handle)) != 0:
+            physical = physical_device(index)
+            status = (self.nvml.nvmlDeviceGetHandleByIndex_v2(int(physical), ctypes.byref(self.handle))
+                      if physical.isdigit() else
+                      self.nvml.nvmlDeviceGetHandleByUUID(physical.encode(), ctypes.byref(self.handle)))
+            if status != 0:
                 raise RuntimeError('NVML device unavailable')
         except (OSError, RuntimeError):
             self.nvml = None
@@ -208,11 +217,22 @@ def setup(args, output):
                             ('smart_organizer', 'core_modules/organize/smart_organizer.py')]:
         source = subprocess.check_output(['git', 'show', f'{args.baseline}:{path}'], cwd=ROOT)
         (output / f'corrected_{component}.py').write_bytes(source)
+    if args.baseline_mode == 'batch':
+        source = subprocess.check_output(['git', 'show', f'{args.baseline}:core_modules/organize/feature_cache.py'], cwd=ROOT)
+        (output / 'corrected_feature_cache.py').write_bytes(source)
     gallery = output / 'gallery'
     shutil.copytree(args.gallery, gallery, dirs_exist_ok=True)
     from config.base import SCRFD_MODEL_PATH, ARCFACE_MODEL_PATH
+    hashes = source_hashes()
+    for relative, expected in hashes.items():
+        data = (ROOT / relative).read_bytes()
+        if hashlib.sha256(data).hexdigest() != expected:
+            raise RuntimeError('准备期间源码已变化')
+        snapshot = output / 'source_snapshot' / relative
+        snapshot.parent.mkdir(parents=True, exist_ok=True)
+        snapshot.write_bytes(data)
     write_json(output / 'provenance.json', {
-        'source_sha256': source_hashes(),
+        'source_sha256': hashes,
         'gallery_sha256': {path.relative_to(gallery).as_posix(): hasher.fingerprint(path)[0]
                            for path in sorted(gallery.rglob('*')) if path.is_file()},
         'face_weights_sha256': {str(path): hasher.fingerprint(path)[0]
@@ -226,10 +246,11 @@ def setup(args, output):
 def worker(args, output):
     import torch
     import transformers
+    import PIL
     from core_modules.image_search import ImageEmbedder
     from core_modules.organize.feature_cache import FeatureService
     from core_modules.organize.smart_organizer import SmartOrganizer
-    from config.base import FEATURE_DECODE_WORKERS
+    from config.base import FEATURE_DECODE_WORKERS, QUALITY_DECODE_WORKERS
     provenance = json.loads((output / 'provenance.json').read_text())
     if provenance['source_sha256'] != source_hashes():
         raise RuntimeError('测量期间源码已变化，请使用新输出目录重新运行')
@@ -237,16 +258,21 @@ def worker(args, output):
     paths, texts = [row['path'] for row in inputs['images']], inputs['texts']
     index = int(args.device.partition(':')[2] or 0)
     torch.cuda.set_device(index)
+    if args.torch_threads is not None:
+        torch.set_num_threads(args.torch_threads)
     environment_before = gpu_environment(index)
     before_load = Resources(index).gpu()
     started = time.perf_counter()
-    model = ImageEmbedder('siglip2_base', device=args.device)
+    baseline = args.worker == 'baseline'
+    model = ImageEmbedder('siglip2_base', device=args.device,
+                          image_backend='processor' if baseline else args.image_backend)
+    if not type(model.model).__name__.startswith('Siglip'):
+        raise RuntimeError('SigLIP load failed; refusing to benchmark a fallback model')
     load_seconds = time.perf_counter() - started
     started = time.perf_counter()
     # Compute the immutable model/processor identity outside warmed inference timing.
     identity = {'model': model.model_signature, 'preprocessing': model.preprocessing_signature}
     signature_seconds = time.perf_counter() - started
-    baseline = args.worker == 'baseline'
     if baseline:
         legacy_type = load_baseline(output, 'image_search').ImageEmbedder
         legacy = legacy_type.__new__(legacy_type)
@@ -255,40 +281,50 @@ def worker(args, output):
         organizer_module = load_baseline(output, 'smart_organizer')
         organizer_module.BurstDeduplicator = load_baseline(output, 'burst_dedup').BurstDeduplicator
         organizer_type = organizer_module.SmartOrganizer
+        if args.baseline_mode == 'batch':
+            # Preserve the pre-optimization service for the feature stage and
+            # its lazy imports from the frozen organizer in this child process.
+            import core_modules.organize.feature_cache as cache_module
+            FeatureService = load_baseline(output, 'feature_cache').FeatureService
+            cache_module.FeatureService = FeatureService
     else:
         encoder, organizer_type = model, SmartOrganizer
     # Prewarm only the mode being measured, then use a fresh feature cache each run.
-    if baseline:
+    if baseline and args.baseline_mode == 'sequential':
         encoder.extract_features(paths[0])
         encoder.encode_text(texts[0])
     else:
-        model.extract_features_batch(paths[:args.batch_size], sub_batch_size=args.batch_size)
-        model.encode_text_batch(texts[:args.batch_size])
+        encoder.extract_features_batch(paths[:args.batch_size], sub_batch_size=args.batch_size)
+        encoder.encode_text_batch(texts[:args.batch_size])
     report = {'mode': args.worker, 'status': 'running', 'identity': identity,
               'sample_count': len(paths), 'repeats': args.repeats,
               'feature_runs': [], 'pipeline_runs': [], 'load_seconds': load_seconds,
               'signature_seconds': signature_seconds,
               'environment': {'device': args.device, 'gpu': torch.cuda.get_device_name(index),
                               'torch': torch.__version__, 'transformers': transformers.__version__,
+                              'pillow': PIL.__version__, 'numpy': np.__version__,
                               'cpu_count': os.cpu_count(), 'torch_cpu_threads': torch.get_num_threads(),
                               'decode_workers': FEATURE_DECODE_WORKERS, 'batch_size': args.batch_size,
                               'gpu_before': environment_before,
                               'before_load_gpu': before_load, 'memory_sampling_seconds': .05},
               'pipeline_configuration': {'shot_classifier': None, 'classify_role': False,
                                          'keep_per_bucket': 2, 'face_device': args.face_device,
+                                         'quality_decode_workers': 1 if baseline else QUALITY_DECODE_WORKERS,
                                          'gallery': 'isolated_copy', 'feature_cache': 'empty_each_run'}}
+    report['baseline_mode'] = args.baseline_mode
+    report['image_backend'] = 'processor' if baseline else args.image_backend
     target = output / (args.worker + '.json')
     for repeat in range(args.repeats):
         with tempfile.TemporaryDirectory(prefix='features-', dir=output) as cache_dir:
             features = None
-            if baseline:
+            if baseline and args.baseline_mode == 'sequential':
                 def encode():
                     return ({path: encoder.extract_features(path) for path in paths},
                             {text: encoder.encode_text(text) for text in texts})
             else:
                 def encode():
                     nonlocal features
-                    features = FeatureService(model, cache_dir=cache_dir, batch_size=args.batch_size)
+                    features = FeatureService(encoder, cache_dir=cache_dir, batch_size=args.batch_size)
                     return features.images(paths), features.texts(texts)
             (images, documents), sample = measured(encode, model, args.device, index)
             if set(images) != set(paths) or set(documents) != set(texts) or any(
@@ -296,19 +332,28 @@ def worker(args, output):
                 raise RuntimeError('部分特征缺失，停止完整样本性能声明')
             if features:
                 sample['features'] = features.report()
+            vectors = {'images': np.stack([images[path] for path in paths]),
+                       'texts': np.stack([documents[text] for text in texts])}
+            if repeat == 0:
+                reference_vectors = {kind: value.copy() for kind, value in vectors.items()}
+            sample['repeat_min_cosine'] = {
+                kind: float(np.min(np.sum(value * reference_vectors[kind], axis=1) /
+                    (np.linalg.norm(value, axis=1) * np.linalg.norm(reference_vectors[kind], axis=1))))
+                for kind, value in vectors.items()}
             report['feature_runs'].append(sample)
             if repeat == 0:
                 np.savez(output / (args.worker + '_vectors.npz'),
-                         images=np.stack([images[path] for path in paths]),
-                         texts=np.stack([documents[text] for text in texts]))
+                         **vectors)
                 if not baseline:
                     fresh = None
                     def cache_hit():
                         nonlocal fresh
                         fresh = FeatureService(model, cache_dir=cache_dir, batch_size=args.batch_size)
                         return fresh.images(paths), fresh.texts(texts)
-                    _, hot = measured(cache_hit, model, args.device, index)
+                    (hot_images, hot_texts), hot = measured(cache_hit, model, args.device, index)
                     hot['features'] = fresh.report()
+                    hot['vectors_equal'] = all(np.array_equal(images[path], hot_images[path]) for path in paths) and \
+                        all(np.array_equal(documents[text], hot_texts[text]) for text in texts)
                     report['cache_hit_run'] = hot
         write_json(target, report)
         print(json.dumps({'mode': args.worker, 'stage': 'features', 'repeat': repeat + 1,
@@ -355,8 +400,9 @@ def worker(args, output):
                         destination = Path(destination or run_dir)
                         reports = []
                         for folder in folders:
-                            options = {} if baseline else {'feature_cache_dir': str(Path(run_dir) / 'features'),
-                                                           'feature_batch_size': args.batch_size}
+                            options = {} if baseline and args.baseline_mode == 'sequential' else {
+                                'feature_cache_dir': str(Path(run_dir) / 'features'),
+                                'feature_batch_size': args.batch_size}
                             organizer = organizer_type(system, str(output / 'gallery'), embedder=encoder, **options)
                             result = organizer.organize(str(folder), str(destination / folder.name), classify_role=False)
                             reports.append((folder.name, result))
@@ -374,9 +420,10 @@ def worker(args, output):
                     sample['kept'] = sum(result['kept'] for _, result in results)
                     sample['errors'] = sum(bool(row.get('error')) for _, result in results for row in result['records'])
                     sample['face_errors'] = list(face_errors)
-                    if not baseline:
+                    if results[0][1].get('timings'):
                         sample['stage_timings'] = {key: sum(result['timings'].get(key, 0) for _, result in results)
                                                    for key in results[0][1]['timings']}
+                    if not baseline:
                         sample['features_by_directory'] = {folder: result['scene_features']
                                                            for folder, result in results}
                         sample['feature_errors'] = {path: error for _, result in results
@@ -451,6 +498,7 @@ def summarize(args, output):
               'directory_count': len({str(Path(row['path']).parent) for row in inputs['images']}),
               'text_count': len(inputs['texts']),
               'repeats': args.repeats, 'comparison': comparisons, 'timing': timing,
+              'baseline_mode': args.baseline_mode, 'image_backend': args.image_backend,
               'cache_hit_forward_calls': batch['cache_hit_run']['forward']['calls'],
               'pipeline_cache_hit_forward_calls': batch.get('pipeline_cache_hit_run', {}).get('forward', {}).get('calls'),
               'pipeline_decisions_equal': len({row['decisions_sha256'] for row in
@@ -465,11 +513,16 @@ def summarize(args, output):
                               'Pipeline uses real SCRFD/ArcFace and SigLIP2, without shot or role classifiers.',
                               'Device memory includes other processes and is sampled every 50 ms.',
                               'This benchmark does not measure HTTP/UI latency or DALI.']}
+    pipeline_hot = batch.get('pipeline_cache_hit_run', {})
     checks = {'minimum_size': report['sample_count'] >= 200 and report['directory_count'] >= 3 and args.repeats >= 5,
               'cosine': all(value['fraction_at_least_0999'] >= .999 for value in comparisons.values()),
-              'cache_zero_forwards': report['cache_hit_forward_calls'] == {'image': 0, 'text': 0},
+              'repeat_consistency': all(min(row['repeat_min_cosine'].values()) >= .999
+                                        for mode in (baseline, batch) for row in mode['feature_runs']),
+              'cache_zero_forwards': report['cache_hit_forward_calls'] == {'image': 0, 'text': 0}
+                                    and batch['cache_hit_run']['vectors_equal'],
               'analysis_to_organizer_cache': report['pipeline_cache_hit_forward_calls'] == {'image': 0, 'text': 0}
-                  and batch['pipeline_cache_hit_run']['decisions_sha256'] == batch['pipeline_runs'][0]['decisions_sha256'],
+                  and bool(batch['pipeline_runs'])
+                  and pipeline_hot.get('decisions_sha256') == batch['pipeline_runs'][0]['decisions_sha256'],
               'feature_speedup': timing['feature_runs']['speedup'] >= 1.5,
               'pipeline_speedup': timing.get('pipeline_runs', {}).get('wall_time_reduction', -1) >= .2,
               'pipeline_decisions_equal': report['pipeline_decisions_equal'] is True,
@@ -477,7 +530,9 @@ def summarize(args, output):
               'rss_increase': all(value['rss_peak_ratio'] <= 1.25 for value in timing.values()),
               'gpu_headroom': len(gpu_ratios) == 2 and max(gpu_ratios) <= .85,
               'no_errors': all(not row.get('errors') and not row.get('face_errors') and not row.get('feature_errors')
-                               for row in batch['pipeline_runs'] + baseline['pipeline_runs'])}
+                               and not row.get('features', {}).get('image_errors')
+                               and not row.get('features', {}).get('text_errors')
+                               for mode in (baseline, batch) for row in mode['pipeline_runs'] + mode['feature_runs'])}
     report['checks'] = checks
     report['performance_status'] = 'passed' if all(checks.values()) else 'not_passed'
     write_json(output / 'summary.json', report)
@@ -492,15 +547,20 @@ def main():
     parser.add_argument('--source-root', default='data/ncpa_test')
     parser.add_argument('--gallery', default='data/face_database')
     parser.add_argument('--baseline', default='fdc1fda')
+    parser.add_argument('--baseline-mode', choices=['sequential', 'batch'], default='sequential',
+                        help='batch compares the frozen pre-optimization pipeline without changing its semantics')
+    parser.add_argument('--image-backend', choices=['processor', 'pillow'], default='processor')
     parser.add_argument('--device', default='cuda:0')
     parser.add_argument('--face-device', choices=['cuda', 'tensorrt'], default='cuda')
     parser.add_argument('--limit', type=int, default=200)
     parser.add_argument('--repeats', type=int, default=5)
     parser.add_argument('--batch-size', type=int, default=8)
+    parser.add_argument('--torch-threads', type=int,
+                        help='same Torch CPU thread limit in both independent workers')
     parser.add_argument('--skip-pipeline', action='store_true')
     parser.add_argument('--worker', choices=['baseline', 'batch'], help=argparse.SUPPRESS)
     args = parser.parse_args()
-    if min(args.limit, args.repeats, args.batch_size) < 1 or args.device != 'cuda:0':
+    if min(args.limit, args.repeats, args.batch_size, args.torch_threads or 1) < 1 or args.torch_threads == 0 or args.device != 'cuda:0':
         parser.error('数量参数必须为正；当前完整人脸流水线固定使用 cuda:0')
     output = Path(args.output).resolve()
     output.mkdir(parents=True, exist_ok=True)

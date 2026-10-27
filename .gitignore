@@ -18,6 +18,8 @@ core_modules/face_recognition/trt_cache/
 
 # 测试工作区
 tests/*
+!tests/test_dali_preprocessing.py
+!tests/test_quality_parallelism.py
 
 
 .env 

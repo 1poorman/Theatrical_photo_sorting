@@ -10,13 +10,19 @@
 import os
 import json
 import shutil
+from concurrent.futures import ThreadPoolExecutor
 import cv2
 import numpy as np
 
+from config.base import QUALITY_DECODE_WORKERS
 from core_modules.organize.filename_parser import parse_filename
 from core_modules.tools.logger import get_app_logger
 
 logger = get_app_logger()
+# Reuse worker threads across directories. Only these workers hold full images;
+# queued work and completed results contain paths and small quality dictionaries.
+_quality_executor = ThreadPoolExecutor(max_workers=QUALITY_DECODE_WORKERS,
+                                       thread_name_prefix='theatre-quality')
 
 
 def normalize_group_key(filename):
@@ -97,6 +103,7 @@ class BurstDeduplicator:
         """景别分类；无分类器或失败时返回 None。"""
         if self.shot_classifier is None:
             return None
+
         try:
             h, w = img.shape[:2]
             # 估计人物面积占比（简化：由分类器内部姿态框计算，这里传 0 由其内部处理）
@@ -105,6 +112,12 @@ class BurstDeduplicator:
         except Exception as e:
             logger.warning(f"景别分类失败 {name}: {e}")
             return None
+
+    def _quality_entry(self, path):
+        img = cv2.imread(path)
+        return {'path': path, 'name': os.path.basename(path),
+                'quality': image_quality(img),
+                'shot_type': self._shot_type(img, os.path.basename(path)) if img is not None else None}
 
     def dedup_folder(self, input_dir, output_dir, keep_per_bucket=None,
                      save_discarded=True, recursive=False):
@@ -134,17 +147,22 @@ class BurstDeduplicator:
             os.makedirs(disc_dir, exist_ok=True)
 
         groups = self.group_bursts(paths)
+        # Classifiers can own mutable state or a GPU session. Parallelize only
+        # CPU quality evaluation, preserving input order for equal-score ties.
+        ordered_paths = [path for _, members in groups for path in members]
+        if self.shot_classifier is None and QUALITY_DECODE_WORKERS > 1:
+            entries_by_path = dict(zip(ordered_paths,
+                _quality_executor.map(self._quality_entry, ordered_paths)))
+        else:
+            entries_by_path = None
         report_groups = []
         n_kept = n_disc = 0
 
         for gi, (key, members) in enumerate(groups):
             entries = []
             for p in members:
-                img = cv2.imread(p)
-                q = image_quality(img)
-                shot = self._shot_type(img, os.path.basename(p)) if img is not None else None
-                entries.append({'path': p, 'name': os.path.basename(p),
-                                'quality': q, 'shot_type': shot})
+                entries.append(entries_by_path[p] if entries_by_path is not None
+                               else self._quality_entry(p))
 
             # 景别分桶（None 归入同桶）
             buckets = {}

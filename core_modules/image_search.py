@@ -34,7 +34,7 @@ except ImportError:
     print("Nomic model components not available.")
 
 # SigLIP 2 本地权重根目录（config/base.py 统一管理，可用环境变量 TRANS_SIGLIP_WEIGHTS_ROOT 覆盖）
-from config.base import SIGLIP_WEIGHTS_ROOT, OUTPUT_DIR, FEATURE_DECODE_WORKERS
+from config.base import SIGLIP_WEIGHTS_ROOT, OUTPUT_DIR, FEATURE_DECODE_WORKERS, FEATURE_IMAGE_BACKEND
 from core_modules.organize.feature_cache import signature, tensor_signature, tokenizer_signature
 
 # SigLIP 2 模型映射: 名称 -> (本地权重路径, 在线 model_id, 特征维度)
@@ -62,9 +62,13 @@ class ImageEmbedder:
     """
     Image feature extractor supporting multiple models including ResNet, DINOv2, Nomic, and BLIP2.
     """
-    def __init__(self, model_name='resnet50', device='cuda' if torch.cuda.is_available() else 'cpu'):
+    def __init__(self, model_name='resnet50', device='cuda' if torch.cuda.is_available() else 'cpu',
+                 image_backend=None):
         self.device = device
         self.model_name = model_name
+        self.image_backend = image_backend or FEATURE_IMAGE_BACKEND
+        if self.image_backend not in ('processor', 'pillow'):
+            raise ValueError('image_backend must be processor or pillow')
         self.model, self.feature_dim, self.processor = self._load_model(model_name)
         self.preprocess = self._get_preprocess(model_name)
         self.metrics = {}
@@ -100,7 +104,7 @@ class ImageEmbedder:
         tokenizer = getattr(self.processor, 'tokenizer', None)
         tokenizer_backend = getattr(tokenizer, 'backend_tokenizer', None)
         tokenizer_state = tokenizer_signature(tokenizer_backend) if tokenizer_backend else None
-        return signature({'adapter': 'image-search-v3', 'decode': 'pillow-exif-transpose-rgb',
+        identity = {'adapter': 'image-search-v3', 'decode': 'pillow-exif-transpose-rgb',
                           'image_processor': image_processor.to_dict() if image_processor else repr(self.preprocess),
                           'tokenizer_sha256': tokenizer_state,
                           'tokenizer_class': type(tokenizer).__name__,
@@ -114,7 +118,12 @@ class ImageEmbedder:
                                    'pad_token_type_id': getattr(tokenizer, 'pad_token_type_id', None),
                                    'padding_side': getattr(tokenizer, 'padding_side', None),
                                    'truncation_side': getattr(tokenizer, 'truncation_side', None)},
-                          'versions': {name: version(name) for name in ('torch', 'torchvision', 'transformers', 'Pillow')}})
+                          'versions': {name: version(name) for name in ('torch', 'torchvision', 'transformers', 'Pillow')}}
+        # Retain existing reference keys; a changed resize implementation must
+        # never read or overwrite vectors made by the original processor.
+        if getattr(self, 'image_backend', 'processor') != 'processor':
+            identity['image_backend'] = self.image_backend + '-resize-v2'
+        return signature(identity)
 
     def _metric(self, name, value):
         if not hasattr(self, 'metrics'):
@@ -358,7 +367,22 @@ class ImageEmbedder:
             decoded = time.perf_counter()
             try:
                 if self.model_name.startswith(('nomic', 'blip2', 'siglip')):
-                    inputs = dict(self.processor(images=image, return_tensors='pt'))
+                    processor = getattr(self.processor, 'image_processor', None)
+                    # Loaded Transformers processors may use SizeDict, whose
+                    # iterator yields pairs rather than dictionary keys.
+                    size = dict(getattr(processor, 'size', {}) or {})
+                    if (getattr(self, 'image_backend', 'processor') == 'pillow'
+                            and self.model_name.startswith('siglip')
+                            and type(processor).__name__ == 'SiglipImageProcessor'
+                            and getattr(processor, 'do_resize', False)
+                            and set(size) == {'height', 'width'}):
+                        # Avoid converting a full-resolution RGB photo into a
+                        # Torch tensor just to shrink it. Keep the processor's
+                        # remaining crop/rescale/normalize steps unchanged.
+                        with image.resize((size['width'], size['height']), processor.resample) as resized:
+                            inputs = dict(self.processor(images=resized, do_resize=False, return_tensors='pt'))
+                    else:
+                        inputs = dict(self.processor(images=image, return_tensors='pt'))
                 else:
                     inputs = {'pixel_values': self.preprocess(image).unsqueeze(0)}
             finally:
@@ -501,6 +525,10 @@ class ImageEmbedder:
             image_embeds = F.normalize(outputs.pooler_output, p=2, dim=-1)
         return image_embeds.cpu().numpy()
 
+    def extract_features_prefetched(self, image_paths, batch_size):
+        """FeatureService capability: overlap two bounded model batches."""
+        return self.extract_features_batch(image_paths, sub_batch_size=batch_size)
+
     def extract_features_batch(self, image_paths: List[str], sub_batch_size: int = 32) -> Tuple[np.ndarray, List[str]]:
         """Bound memory to two tensor batches and a fixed number of decoders.
 
@@ -552,10 +580,14 @@ class ImageEmbedder:
                     valid_paths.extend(path for path, _ in pairs)
                 except Exception as exc:
                     print(f"Batch extraction failed, retrying paths: {type(exc).__name__}")
-                    for path, _ in pairs:
-                        vector = self.extract_features(path)
+                    for path, inputs in pairs:
+                        try:
+                            vector = self._encode_prepared([inputs])
+                        except Exception as single_exc:
+                            print(f"Error processing {path}: {type(single_exc).__name__}")
+                            continue
                         if vector is not None:
-                            features.append(vector[None, :])
+                            features.append(vector)
                             valid_paths.append(path)
         return (np.vstack(features), valid_paths) if features else (np.array([]), [])
 

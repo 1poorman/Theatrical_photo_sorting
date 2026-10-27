@@ -217,13 +217,15 @@ class FeatureService:
             self.hits[kind] += 1
         return vector
 
-    def _encode(self, kind, batch, values):
+    def _encode(self, kind, batch, values, prefetch_batch_size=None):
         method = (getattr(self.embedder, 'extract_features_batch', None) if batch else
                   getattr(self.embedder, 'extract_features', None)) if kind == 'image' else (
                       self.text_batch if batch else self.text_encoder)
         self.encoder_calls[kind + ('_batch' if batch else '_single')] += 1
         start = time.perf_counter()
         try:
+            if prefetch_batch_size is not None:
+                return self.embedder.extract_features_prefetched(values, batch_size=prefetch_batch_size)
             return method(values)
         finally:
             self.timings['encoder_seconds'] += time.perf_counter() - start
@@ -263,13 +265,18 @@ class FeatureService:
                 pending.setdefault(key, path)
         items = list(pending.items())
         size = max(1, int(batch_size or self.batch_size))
-        for start in range(0, len(items), size):
-            chunk = items[start:start + size]
+        prefetch = use_batch and callable(getattr(self.embedder, 'extract_features_prefetched', None))
+        # Give capable encoders a next batch to prepare while the current batch
+        # runs. Other encoders keep the original batch-size contract unchanged.
+        window = size * (2 if prefetch else 1)
+        for start in range(0, len(items), window):
+            chunk = items[start:start + window]
             chunk_paths = [p for _, p in chunk]
             by_path = {}
             if use_batch and callable(getattr(self.embedder, 'extract_features_batch', None)):
                 try:
-                    encoded = self._encode('image', True, chunk_paths)
+                    encoded = self._encode('image', True, chunk_paths,
+                                           prefetch_batch_size=size if prefetch else None)
                     vectors, valid = encoded if isinstance(encoded, tuple) else (encoded, chunk_paths)
                     valid = [os.path.abspath(p) for p in valid]
                     if len(vectors) != len(valid) or len(set(valid)) != len(valid) or not set(valid) <= set(chunk_paths):

@@ -161,15 +161,24 @@ class CoreUpgradeTests(unittest.TestCase):
         for path, color in zip(paths, ('red', 'green')):
             Image.new('RGB', (20, 20), color).save(path)
         model = ImageEmbedder.__new__(ImageEmbedder)
+        self.addCleanup(model.close)
         model.model_name = 'siglip2_base'
         model.device = 'cpu'
-        model.processor = lambda **kwargs: {'pixel_values': torch.ones((1, 3, 2, 2))}
-        def fail_batch(**kwargs):
-            raise RuntimeError('forced batch failure')
+        model.processor = lambda images, **kwargs: {
+            'pixel_values': torch.tensor(np.asarray(images).mean((0, 1))[:2]).reshape(1, 2, 1, 1).float()}
+        attempts = []
+        def fail_batch(pixel_values):
+            attempts.append(len(pixel_values))
+            if len(pixel_values) > 1:
+                raise RuntimeError('forced batch failure')
+            return pixel_values.mean((2, 3))
         model.model = SimpleNamespace(get_image_features=fail_batch)
-        with patch.object(model, 'extract_features', side_effect=[np.array([1., 0.]), np.array([0., 1.])]) as single:
+        with patch.object(model, '_prepare_image', wraps=model._prepare_image) as decode, \
+                patch.object(model, 'extract_features', side_effect=AssertionError('unexpected decode retry')) as single:
             vectors, valid = model.extract_features_batch(paths)
-        self.assertEqual([call.args[0] for call in single.call_args_list], paths)
+        self.assertCountEqual([call.args[0] for call in decode.call_args_list], paths)
+        single.assert_not_called()
+        self.assertEqual(attempts, [2, 1, 1])
         self.assertEqual(valid, paths)
         np.testing.assert_array_equal(vectors, np.eye(2))
 

@@ -163,6 +163,34 @@ class FeatureCacheTests(unittest.TestCase):
                 np.testing.assert_array_equal(result[path], model.vector(path))
             self.assertEqual(model.singles, paths)
 
+    def test_prefetch_preserves_mapping_and_model_batch_bound(self):
+        paths = [self.photo(f'{i}.jpg') for i in range(13)]
+        model = Encoder()
+        windows = []
+        def prefetched(values, batch_size):
+            windows.append((list(values), batch_size))
+            return model.extract_features_batch(values)
+        model.extract_features_prefetched = prefetched
+        result = self.service(model, batch_size=3).images(paths)
+        self.assertEqual([len(values) for values, _ in windows], [6, 6, 1])
+        self.assertTrue(all(size == 3 for _, size in windows))
+        for path in paths:
+            np.testing.assert_array_equal(result[path], model.vector(path))
+        self.assertEqual(model.singles, [])
+
+    def test_prefetch_failure_retries_each_path_and_rejects_changed_source(self):
+        paths = [self.photo('first.jpg', b'aaaa'), self.photo('second.jpg', b'cccc')]
+        model = Encoder()
+        def broken(values, batch_size):
+            Path(values[0]).write_bytes(b'bbbb')
+            raise RuntimeError('prefetch failed')
+        model.extract_features_prefetched = broken
+        service = self.service(model, batch_size=1)
+        result = service.images(paths)
+        self.assertEqual(set(result), {paths[1]})
+        self.assertEqual(model.singles, paths)
+        self.assertIn(paths[0], service.image_errors)
+
     def test_invalid_batch_vectors_retry_only_affected_paths(self):
         paths = [self.photo(f'{i}.jpg') for i in range(4)]
         model = Encoder()
@@ -405,6 +433,89 @@ class FeatureCacheTests(unittest.TestCase):
             self.assertTrue(executor._shutdown)
             model.extract_features_batch(['a.jpg'])
             self.assertEqual(pools.call_count, 2)
+
+    def test_pillow_resize_preserves_orientation_modes_and_cache_separation(self):
+        from transformers import SiglipImageProcessor
+        from core_modules.image_search import ImageEmbedder
+        processor = SiglipImageProcessor(size={'height': 8, 'width': 12}, resample=2)
+        class Processor:
+            image_processor = processor
+            def __call__(self, **kwargs):
+                return processor(**kwargs)
+        model = ImageEmbedder.__new__(ImageEmbedder)
+        model.model_name, model.preprocess, model.processor = 'siglip2_base', None, Processor()
+        rng = np.random.default_rng(123)
+        image = Image.fromarray(rng.integers(0, 256, (48, 72, 3), dtype=np.uint8))
+        fixtures = []
+        for orientation in range(1, 9):
+            path = self.root / f'exif-{orientation}.jpg'
+            exif = Image.Exif()
+            exif[274] = orientation
+            image.save(path, exif=exif)
+            fixtures.append(path)
+        for mode, suffix in [('L', 'png'), ('RGBA', 'png'), ('CMYK', 'jpg')]:
+            path = self.root / f'mode-{mode}.{suffix}'
+            image.convert(mode).save(path)
+            fixtures.append(path)
+        for path in fixtures:
+            model.image_backend = 'processor'
+            reference = model._prepare_image(path)[0]['pixel_values'].numpy()
+            original_signature = model.preprocessing_signature
+            model.image_backend = 'pillow'
+            candidate = model._prepare_image(path)[0]['pixel_values'].numpy()
+            self.assertEqual(candidate.shape, (1, 3, 8, 12))
+            np.testing.assert_allclose(reference, candidate, atol=2 / 255 + 1e-6, rtol=0)
+            self.assertNotEqual(original_signature, model.preprocessing_signature)
+
+    def test_pillow_resize_uses_loaded_processor_size_dict(self):
+        from transformers import SiglipImageProcessor
+        from transformers.image_utils import SizeDict
+        from core_modules.image_search import ImageEmbedder
+        processor = SiglipImageProcessor(size={'height': 8, 'width': 12}, resample=2)
+        # AutoProcessor converts the loaded dimensions into this representation.
+        processor.size = SizeDict(height=8, width=12)
+        received = []
+        class Processor:
+            image_processor = processor
+            def __call__(self, **kwargs):
+                received.append((kwargs['images'].size, kwargs.get('do_resize')))
+                return processor(**kwargs)
+        model = ImageEmbedder.__new__(ImageEmbedder)
+        model.model_name, model.preprocess, model.processor = 'siglip2_base', None, Processor()
+        model.image_backend = 'pillow'
+        path = self.root / 'loaded-size.jpg'
+        Image.new('RGB', (72, 48), 'red').save(path)
+        model._prepare_image(path)
+        self.assertEqual(received, [((12, 8), False)])
+
+        # Aspect-ratio based sizes must retain the original processor behavior.
+        processor.size = SizeDict(height=8, width=12, shortest_edge=4)
+        model._prepare_image(path)
+        self.assertEqual(received[-1], ((72, 48), None))
+
+    def test_failed_model_batch_reuses_prepared_tensors_and_isolates_single_failure(self):
+        import torch
+        from core_modules.image_search import ImageEmbedder
+        model = ImageEmbedder.__new__(ImageEmbedder)
+        model.device, model.model_name = 'cpu', 'siglip2_base'
+        self.addCleanup(model.close)
+        decoded, forwarded = [], []
+        def prepare(path):
+            decoded.append(path)
+            value = int(path[0])
+            return {'pixel_values': torch.full((1, 3, 2, 2), float(value))}, 0., 0.
+        def forward(pixel_values):
+            forwarded.append(len(pixel_values))
+            if len(pixel_values) > 1 or pixel_values[0, 0, 0, 0] == 2:
+                raise RuntimeError('injected model failure')
+            return pixel_values.mean((2, 3))
+        model._prepare_image = prepare
+        model.model = SimpleNamespace(get_image_features=forward)
+        vectors, valid = model.extract_features_batch(['1.jpg', '2.jpg', '3.jpg'], sub_batch_size=3)
+        self.assertCountEqual(decoded, ['1.jpg', '2.jpg', '3.jpg'])
+        self.assertEqual(forwarded, [3, 1, 1, 1])
+        self.assertEqual(valid, ['1.jpg', '3.jpg'])
+        np.testing.assert_allclose(vectors, np.full((2, 3), 1 / np.sqrt(3)), atol=1e-7)
 
     def test_face_batches_respect_extractor_limit(self):
         batches = []

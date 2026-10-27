@@ -26,6 +26,10 @@ TEMP_DIR = os.path.join(OUTPUT_DIR, 'temp')
 FEATURE_CACHE_DIR = os.environ.get('TRANS_FEATURE_CACHE_DIR', os.path.join(OUTPUT_DIR, 'feature_cache'))
 FEATURE_BATCH_SIZE = max(1, int(os.environ.get('TRANS_FEATURE_BATCH_SIZE', '8')))
 FEATURE_DECODE_WORKERS = max(1, int(os.environ.get('TRANS_FEATURE_DECODE_WORKERS', '2')))
+# Explicit opt-in until preprocessing and end-to-end acceptance are complete.
+FEATURE_IMAGE_BACKEND = os.environ.get('TRANS_FEATURE_IMAGE_BACKEND', 'processor')
+# CPU-only full-resolution quality evaluation; classifiers remain serial.
+QUALITY_DECODE_WORKERS = max(1, int(os.environ.get('TRANS_QUALITY_DECODE_WORKERS', '1')))
 
 # ---------- 模型权重路径 ----------
 SCRFD_MODEL_PATH = os.path.join(WEIGHTS_DIR, 'scrfd', 'scrfd_10g_bnkps.onnx')
