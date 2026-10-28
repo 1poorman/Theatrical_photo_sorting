@@ -6,7 +6,7 @@
 
 ## 运行方式
 
-- 依赖：`requirements_agent.txt`；可用 Conda 环境 `agent`。
+- 依赖：`requirements/agent.txt`；可用 Conda 环境 `agent`。
 - 对话模式：`python -m app.photo_agent_cli --model auto --protocol json --max-steps 6`
 - 单轮模式：`python -m app.photo_agent_cli --session live --message '检查目录并生成清单' --context '{"input_dir":"/path/photos","output_file":"/path/new.jsonl"}'`
 - 主服务接口：`POST /api/organize/agent/advanced/chat`

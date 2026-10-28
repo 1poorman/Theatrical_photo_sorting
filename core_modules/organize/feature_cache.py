@@ -5,6 +5,7 @@ cannot discard another process's entries by saving an old whole-cache snapshot.
 Unsigned third-party encoders get a private namespace, never a shared 'unknown'.
 """
 from collections import OrderedDict
+from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import json
 import os
@@ -15,6 +16,7 @@ import uuid
 from zipfile import BadZipFile
 
 import numpy as np
+from config.base import FEATURE_HASH_WORKERS
 
 
 def signature(value):
@@ -70,6 +72,26 @@ class ContentHasher:
         if file_version(path) != before:
             raise ValueError('source_changed_during_hash')
         return digest.hexdigest(), before
+
+    def fingerprints(self, paths, workers=1):
+        """Ordered full-byte checks with bounded readers and per-path errors.
+
+        Each worker streams one file using fingerprint's existing write guard;
+        futures retain only a digest, metadata or an exception, never image bytes.
+        """
+        def check(path):
+            try:
+                return path, self.fingerprint(path), None
+            except (OSError, ValueError) as exc:
+                return path, None, exc
+
+        workers = min(max(1, int(workers)), os.cpu_count() or 1)
+        if workers == 1:
+            for path in paths:
+                yield check(path)
+        else:
+            with ThreadPoolExecutor(max_workers=workers, thread_name_prefix='theatre-hash') as pool:
+                yield from pool.map(check, paths)
 
 
 def checkpoint_signature(root, hasher):
@@ -179,10 +201,11 @@ class VectorCache:
 class FeatureService:
     """Bounded batches with explicit path mapping and per-item failure recovery."""
     def __init__(self, embedder, cache_dir=None, batch_size=8,
-                 model_signature=None, text_encoder=None):
+                 model_signature=None, text_encoder=None, hash_workers=FEATURE_HASH_WORKERS):
         initialized = time.perf_counter()
         self.embedder = embedder
         self.batch_size = max(1, int(batch_size))
+        self.hash_workers = min(max(1, int(hash_workers)), os.cpu_count() or 1)
         self.model_signature = (model_signature or getattr(embedder, 'model_signature', None)
                                 or 'private-' + uuid.uuid4().hex)
         self.identity = {'model': self.model_signature,
@@ -241,20 +264,28 @@ class FeatureService:
         self.calls[kind] += 1
         return result
 
+    def _fingerprints(self, paths, workers=None):
+        checks = iter(self.hasher.fingerprints(paths, workers=self.hash_workers if workers is None else workers))
+        while True:
+            start = time.perf_counter()
+            try:
+                value = next(checks)
+            except StopIteration:
+                return
+            finally:
+                self.timings['hash_seconds'] += time.perf_counter() - start
+            yield value
+
     def images(self, paths, batch_size=None, use_batch=True):
         result, pending = {}, {}
         encoded_vectors = {}
         aliases, versions = {}, {}
-        for original in dict.fromkeys(map(os.fspath, paths)):
+        for original, fingerprint, error in self._fingerprints(dict.fromkeys(map(os.fspath, paths))):
             path = os.path.abspath(original)
-            start = time.perf_counter()
-            try:
-                content, version = self.hasher.fingerprint(path)
-            except (OSError, ValueError) as exc:
-                self.image_errors[original] = type(exc).__name__
+            if error is not None:
+                self.image_errors[original] = type(error).__name__
                 continue
-            finally:
-                self.timings['hash_seconds'] += time.perf_counter() - start
+            content, version = fingerprint
             key = self.cache.key('image', content)
             aliases.setdefault(key, []).append(original)
             versions[original] = (content, version)
@@ -299,38 +330,29 @@ class FeatureService:
                 except Exception as exc:
                     self._failed[key] = type(exc).__name__
         aligned = {}
-        for key, originals in aliases.items():
-            if key in encoded_vectors:
-                original = originals[0]
-                before_hash = time.perf_counter()
-                try:
-                    try:
-                        current = self.hasher.fingerprint(original)
-                    finally:
-                        self.timings['hash_seconds'] += time.perf_counter() - before_hash
-                    if current != versions[original]:
-                        raise ValueError('source_changed_during_encoding')
+        publication = {original: (key, index == 0 and key in encoded_vectors)
+                       for key, originals in aliases.items() for index, original in enumerate(originals)}
+        # Verify full bytes immediately before each publication. Prehashing
+        # later files in parallel would widen the race interval; unchanged
+        # metadata cannot prove equality on filesystems with coarse timestamps.
+        for original, current, error in self._fingerprints(publication, workers=1):
+            key, publish = publication[original]
+            try:
+                if error is not None:
+                    raise error
+                if current != versions[original] or file_version(original) != current[1]:
+                    raise ValueError('source_changed_during_encoding')
+                if publish:
                     result[key] = self._store(key, 'image', encoded_vectors[key])
+                if key in result:
                     aligned[original] = result[key]
                     self.image_errors.pop(original, None)
-                except Exception as exc:
+                else:
+                    self.image_errors[original] = self._failed.get(key, 'unavailable')
+            except Exception as exc:
+                if publish:
                     self._failed[key] = type(exc).__name__
-                    self.image_errors[original] = type(exc).__name__
-                originals = originals[1:]
-            for original in originals:
-                try:
-                    before_hash = time.perf_counter()
-                    current = self.hasher.fingerprint(original)
-                    self.timings['hash_seconds'] += time.perf_counter() - before_hash
-                    if current != versions[original]:
-                        raise ValueError('source_changed_during_encoding')
-                    if key in result:
-                        aligned[original] = result[key]
-                        self.image_errors.pop(original, None)
-                    else:
-                        self.image_errors[original] = self._failed.get(key, 'unavailable')
-                except (OSError, ValueError) as exc:
-                    self.image_errors[original] = type(exc).__name__
+                self.image_errors[original] = type(exc).__name__
         return aligned
 
     def texts(self, texts, batch_size=None, use_batch=True):
@@ -368,7 +390,7 @@ class FeatureService:
 
     def report(self):
         metrics = getattr(self.embedder, 'metrics', {})
-        return {'encoder': self.identity, 'batch_size': self.batch_size,
+        return {'encoder': self.identity, 'batch_size': self.batch_size, 'hash_workers': self.hash_workers,
                 'encoded_vectors': dict(self.calls), 'cache_hits': dict(self.hits),
                 'encoder_calls': dict(self.encoder_calls), 'timings': dict(self.timings),
                 'model_metrics': {k: v - self._metrics_start.get(k, 0) for k, v in metrics.items()},

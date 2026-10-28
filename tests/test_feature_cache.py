@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import sys
 import tempfile
+import threading
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
@@ -223,6 +224,69 @@ class FeatureCacheTests(unittest.TestCase):
             fingerprint.reset_mock()
             np.testing.assert_array_equal(service.images([path])[path], first)
             self.assertEqual(fingerprint.call_count, 2)
+
+    def test_parallel_full_hash_preserves_order_errors_and_reader_bound(self):
+        paths = [self.photo('first.jpg'), self.photo('second.jpg'), str(self.root / 'missing.jpg')]
+        hasher = ContentHasher()
+        expected = [hasher.fingerprint(path) for path in paths[:2]]
+        barrier = threading.Barrier(2)
+        threads = set()
+        original = hasher.fingerprint
+        def simultaneous(path):
+            if path in paths[:2]:
+                threads.add(threading.current_thread().name)
+                barrier.wait(timeout=5)
+            return original(path)
+        with patch.object(hasher, 'fingerprint', side_effect=simultaneous), \
+                patch('core_modules.organize.feature_cache.os.cpu_count', return_value=2):
+            result = list(hasher.fingerprints(paths, workers=2))
+        self.assertEqual([row[0] for row in result], paths)
+        self.assertEqual([row[1] for row in result[:2]], expected)
+        self.assertIsInstance(result[2][2], FileNotFoundError)
+        self.assertEqual(len(threads), 2)
+
+    def test_parallel_cache_duplicates_bad_images_and_hot_reuse(self):
+        paths = [self.photo('a.jpg'), self.photo('b.jpg')]
+        duplicate = self.photo('copy.jpg', Path(paths[0]).read_bytes())
+        bad = self.photo('bad.jpg', b'bad')
+        service = self.service(hash_workers=4)
+        first = service.images(paths + [duplicate, bad])
+        self.assertEqual(set(first), set(paths + [duplicate]))
+        np.testing.assert_array_equal(first[duplicate], first[paths[0]])
+        calls = dict(service.encoder_calls)
+        with patch.object(service.hasher, 'fingerprint', wraps=service.hasher.fingerprint) as check:
+            second = service.images(paths + [duplicate, bad])
+            self.assertEqual(check.call_count, 8)
+        self.assertEqual(service.encoder_calls, calls)
+        for path in first:
+            np.testing.assert_array_equal(first[path], second[path])
+
+    def test_parallel_rehash_catches_changed_bytes_with_unchanged_metadata(self):
+        path = self.photo('image.jpg', b'aaaa')
+        model = Encoder()
+        def mutate(paths):
+            vectors = [model.vector(path)]
+            Path(path).write_bytes(b'bbbb')
+            return vectors, paths
+        model.extract_features_batch = mutate
+        service = self.service(model, hash_workers=4)
+        with patch('core_modules.organize.feature_cache.file_version', return_value=(1, 1, 4, 1, 1)):
+            self.assertEqual(service.images([path]), {})
+        self.assertFalse(list(self.cache.rglob('*.npz')))
+
+    def test_publication_rehashes_after_previous_cache_write_even_with_coarse_metadata(self):
+        paths = [self.photo('a.jpg', b'aaaa'), self.photo('b.jpg', b'bbbb')]
+        service = self.service(hash_workers=2)
+        put = service.cache.put
+        def write(key, value):
+            Path(paths[1]).write_bytes(b'cccc')
+            return put(key, value)
+        with patch('core_modules.organize.feature_cache.file_version', return_value=(1, 1, 4, 1, 1)), \
+                patch.object(service.cache, 'put', side_effect=write):
+            result = service.images(paths)
+        self.assertEqual(set(result), {paths[0]})
+        self.assertIn(paths[1], service.image_errors)
+        self.assertEqual(len(list(self.cache.rglob('*.npz'))), 1)
 
     def test_later_batch_mutation_does_not_publish_earlier_vector(self):
         first, second = self.photo('first.jpg', b'aaaa'), self.photo('second.jpg', b'cccc')

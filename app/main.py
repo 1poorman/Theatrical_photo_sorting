@@ -1235,7 +1235,7 @@ def advanced_agent_chat(message: str = Form(...), session_id: str = Form(''),
         return JSONResponse(status_code=400, content=srv.get_error(message=str(exc)))
     except ImportError:
         return JSONResponse(status_code=503, content=srv.get_error(
-            message='请在 API 环境安装 requirements_agent.txt'))
+            message='请在 API 环境安装 requirements/agent.txt'))
     except Exception:
         app_logger.exception('Advanced agent failed')
         return JSONResponse(status_code=500, content=srv.get_error(message='高级智能体执行失败，请检查服务日志'))

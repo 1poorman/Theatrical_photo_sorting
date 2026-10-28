@@ -18,10 +18,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # 先装 PyTorch（cu130 索引，层缓存友好），再装其余依赖
-COPY requirements_scrfd_arcface.txt .
+COPY requirements/ ./requirements/
 RUN pip install torch==2.9.0 torchvision==0.24.0 \
     --index-url https://download.pytorch.org/whl/cu130 \
-    && pip install -r requirements_scrfd_arcface.txt
+    && pip install -r requirements/vision.txt
 
 # 复制项目代码（weights/ data/ 等通过 .dockerignore 排除，运行时挂载）
 COPY app/ ./app/

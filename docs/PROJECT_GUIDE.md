@@ -33,19 +33,19 @@ FastAPI / Web UI / 独立智能体 CLI
 | `core_modules/*.py` | 人像检测/分割、景别、修复、图像向量检索 |
 | `core_modules/organize/` | 文件名解析、去重、建库、演员视图、知识、复核、智能体 |
 | `core_modules/tools/` | 图像 I/O、日志、可视化、质量工具，优先复用 |
-| `assets/` | 文档截图；`data/sample_images/` 为跟踪的样例图片 |
+| `assets/` | 随 Git 保存的文档截图；样例原图位于本地 `data/sample_images/` |
 | `data/ncpa_test/` | 本地剧目测试数据，不随普通克隆提供 |
 | `data/face_database/` | 人脸锚定库，含敏感数据，不公开提交 |
 | `weights/` | 本地权重，默认忽略；不随意重命名 |
-| `outputs/`、`logs/` | 运行产物与日志，默认忽略；历史已跟踪产物可能仍在 Git 中 |
+| `outputs/`、`logs/` | 运行产物与日志，全部忽略；历史产物保留本地 |
 | `tests/test_*.py` | 按功能组织的测试，多数是可直接执行脚本 |
 | `tests/acceptance_*.py` | 聚合/全量验收，依赖特定数据与环境 |
-| `tests/tmp_*.py` | 本地实验、历史修补与冒烟脚本，不是正式迁移程序 |
-| `requirements_scrfd_arcface.txt` | 视觉服务依赖；`environment_scrfd_arcface.yml` 为 Conda 环境定义 |
-| `requirements_agent.txt` | LangChain 扩展依赖，不包含视觉服务完整依赖 |
+| `tests/local/tmp_*.py` | 本地实验、历史修补与冒烟脚本，不是正式迁移程序 |
+| `requirements/vision.txt` | 视觉服务依赖；`requirements/environment.yml` 为 Conda 环境定义 |
+| `requirements/agent.txt` | LangChain 扩展依赖，不包含视觉服务完整依赖 |
 | `Dockerfile`、`docker-compose.yml` | 主服务镜像与 GPU/存储挂载 |
 
-本次采取逻辑归类与索引整理，不物理搬迁代码、数据或脚本。新增正式测试需检查 `.gitignore`：目前 `tests/*` 默认忽略，`test_langchain_agent.py` 有例外；本地存在不等于已跟踪。
+2026-10-28：环境文件集中于 `requirements/`；临时脚本归档至 `tests/local/`。正式代码与测试、原图/图库和历史验收目录保持路径。`tests/.gitignore` 明确列出随 Git 保存的测试；`python tools/audit_repository_scope.py` 检查暂存索引，排除本地数据、权重、缓存、日志和实验输出。文档截图与精选技术报告包继续随 Git 保存。
 
 ## 3. 安装与启动
 
@@ -54,9 +54,9 @@ FastAPI / Web UI / 独立智能体 CLI
 ### 主视觉服务
 
 ```bash
-conda env create -f environment_scrfd_arcface.yml
+conda env create -f requirements/environment.yml
 conda activate face_scrfd_arcface
-python -m pip install -r requirements_scrfd_arcface.txt
+python -m pip install -r requirements/vision.txt
 python app/server.py
 ```
 
@@ -68,11 +68,11 @@ PyTorch 的 CUDA 安装方式以依赖文件顶部说明为准；权重布局见
 
 ```bash
 conda activate agent
-python -m pip install -r requirements_agent.txt
+python -m pip install -r requirements/agent.txt
 python -m app.photo_agent_cli --session demo --model auto --protocol json
 ```
 
-若没有 `agent` 环境，可先创建 Python 3.11 环境。CLI 不要求本机 GPU，但需要可用模型 HTTP 端点；它不会启动模型服务。要在主 API 使用高级智能体，需要在**主服务的同一 Python 环境**安装 `requirements_agent.txt`，不能只安装到另一个 Conda 环境。
+若没有 `agent` 环境，可先创建 Python 3.11 环境。CLI 不要求本机 GPU，但需要可用模型 HTTP 端点；它不会启动模型服务。要在主 API 使用高级智能体，需要在**主服务的同一 Python 环境**安装 `requirements/agent.txt`，不能只安装到另一个 Conda 环境。
 
 ### Docker
 

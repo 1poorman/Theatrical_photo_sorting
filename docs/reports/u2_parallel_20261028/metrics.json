@@ -1,0 +1,223 @@
+{
+  "status": "measured",
+  "baseline_commit": "56baf192bfdbb7dea7e60928eed5ee203a2e0497",
+  "code_commit": "56baf192bfdbb7dea7e60928eed5ee203a2e0497",
+  "source_sha256": {
+    "core_modules/image_search.py": "e89ba11f2157441db1c45d15bca86a98d2099f4f999c386f48ee1b5cdb572ff1",
+    "core_modules/organize/feature_cache.py": "f99fb91bbae6961055001632bc9e39f59a6b53df35b82fbed792caf8799f7f20",
+    "core_modules/organize/smart_organizer.py": "cf684bc6f2ea7b44dc4801a27922c9749ffc350840c525eca1c26411a775eec6",
+    "core_modules/organize/burst_dedup.py": "d73278472929375f9c504e4e227eded7ac442b18236864e8bb8f1c9c2502900a",
+    "core_modules/organize/multimodal_evidence.py": "643acda290949fac7695ccd6cd7643a496a8b07816af0607ec61fec133aa3825",
+    "core_modules/organize/filename_parser.py": "43551da0b05639dbe220e6f4c56d0fdc15568558e99b42d6585b3e9303868d01",
+    "core_modules/organize/scene_split.py": "26ec6e42e1fa4cf0a5d75bf0b51eba0c8a3c39fc07a90f14523c1633a4e783a4",
+    "core_modules/organize/face_db_builder.py": "9d718a061b2aae908dfac5d3d25c99e3f9b3d763e59327b57228e99cdd4cb023",
+    "core_modules/tools/image_io.py": "4bbcef4b45321ddad8baed47d16e1d498f2fb6392fe707e9531138479784c55f",
+    "core_modules/face_recognition/face_recognition.py": "ce7a10c85a86263663838c8aa5beef8dea136cec15c825053a1b49506ca5d23a",
+    "core_modules/face_recognition/scrfd/scrfd_det.py": "e9d9f14c24ff6816bfb330a4d73f1bfa985b0078ecdb0959c7b7034adce70330",
+    "core_modules/face_recognition/arcface/arcface_onnx.py": "0b01075ee75af7af859c86767f5d7ce0d80eaa2f7f2b7a4a29c17fcc93ec4180",
+    "config/base.py": "989fcb90dc2ec351112e31ef04c51d74325a3eba14b73a1b7c11c410f27ce6a7",
+    "tools/benchmark_feature_pipeline.py": "c724d303cf47435fe5b4fef5898f2d0d351dbaab124769a97e4bfc18d4260521"
+  },
+  "inputs_sha256": "f7f0f6c38e6314282565930d0169e402b6034167df6b17cd9df53adad905d5e3",
+  "sample_count": 200,
+  "play_count": 4,
+  "directory_count": 8,
+  "text_count": 5,
+  "repeats": 5,
+  "comparison": {
+    "images": {
+      "min_cosine": 1.0,
+      "fraction_at_least_0999": 1.0,
+      "below_threshold_indices": []
+    },
+    "texts": {
+      "min_cosine": 1.0,
+      "fraction_at_least_0999": 1.0,
+      "below_threshold_indices": []
+    }
+  },
+  "timing": {
+    "feature_runs": {
+      "baseline_median_seconds": 43.27010051906109,
+      "batch_median_seconds": 28.3414559783414,
+      "speedup": 1.526742329403549,
+      "wall_time_reduction": 0.3450106276999151,
+      "images_per_second": {
+        "baseline": 4.62212931333259,
+        "batch": 7.056800474641825
+      },
+      "rss_peak_bytes": {
+        "baseline": 2074214400,
+        "batch": 2360598528
+      },
+      "rss_peak_ratio": 1.1380687203791469,
+      "distribution": {
+        "baseline": {
+          "p95_seconds": 43.60389146283269,
+          "min_seconds": 42.519689657725394,
+          "max_seconds": 43.67907577659935
+        },
+        "batch": {
+          "p95_seconds": 28.825671586953103,
+          "min_seconds": 28.13379864115268,
+          "max_seconds": 28.940853227861226
+        }
+      }
+    },
+    "pipeline_runs": {
+      "baseline_median_seconds": 169.92739563807845,
+      "batch_median_seconds": 111.62716937158257,
+      "speedup": 1.5222763113559488,
+      "wall_time_reduction": 0.3430890354529248,
+      "images_per_second": {
+        "baseline": 1.176973255248212,
+        "batch": 1.7916785055638516
+      },
+      "rss_peak_bytes": {
+        "baseline": 3421212672,
+        "batch": 4065341440
+      },
+      "rss_peak_ratio": 1.188274986022266,
+      "distribution": {
+        "baseline": {
+          "p95_seconds": 198.3297495784238,
+          "min_seconds": 142.2196462750435,
+          "max_seconds": 198.62289049942046
+        },
+        "batch": {
+          "p95_seconds": 158.0659383310005,
+          "min_seconds": 103.12127693649381,
+          "max_seconds": 167.46609339956194
+        }
+      }
+    }
+  },
+  "baseline_mode": "batch",
+  "image_backend": "pillow",
+  "baseline_image_backend": "pillow",
+  "cache_hit_forward_calls": {
+    "image": 0,
+    "text": 0
+  },
+  "pipeline_cache_hit_forward_calls": {
+    "image": 0,
+    "text": 0
+  },
+  "pipeline_decisions_equal": true,
+  "quality_scores_equal": true,
+  "peak_fraction_of_initial_free_gpu": [
+    0.6092224584861027,
+    0.2673620069717015
+  ],
+  "quality": "not_evaluated_requires_verified_labels",
+  "limitations": [
+    "Stage-photo classification and performance grouping are provisional.",
+    "Pipeline uses real SCRFD/ArcFace and SigLIP2, without shot or role classifiers.",
+    "Device memory includes other processes and is sampled every 50 ms.",
+    "This benchmark does not measure HTTP/UI latency or DALI."
+  ],
+  "checks": {
+    "minimum_size": true,
+    "cosine": true,
+    "repeat_consistency": true,
+    "cache_zero_forwards": true,
+    "analysis_to_organizer_cache": true,
+    "feature_speedup": true,
+    "pipeline_speedup": true,
+    "pipeline_decisions_equal": true,
+    "quality_scores_equal": true,
+    "rss_increase": true,
+    "gpu_headroom": true,
+    "no_errors": true
+  },
+  "performance_status": "passed",
+  "protocol": "incremental comparison against committed Pillow/2 quality workers; baseline then candidate, not interleaved",
+  "formal_u2_status": "not_passed",
+  "physical_gpu": 1,
+  "worker_configuration": {
+    "baseline": {
+      "decode_workers": 2,
+      "hash_workers": 1,
+      "quality_workers": 2,
+      "torch_threads": 16
+    },
+    "batch": {
+      "decode_workers": 4,
+      "hash_workers": 4,
+      "quality_workers": 4,
+      "torch_threads": 16
+    }
+  },
+  "stage_medians": {
+    "baseline": {
+      "dedup_seconds": 58.484918965026736,
+      "scene_features_seconds": 34.312769130803645,
+      "recognition_and_copy_seconds": 76.5296332957223,
+      "before_report_seconds": 169.9039196735248
+    },
+    "batch": {
+      "dedup_seconds": 30.44551510270685,
+      "scene_features_seconds": 23.54007300361991,
+      "recognition_and_copy_seconds": 54.47997802589089,
+      "before_report_seconds": 111.60162953473628
+    }
+  },
+  "repeats_seconds": {
+    "baseline": {
+      "feature_runs": [
+        43.303154207766056,
+        43.67907577659935,
+        43.27010051906109,
+        42.98304889071733,
+        42.519689657725394
+      ],
+      "pipeline_runs": [
+        197.15718589443713,
+        198.62289049942046,
+        142.2196462750435,
+        169.92739563807845,
+        165.57568833883852
+      ]
+    },
+    "batch": {
+      "feature_runs": [
+        28.940853227861226,
+        28.3414559783414,
+        28.277568532153964,
+        28.364945023320615,
+        28.13379864115268
+      ],
+      "pipeline_runs": [
+        167.46609339956194,
+        108.16318747587502,
+        120.46531805675477,
+        103.12127693649381,
+        111.62716937158257
+      ]
+    }
+  },
+  "evidence_sha256": {
+    "summary.json": "2369a54aaa3d4cac78d304aca85e7c51789941f1cc48ad2de85b81f3b4819785",
+    "baseline.json": "d76bd892e80e86f0cf22f1e57152f34f48de295460c199f0011761ec4c1f8a7f",
+    "batch.json": "08814085f2737aa653122d86d6f2f1bf7d7e98afb65d430f18ca3833824def88",
+    "provenance.json": "bd90cf952c68ed0f50ce57fa8643649f3e1fb0a1e57665704289e76645dfe4ba"
+  },
+  "vectors_bitwise_equal": {
+    "images": true,
+    "texts": true
+  },
+  "device_memory_mib_at_worker_boundaries": {
+    "baseline": {
+      "before_load": 2697,
+      "after_measurement": 15751
+    },
+    "batch": {
+      "before_load": 12739,
+      "after_measurement": 15783
+    }
+  },
+  "integrity_audit": {
+    "passed": true,
+    "checks": 670
+  }
+}

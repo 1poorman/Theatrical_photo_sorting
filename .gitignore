@@ -1,28 +1,30 @@
-__pycache__/*
-*.pyc
-*.pyo
+# Local inputs, model weights, runtime outputs and frozen experiment records.
+/data/
+/weights/
+/outputs/
+/logs/
+/face_recognition/out/
+/third_party/dinov2/
+/core_modules/face_recognition/trt_cache/
+
+# Python, notebooks, editors and local environments.
+__pycache__/
+*.py[cod]
 .ipynb_checkpoints/
 .DS_Store
-outputs/
-logs/
-weights/*
-third_party/dinov2/
-# 下载的模型权重产物（不应入库）
-data/*
-face_recognition/out/*
+.venv/
+venv/
+node_modules/
+/.vscode/
 
-.vscode/
+# Local credentials and agent configuration.
+.env
+.env.*
+!.env.example
+/.agents/
+/.aws/
+/.codex/
+/opencode.json
 
-# TensorRT 引擎缓存（自动生成，不入库）
-core_modules/face_recognition/trt_cache/
-
-# 测试工作区
-tests/*
-!tests/test_dali_preprocessing.py
-!tests/test_quality_parallelism.py
-
-
-.env 
-opencode.json
-
-WORK_STATE.md
+# tests/.gitignore explicitly selects portable regression scripts.
+/tests/local/

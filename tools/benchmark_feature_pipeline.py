@@ -244,13 +244,21 @@ def setup(args, output):
 
 
 def worker(args, output):
+    # Configure each child before importing modules that allocate thread pools.
+    baseline = args.worker == 'baseline'
+    for variable, value in [
+            ('TRANS_FEATURE_DECODE_WORKERS', args.baseline_decode_workers if baseline else args.decode_workers),
+            ('TRANS_QUALITY_DECODE_WORKERS', args.baseline_quality_workers if baseline else args.quality_workers),
+            ('TRANS_FEATURE_HASH_WORKERS', 1 if baseline else args.hash_workers)]:
+        if value is not None:
+            os.environ[variable] = str(value)
     import torch
     import transformers
     import PIL
     from core_modules.image_search import ImageEmbedder
     from core_modules.organize.feature_cache import FeatureService
     from core_modules.organize.smart_organizer import SmartOrganizer
-    from config.base import FEATURE_DECODE_WORKERS, QUALITY_DECODE_WORKERS
+    from config.base import FEATURE_DECODE_WORKERS, QUALITY_DECODE_WORKERS, FEATURE_HASH_WORKERS
     provenance = json.loads((output / 'provenance.json').read_text())
     if provenance['source_sha256'] != source_hashes():
         raise RuntimeError('测量期间源码已变化，请使用新输出目录重新运行')
@@ -263,9 +271,8 @@ def worker(args, output):
     environment_before = gpu_environment(index)
     before_load = Resources(index).gpu()
     started = time.perf_counter()
-    baseline = args.worker == 'baseline'
     model = ImageEmbedder('siglip2_base', device=args.device,
-                          image_backend='processor' if baseline else args.image_backend)
+                          image_backend=args.baseline_image_backend if baseline else args.image_backend)
     if not type(model.model).__name__.startswith('Siglip'):
         raise RuntimeError('SigLIP load failed; refusing to benchmark a fallback model')
     load_seconds = time.perf_counter() - started
@@ -305,14 +312,15 @@ def worker(args, output):
                               'pillow': PIL.__version__, 'numpy': np.__version__,
                               'cpu_count': os.cpu_count(), 'torch_cpu_threads': torch.get_num_threads(),
                               'decode_workers': FEATURE_DECODE_WORKERS, 'batch_size': args.batch_size,
+                              'hash_workers': FEATURE_HASH_WORKERS,
                               'gpu_before': environment_before,
                               'before_load_gpu': before_load, 'memory_sampling_seconds': .05},
               'pipeline_configuration': {'shot_classifier': None, 'classify_role': False,
                                          'keep_per_bucket': 2, 'face_device': args.face_device,
-                                         'quality_decode_workers': 1 if baseline else QUALITY_DECODE_WORKERS,
+                                         'quality_decode_workers': QUALITY_DECODE_WORKERS,
                                          'gallery': 'isolated_copy', 'feature_cache': 'empty_each_run'}}
     report['baseline_mode'] = args.baseline_mode
-    report['image_backend'] = 'processor' if baseline else args.image_backend
+    report['image_backend'] = args.baseline_image_backend if baseline else args.image_backend
     target = output / (args.worker + '.json')
     for repeat in range(args.repeats):
         with tempfile.TemporaryDirectory(prefix='features-', dir=output) as cache_dir:
@@ -499,6 +507,7 @@ def summarize(args, output):
               'text_count': len(inputs['texts']),
               'repeats': args.repeats, 'comparison': comparisons, 'timing': timing,
               'baseline_mode': args.baseline_mode, 'image_backend': args.image_backend,
+              'baseline_image_backend': args.baseline_image_backend,
               'cache_hit_forward_calls': batch['cache_hit_run']['forward']['calls'],
               'pipeline_cache_hit_forward_calls': batch.get('pipeline_cache_hit_run', {}).get('forward', {}).get('calls'),
               'pipeline_decisions_equal': len({row['decisions_sha256'] for row in
@@ -550,6 +559,13 @@ def main():
     parser.add_argument('--baseline-mode', choices=['sequential', 'batch'], default='sequential',
                         help='batch compares the frozen pre-optimization pipeline without changing its semantics')
     parser.add_argument('--image-backend', choices=['processor', 'pillow'], default='processor')
+    parser.add_argument('--baseline-image-backend', choices=['processor', 'pillow'], default='processor',
+                        help='pillow measures incremental improvement against a frozen Pillow implementation')
+    parser.add_argument('--decode-workers', type=int)
+    parser.add_argument('--quality-workers', type=int)
+    parser.add_argument('--hash-workers', type=int)
+    parser.add_argument('--baseline-decode-workers', type=int)
+    parser.add_argument('--baseline-quality-workers', type=int)
     parser.add_argument('--device', default='cuda:0')
     parser.add_argument('--face-device', choices=['cuda', 'tensorrt'], default='cuda')
     parser.add_argument('--limit', type=int, default=200)
@@ -560,6 +576,10 @@ def main():
     parser.add_argument('--skip-pipeline', action='store_true')
     parser.add_argument('--worker', choices=['baseline', 'batch'], help=argparse.SUPPRESS)
     args = parser.parse_args()
+    if any(value is not None and value < 1 for value in (
+            args.decode_workers, args.quality_workers, args.hash_workers,
+            args.baseline_decode_workers, args.baseline_quality_workers)):
+        parser.error('线程数必须为正')
     if min(args.limit, args.repeats, args.batch_size, args.torch_threads or 1) < 1 or args.torch_threads == 0 or args.device != 'cuda:0':
         parser.error('数量参数必须为正；当前完整人脸流水线固定使用 cuda:0')
     output = Path(args.output).resolve()

@@ -1,5 +1,45 @@
 # 图像预处理与 U2 性能复验
 
+## 2026-10-28 并行完整哈希与增量对照
+
+`TRANS_FEATURE_HASH_WORKERS`控制特征查询阶段的完整SHA-256读取线程，默认1。
+可设为4以并行读取多个原图；每线程仅持有1 MiB读取块，结果保留摘要与版本信息。
+写缓存/返回向量前仍按输入顺序逐图重读完整内容，避免提前完成的并行摘要扩大
+原图改写窗口；时间戳不变也不能替代内容相等证明。向量缓存签名和格式保持兼容。
+
+独立基准新增基线和候选的解码/质量线程参数，以及`--baseline-image-backend`。
+基线线程参数在独立子进程导入配置前设置；报告记录两方案实际线程数。
+因此可比较上一轮已提交的Pillow/双线程优化，而不混用旧processor数字。
+
+```bash
+CUDA_VISIBLE_DEVICES=1 /home/huachenghao/.conda/envs/face_scrfd_arcface/bin/python \
+  tools/benchmark_feature_pipeline.py \
+  --output outputs/acceptance/core_upgrade/u2_parallel_new_run \
+  --baseline 56baf19 --baseline-mode batch \
+  --baseline-image-backend pillow --image-backend pillow \
+  --baseline-decode-workers 2 --baseline-quality-workers 2 \
+  --decode-workers 4 --quality-workers 4 --hash-workers 4 \
+  --limit 200 --repeats 5 --torch-threads 16
+```
+
+12图检查中图文向量、归档命名和质量分数一致，热缓存/分析→整理均0前向；
+特征3.257→2.496秒、整理16.441→13.347秒，RSS分别增加9.75%/8.15%。
+完整200图×5次报告已在`u2_parallel_200x5_20261028/`完成，独立进程退出0；
+[Git可见汇总](reports/u2_parallel_20261028/README.md)保留全部五轮、阶段指标及来源摘要。
+特征43.270→28.341秒（1.527×），整理169.927→111.627秒（观察减少34.31%）；
+RSS分别增加13.81%/18.83%，12项检查全部通过，本增量协议为`passed`。
+十轮保留154图、评分/命名一致、0错误；图文向量逐字节相同，热缓存与分析→整理0前向。
+670项完整性核查通过，125份本地文件及74份旧摘要保留。GPU整卡占用在两方案
+测量前分别2697/12739 MiB，外部负载未隔离；不能据此认定受控收益或尾延迟改善。
+本协议只测同步整理；持久任务的逐项选优仍顺序执行。默认processor、
+2解码/1质量/1哈希线程保持，DALI不采用，独立质量缺项与正式U2门槛保留。
+
+33项缓存回归覆盖并行读取顺序/坏图/重复字节/热缓存、相同元数据下的原图改写及
+前一个缓存写入期间后图变化；28核心、18整理和4质量并行测试通过。
+目录与失败/最终回归记录见`outputs/maintenance/layout_20261028/`。
+
+## 既有预处理选项
+
 场景图像特征默认使用模型自带的 `processor`。可通过环境变量
 `TRANS_FEATURE_IMAGE_BACKEND=pillow` 或构造参数
 `ImageEmbedder('siglip2_base', image_backend='pillow')` 试用 Pillow 缩放。
@@ -92,7 +132,7 @@ Pillow 200 图×5 次报告。它先验证13个大小/方向/颜色样例及坏�
 
 ```bash
 # 可选依赖只安装到独立目录。
-python -m pip install --target outputs/u2_dali_deps -r requirements_dali.txt
+python -m pip install --target outputs/u2_dali_deps -r requirements/dali.txt
 CUDA_VISIBLE_DEVICES=1 PYTHONPATH=outputs/u2_dali_deps \
   /home/huachenghao/.conda/envs/face_scrfd_arcface/bin/python \
   tools/evaluate_dali_preprocessing.py \

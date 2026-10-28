@@ -24,6 +24,7 @@
 
 - [工作状态与中断接续](WORK_STATE.md)：当前交接点、关键节点、提交范围、实验产物和协作接续步骤。
 - [文档中心](docs/README.md)：阅读顺序、现行说明与历史设计分类。
+- [U2 最新性能增量报告](docs/reports/u2_parallel_20261028/README.md)：200图×5次，特征1.527×、整理观察减少34.31%；输出一致，保留共享负载与正式验收边界。
 - [最新技术报告](docs/technical_report_20261026.md)：29页、15幅正文插图，包含最新U2性能与DALI评价；[PDF](docs/reports/technical_report_20261026/technical_report.pdf)与插图随Git保存，可在GitHub阅读。
 - [工作台使用指南](docs/workspace_guide.md)：目录导入、图文分析、看图复核与归档。
 - [演员身份与角色表](docs/identity_registry_guide.md)：稳定身份 ID、剧目角色、同名演员专辑、JSON 格式与 API 参数。
@@ -82,12 +83,11 @@
 │
 ├── tests/                          # 测试脚本（见"测试"章节）
 ├── docs/                           # 文档（蓝图、优化报告、多模态进度状态）
-├── data/                           # 数据（face_database/ 人脸库、sample_images/、ncpa_test/）
+├── data/                           # 本地原图、样例和人脸库（不入库）
 ├── weights/                        # 模型权重（不入库）
 ├── outputs/ logs/                  # 运行产物（不入库）
 ├── Dockerfile / docker-compose.yml
-├── requirements_scrfd_arcface.txt  # pip 依赖
-└── environment_scrfd_arcface.yml   # conda 环境
+└── requirements/                   # 环境与可选依赖（vision/agent/embeddinggemma/dali）
 ```
 
 > **config/base.py** 是唯一的参数中心：阈值、模型路径、ES 地址等全部集中于此，支持 `TRANS_<参数名>` 环境变量覆盖。
@@ -97,11 +97,11 @@
 
 ```bash
 # 1. 创建环境
-conda env create -f environment_scrfd_arcface.yml
+conda env create -f requirements/environment.yml
 conda activate face_scrfd_arcface
 
 # 2. 安装依赖（PyTorch 按需选择 CUDA 版本）
-pip install -r requirements_scrfd_arcface.txt
+pip install -r requirements/vision.txt
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cu130
 
 # 3. 准备权重（weights/ 下，首次运行部分模型自动下载）
@@ -179,7 +179,7 @@ curl -X POST http://localhost:8198/api/organize/agent/chat \
 
 ```bash
 conda activate agent
-python -m pip install -r requirements_agent.txt
+python -m pip install -r requirements/agent.txt
 python -m app.photo_agent_cli --model auto --protocol json --session demo
 ```
 
@@ -369,4 +369,4 @@ docker compose up -d --build   # API 端口 8198，需宿主机 NVIDIA 驱动 + 
 - 需 **NVIDIA GPU**；无 GPU 自动回退 CPU 推理（速度大幅下降）
 - 服务默认使用物理 GPU1（`app/server.py` 中 `CUDA_VISIBLE_DEVICES=1`，可按需修改）
 - `outputs/`、`logs/`、`weights/` 默认忽略；`data/ncpa_test/` 和 `data/face_database/` 不入库，`data/sample_images/` 样例保留；已跟踪的历史文件不受忽略规则影响
-- 依赖版本以 `requirements_scrfd_arcface.txt` 为准（ES 客户端 8.x 对应服务端 8.12）
+- 依赖版本以 `requirements/vision.txt` 为准（ES 客户端 8.x 对应服务端 8.12）

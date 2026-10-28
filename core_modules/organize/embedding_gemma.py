@@ -65,7 +65,7 @@ class EmbeddingGemmaEmbedder:
             from sentence_transformers import SentenceTransformer
         except (ImportError, ValueError) as exc:
             raise RuntimeError('EmbeddingGemma 2 需要支持 embedding_gemma2 的 Transformers '
-                               '及 SentenceTransformers；请使用 requirements_embeddinggemma.txt') from exc
+                               '及 SentenceTransformers；请使用 requirements/embeddinggemma.txt') from exc
         if checkpoint_signature(self.model_path, self._hasher) != self._checkpoint:
             raise ValueError('EmbeddingGemma 权重或处理器已变化，请重新创建编码器')
         self._model = SentenceTransformer(
