@@ -7,8 +7,10 @@ are written. Quality labels are not inferred from these performance measurements
 import argparse
 from collections import defaultdict
 import ctypes
+import csv
 import hashlib
 import importlib.util
+import io
 import json
 import os
 from pathlib import Path
@@ -16,6 +18,7 @@ import shutil
 import statistics
 import subprocess
 import sys
+import tarfile
 import tempfile
 import threading
 import time
@@ -40,6 +43,55 @@ SOURCE_FILES = ['core_modules/image_search.py', 'core_modules/organize/feature_c
 
 def source_hashes():
     return {path: hashlib.sha256((ROOT / path).read_bytes()).hexdigest() for path in SOURCE_FILES}
+
+
+def freeze_baseline(output, commit):
+    """Freeze all business dependencies, not just the three entry modules."""
+    tree = output / 'baseline_tree'
+    tree.mkdir()
+    archive = subprocess.check_output(
+        ['git', 'archive', '--format=tar', commit, 'core_modules', 'config'], cwd=ROOT)
+    hashes = {}
+    with tarfile.open(fileobj=io.BytesIO(archive)) as stream:
+        for member in stream:
+            if not member.isfile():
+                continue
+            relative = Path(member.name)
+            if relative.is_absolute() or '..' in relative.parts:
+                raise ValueError('unsafe_baseline_archive_path')
+            data = stream.extractfile(member).read()
+            path = tree / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(data)
+            hashes[member.name] = hashlib.sha256(data).hexdigest()
+    return hashes
+
+
+def execution_plan(repeats):
+    return [(repeat, mode) for repeat in range(repeats)
+            for mode in (('baseline', 'batch') if repeat % 2 == 0 else ('batch', 'baseline'))]
+
+
+def hardware_observation(path):
+    if not path.exists():
+        return {'samples': 0, 'controlled_environment': False}
+    rows = [json.loads(line) for line in path.read_text().splitlines()]
+    external = set()
+    for row in rows:
+        processes = row['gpu'].get('processes')
+        if isinstance(processes, str):
+            for values in list(csv.reader(io.StringIO(processes)))[1:]:
+                if len(values) >= 2 and values[1].strip().isdigit():
+                    pid = int(values[1].strip())
+                    if pid != row['worker_pid']:
+                        external.add(pid)
+    return {'samples': len(rows), 'external_gpu_pids': sorted(external),
+            'external_gpu_processes_present': bool(external),
+            'cpu_load_1min_range': [min(row['cpu_load_average'][0] for row in rows),
+                                   max(row['cpu_load_average'][0] for row in rows)] if rows else None,
+            'controlled_environment': False,
+            'reason': 'Other GPU processes observed; shared CPU/storage.' if external else
+                      'No dedicated CPU/storage reservation; GPU sampling alone does not establish control.'}
 
 
 def physical_device(index):
@@ -224,6 +276,9 @@ def setup(args, output):
     shutil.copytree(args.gallery, gallery, dirs_exist_ok=True)
     from config.base import SCRFD_MODEL_PATH, ARCFACE_MODEL_PATH
     hashes = source_hashes()
+    baseline_tree_hashes = freeze_baseline(output, args.baseline) if args.baseline_scope == 'tree' else None
+    from config.base import SIGLIP_WEIGHTS_ROOT
+    embedding_root = Path(SIGLIP_WEIGHTS_ROOT) / 'siglip2-base-patch16-384'
     for relative, expected in hashes.items():
         data = (ROOT / relative).read_bytes()
         if hashlib.sha256(data).hexdigest() != expected:
@@ -233,6 +288,9 @@ def setup(args, output):
         snapshot.write_bytes(data)
     write_json(output / 'provenance.json', {
         'source_sha256': hashes,
+        'baseline_tree_sha256': baseline_tree_hashes,
+        'embedding_weights_sha256': {str(path): hasher.fingerprint(path)[0]
+                                    for path in sorted(embedding_root.rglob('*')) if path.is_file()},
         'gallery_sha256': {path.relative_to(gallery).as_posix(): hasher.fingerprint(path)[0]
                            for path in sorted(gallery.rglob('*')) if path.is_file()},
         'face_weights_sha256': {str(path): hasher.fingerprint(path)[0]
@@ -246,6 +304,11 @@ def setup(args, output):
 def worker(args, output):
     # Configure each child before importing modules that allocate thread pools.
     baseline = args.worker == 'baseline'
+    full_baseline = baseline and args.baseline_scope == 'tree'
+    if full_baseline:
+        sys.path.insert(0, str(output / 'baseline_tree'))
+    os.environ.setdefault('TRANS_WEIGHTS_DIR', str(ROOT / 'weights'))
+    os.environ['TRANS_OUTPUT_DIR'] = str(output / 'runtime')
     for variable, value in [
             ('TRANS_FEATURE_DECODE_WORKERS', args.baseline_decode_workers if baseline else args.decode_workers),
             ('TRANS_QUALITY_DECODE_WORKERS', args.baseline_quality_workers if baseline else args.quality_workers),
@@ -256,9 +319,12 @@ def worker(args, output):
     import transformers
     import PIL
     from core_modules.image_search import ImageEmbedder
-    from core_modules.organize.feature_cache import FeatureService
     from core_modules.organize.smart_organizer import SmartOrganizer
-    from config.base import FEATURE_DECODE_WORKERS, QUALITY_DECODE_WORKERS, FEATURE_HASH_WORKERS
+    if not full_baseline:
+        from core_modules.organize.feature_cache import FeatureService
+        from config.base import FEATURE_DECODE_WORKERS, QUALITY_DECODE_WORKERS, FEATURE_HASH_WORKERS
+    else:
+        FEATURE_DECODE_WORKERS = QUALITY_DECODE_WORKERS = FEATURE_HASH_WORKERS = 1
     provenance = json.loads((output / 'provenance.json').read_text())
     if provenance['source_sha256'] != source_hashes():
         raise RuntimeError('测量期间源码已变化，请使用新输出目录重新运行')
@@ -271,16 +337,18 @@ def worker(args, output):
     environment_before = gpu_environment(index)
     before_load = Resources(index).gpu()
     started = time.perf_counter()
-    model = ImageEmbedder('siglip2_base', device=args.device,
-                          image_backend=args.baseline_image_backend if baseline else args.image_backend)
+    options = {} if full_baseline else {'image_backend': args.baseline_image_backend if baseline else args.image_backend}
+    model = ImageEmbedder('siglip2_base', device=args.device, **options)
     if not type(model.model).__name__.startswith('Siglip'):
         raise RuntimeError('SigLIP load failed; refusing to benchmark a fallback model')
     load_seconds = time.perf_counter() - started
     started = time.perf_counter()
     # Compute the immutable model/processor identity outside warmed inference timing.
-    identity = {'model': model.model_signature, 'preprocessing': model.preprocessing_signature}
+    identity = {'model': model.model_signature,
+                'preprocessing': getattr(model, 'preprocessing_signature', 'frozen_processor'),
+                'weights_sha256': provenance['embedding_weights_sha256']}
     signature_seconds = time.perf_counter() - started
-    if baseline:
+    if baseline and not full_baseline:
         legacy_type = load_baseline(output, 'image_search').ImageEmbedder
         legacy = legacy_type.__new__(legacy_type)
         legacy.__dict__.update(model.__dict__)
@@ -320,6 +388,7 @@ def worker(args, output):
                                          'quality_decode_workers': QUALITY_DECODE_WORKERS,
                                          'gallery': 'isolated_copy', 'feature_cache': 'empty_each_run'}}
     report['baseline_mode'] = args.baseline_mode
+    report['baseline_scope'] = args.baseline_scope
     report['image_backend'] = args.baseline_image_backend if baseline else args.image_backend
     target = output / (args.worker + '.json')
     for repeat in range(args.repeats):
@@ -458,7 +527,67 @@ def worker(args, output):
                                   'seconds': sample['seconds'], 'kept': sample['kept']}, ensure_ascii=False), flush=True)
     report['status'] = 'measured'
     report['environment']['gpu_after'] = gpu_environment(index)
+    if full_baseline:
+        tree = (output / 'baseline_tree').resolve()
+        origins = {name: str(Path(module.__file__).resolve()) for name, module in list(sys.modules.items())
+                   if (name == 'config' or name.startswith('config.') or
+                       name == 'core_modules' or name.startswith('core_modules.'))
+                   and getattr(module, '__file__', None)}
+        if not all(Path(path).is_relative_to(tree) for path in origins.values()):
+            raise RuntimeError('baseline_dependency_imported_from_current_tree')
+        if not all(hashlib.sha256((tree / path).read_bytes()).hexdigest() == sha
+                   for path, sha in provenance['baseline_tree_sha256'].items()):
+            raise RuntimeError('baseline_source_changed')
+        report['baseline_import_origins'] = origins
     write_json(target, report)
+
+
+def run_interleaved(args, output):
+    """Each pair has fresh processes and empty feature caches, alternating order."""
+    reports = {'baseline': [], 'batch': []}
+    plan = execution_plan(args.repeats)
+    for repeat, mode in plan:
+        directory = output / f'pair_{repeat + 1:02d}_{mode}'
+        directory.mkdir()
+        for path in output.iterdir():
+            if path.name in ('inputs.json', 'provenance.json', 'gallery', 'baseline_tree') or path.name.startswith('corrected_'):
+                (directory / path.name).symlink_to(path.resolve(), target_is_directory=path.is_dir())
+        command = [sys.executable, str(Path(__file__).resolve()), *sys.argv[1:],
+                   '--output', str(directory), '--repeats', '1', '--worker', mode]
+        print(f'Starting pair {repeat + 1} {mode}; progress in {directory / (mode + ".log")}', flush=True)
+        with (directory / (mode + '.log')).open('w') as log:
+            with subprocess.Popen(command, cwd=ROOT, stdout=log, stderr=subprocess.STDOUT) as process:
+                with (output / 'hardware_samples.jsonl').open('a') as samples:
+                    while process.poll() is None:
+                        samples.write(json.dumps({'time': time.time(), 'pair': repeat + 1, 'mode': mode,
+                            'worker_pid': process.pid, 'cpu_load_average': os.getloadavg(),
+                            'gpu': gpu_environment(0)}) + '\n')
+                        samples.flush()
+                        try:
+                            process.wait(timeout=2)
+                        except subprocess.TimeoutExpired:
+                            pass
+                if process.returncode:
+                    raise subprocess.CalledProcessError(process.returncode, command)
+        report = json.loads((directory / (mode + '.json')).read_text())
+        for stage in ('feature_runs', 'pipeline_runs'):
+            for row in report[stage]:
+                row.update(pair=repeat + 1, worker_before_load_gpu=report['environment']['before_load_gpu'])
+        reports[mode].append(report)
+        if repeat == 0:
+            for suffix in ('_vectors.npz', '_decisions.json', '_quality.json'):
+                path = directory / (mode + suffix)
+                if path.exists():
+                    shutil.copy2(path, output / path.name)
+        write_json(output / 'execution_state.json', {
+            'plan': plan, 'completed': sum(map(len, reports.values())), 'latest_pair': repeat + 1, 'latest_mode': mode})
+    for mode, runs in reports.items():
+        merged = dict(runs[0], repeats=args.repeats)
+        for stage in ('feature_runs', 'pipeline_runs'):
+            merged[stage] = [row for run in runs for row in run[stage]]
+        merged['worker_environments'] = [run['environment'] for run in runs]
+        merged['worker_load_seconds'] = [run['load_seconds'] for run in runs]
+        write_json(output / (mode + '.json'), merged)
 
 
 def summarize(args, output):
@@ -493,11 +622,13 @@ def summarize(args, output):
         raise RuntimeError('测量期间源码已变化；保留原始测量，不生成混合版本结论')
     gpu_ratios = []
     for mode in (baseline, batch):
-        initial = mode['environment']['before_load_gpu']
-        if initial:
-            peaks = [row['device_used_peak_bytes'] for row in mode['feature_runs'] + mode['pipeline_runs']]
-            if peaks and all(peaks):
-                gpu_ratios.append(max(0, max(peaks) - initial['used']) / initial['free'])
+        ratios = []
+        for row in mode['feature_runs'] + mode['pipeline_runs']:
+            initial = row.get('worker_before_load_gpu', mode['environment']['before_load_gpu'])
+            if initial and row['device_used_peak_bytes']:
+                ratios.append(max(0, row['device_used_peak_bytes'] - initial['used']) / initial['free'])
+        if ratios:
+            gpu_ratios.append(max(ratios))
     report = {'status': 'measured', 'baseline_commit': provenance['baseline_commit'],
               'code_commit': provenance['code_commit'],
               'source_sha256': provenance['source_sha256'],
@@ -507,6 +638,8 @@ def summarize(args, output):
               'text_count': len(inputs['texts']),
               'repeats': args.repeats, 'comparison': comparisons, 'timing': timing,
               'baseline_mode': args.baseline_mode, 'image_backend': args.image_backend,
+              'baseline_scope': args.baseline_scope, 'schedule': args.schedule,
+              'hardware_observation': hardware_observation(output / 'hardware_samples.jsonl'),
               'baseline_image_backend': args.baseline_image_backend,
               'cache_hit_forward_calls': batch['cache_hit_run']['forward']['calls'],
               'pipeline_cache_hit_forward_calls': batch.get('pipeline_cache_hit_run', {}).get('forward', {}).get('calls'),
@@ -544,6 +677,8 @@ def summarize(args, output):
                                for mode in (baseline, batch) for row in mode['pipeline_runs'] + mode['feature_runs'])}
     report['checks'] = checks
     report['performance_status'] = 'passed' if all(checks.values()) else 'not_passed'
+    report['formal_U2_status'] = 'not_passed'
+    report['limitations'].append('Shared hardware; alternating order does not establish exclusive load or independent quality acceptance.')
     write_json(output / 'summary.json', report)
     print(json.dumps(report, ensure_ascii=False, indent=2))
 
@@ -558,6 +693,9 @@ def main():
     parser.add_argument('--baseline', default='fdc1fda')
     parser.add_argument('--baseline-mode', choices=['sequential', 'batch'], default='sequential',
                         help='batch compares the frozen pre-optimization pipeline without changing its semantics')
+    parser.add_argument('--baseline-scope', choices=['entries', 'tree'], default='entries',
+                        help='tree imports all baseline core/config dependencies from a frozen Git archive')
+    parser.add_argument('--schedule', choices=['grouped', 'interleaved'], default='grouped')
     parser.add_argument('--image-backend', choices=['processor', 'pillow'], default='processor')
     parser.add_argument('--baseline-image-backend', choices=['processor', 'pillow'], default='processor',
                         help='pillow measures incremental improvement against a frozen Pillow implementation')
@@ -576,6 +714,8 @@ def main():
     parser.add_argument('--skip-pipeline', action='store_true')
     parser.add_argument('--worker', choices=['baseline', 'batch'], help=argparse.SUPPRESS)
     args = parser.parse_args()
+    if args.baseline_scope == 'tree' and (args.baseline_mode != 'sequential' or args.baseline_image_backend != 'processor'):
+        parser.error('完整历史树仅支持原始逐图processor流水线')
     if any(value is not None and value < 1 for value in (
             args.decode_workers, args.quality_workers, args.hash_workers,
             args.baseline_decode_workers, args.baseline_quality_workers)):
@@ -590,6 +730,10 @@ def main():
     if any(output.iterdir()):
         parser.error('输出目录必须为空，以免覆盖已有测量；请指定新的 --output')
     setup(args, output)
+    if args.schedule == 'interleaved':
+        run_interleaved(args, output)
+        summarize(args, output)
+        return
     for mode in ('baseline', 'batch'):
         print(f'Starting {mode}; progress in {output / (mode + ".log")}', flush=True)
         with (output / (mode + '.log')).open('w') as log:

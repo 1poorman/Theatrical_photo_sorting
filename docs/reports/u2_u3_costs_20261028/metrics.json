@@ -1,0 +1,1039 @@
+{
+  "U2": {
+    "baseline_commit": "fdc1fda48e224d4d573243e1a51f936841bfaf1a",
+    "code_commit": "40f2a1ebbfbe0e05e651c163031b4dab10062448",
+    "source_sha256": {
+      "core_modules/image_search.py": "e89ba11f2157441db1c45d15bca86a98d2099f4f999c386f48ee1b5cdb572ff1",
+      "core_modules/organize/feature_cache.py": "f99fb91bbae6961055001632bc9e39f59a6b53df35b82fbed792caf8799f7f20",
+      "core_modules/organize/smart_organizer.py": "cf684bc6f2ea7b44dc4801a27922c9749ffc350840c525eca1c26411a775eec6",
+      "core_modules/organize/burst_dedup.py": "d73278472929375f9c504e4e227eded7ac442b18236864e8bb8f1c9c2502900a",
+      "core_modules/organize/multimodal_evidence.py": "643acda290949fac7695ccd6cd7643a496a8b07816af0607ec61fec133aa3825",
+      "core_modules/organize/filename_parser.py": "43551da0b05639dbe220e6f4c56d0fdc15568558e99b42d6585b3e9303868d01",
+      "core_modules/organize/scene_split.py": "26ec6e42e1fa4cf0a5d75bf0b51eba0c8a3c39fc07a90f14523c1633a4e783a4",
+      "core_modules/organize/face_db_builder.py": "9d718a061b2aae908dfac5d3d25c99e3f9b3d763e59327b57228e99cdd4cb023",
+      "core_modules/tools/image_io.py": "4bbcef4b45321ddad8baed47d16e1d498f2fb6392fe707e9531138479784c55f",
+      "core_modules/face_recognition/face_recognition.py": "ce7a10c85a86263663838c8aa5beef8dea136cec15c825053a1b49506ca5d23a",
+      "core_modules/face_recognition/scrfd/scrfd_det.py": "e9d9f14c24ff6816bfb330a4d73f1bfa985b0078ecdb0959c7b7034adce70330",
+      "core_modules/face_recognition/arcface/arcface_onnx.py": "0b01075ee75af7af859c86767f5d7ce0d80eaa2f7f2b7a4a29c17fcc93ec4180",
+      "config/base.py": "989fcb90dc2ec351112e31ef04c51d74325a3eba14b73a1b7c11c410f27ce6a7",
+      "tools/benchmark_feature_pipeline.py": "c2087ceb7e24e94fb839c9bdb3f9c2e24bcc40b78473f1dc3d9e6e844609a295"
+    },
+    "inputs_sha256": "f7f0f6c38e6314282565930d0169e402b6034167df6b17cd9df53adad905d5e3",
+    "sample_count": 200,
+    "play_count": 4,
+    "directory_count": 8,
+    "text_count": 5,
+    "repeats": 5,
+    "comparison": {
+      "images": {
+        "min_cosine": 0.9999998807907104,
+        "fraction_at_least_0999": 1.0,
+        "below_threshold_indices": []
+      },
+      "texts": {
+        "min_cosine": 1.0,
+        "fraction_at_least_0999": 1.0,
+        "below_threshold_indices": []
+      }
+    },
+    "timing": {
+      "feature_runs": {
+        "baseline_median_seconds": 79.51183766219765,
+        "batch_median_seconds": 58.353074265643954,
+        "speedup": 1.362598948947085,
+        "wall_time_reduction": 0.2661083433443674,
+        "images_per_second": {
+          "baseline": 2.515348731464247,
+          "batch": 3.4274115377285668
+        },
+        "rss_peak_bytes": {
+          "baseline": 2348912640,
+          "batch": 2629115904
+        },
+        "rss_peak_ratio": 1.1192906280243782,
+        "distribution": {
+          "baseline": {
+            "p95_seconds": 89.81827503573149,
+            "min_seconds": 78.61731806024909,
+            "max_seconds": 90.67937214300036
+          },
+          "batch": {
+            "p95_seconds": 59.53070784956217,
+            "min_seconds": 57.24656714592129,
+            "max_seconds": 59.79899331741035
+          }
+        }
+      },
+      "pipeline_runs": {
+        "baseline_median_seconds": 362.30103757604957,
+        "batch_median_seconds": 151.39451414626092,
+        "speedup": 2.3930922439239355,
+        "wall_time_reduction": 0.5821306084046691,
+        "images_per_second": {
+          "baseline": 0.5520271245649374,
+          "batch": 1.3210518302319842
+        },
+        "rss_peak_bytes": {
+          "baseline": 3287302144,
+          "batch": 3569094656
+        },
+        "rss_peak_ratio": 1.08572151255227,
+        "distribution": {
+          "baseline": {
+            "p95_seconds": 728.5504242245107,
+            "min_seconds": 315.50027661398053,
+            "max_seconds": 813.2932865694165
+          },
+          "batch": {
+            "p95_seconds": 152.63683629799635,
+            "min_seconds": 150.9369637966156,
+            "max_seconds": 152.75225446000695
+          }
+        }
+      }
+    },
+    "baseline_scope": "tree",
+    "schedule": "interleaved",
+    "hardware_observation": {
+      "samples": 2210,
+      "external_gpu_pids": [
+        6058,
+        16354
+      ],
+      "external_gpu_processes_present": true,
+      "cpu_load_1min_range": [
+        2.240234375,
+        10.5732421875
+      ],
+      "controlled_environment": false,
+      "reason": "Other GPU processes observed; shared CPU/storage."
+    },
+    "checks": {
+      "minimum_size": true,
+      "cosine": true,
+      "repeat_consistency": true,
+      "cache_zero_forwards": true,
+      "analysis_to_organizer_cache": true,
+      "feature_speedup": false,
+      "pipeline_speedup": true,
+      "pipeline_decisions_equal": false,
+      "quality_scores_equal": true,
+      "rss_increase": true,
+      "gpu_headroom": true,
+      "no_errors": true
+    },
+    "performance_status": "not_passed",
+    "formal_U2_status": "not_passed",
+    "peak_fraction_of_initial_free_gpu": [
+      0.24645788159086543,
+      0.2671863420525348
+    ],
+    "quality": "not_evaluated_requires_verified_labels",
+    "limitations": [
+      "Stage-photo classification and performance grouping are provisional.",
+      "Pipeline uses real SCRFD/ArcFace and SigLIP2, without shot or role classifiers.",
+      "Device memory includes other processes and is sampled every 50 ms.",
+      "This benchmark does not measure HTTP/UI latency or DALI.",
+      "Shared hardware; alternating order does not establish exclusive load or independent quality acceptance."
+    ],
+    "runs": {
+      "baseline": {
+        "feature_runs": [
+          {
+            "pair": 1,
+            "seconds": 86.37388660665601,
+            "rss_peak_bytes": 2348912640,
+            "forward": {
+              "calls": {
+                "image": 200,
+                "text": 5
+              },
+              "gpu_seconds": {
+                "image": 2.0622017574310303,
+                "text": 0.028359488010406494
+              }
+            }
+          },
+          {
+            "pair": 2,
+            "seconds": 90.67937214300036,
+            "rss_peak_bytes": 2347261952,
+            "forward": {
+              "calls": {
+                "image": 200,
+                "text": 5
+              },
+              "gpu_seconds": {
+                "image": 2.0910046100616455,
+                "text": 0.028655648231506348
+              }
+            }
+          },
+          {
+            "pair": 3,
+            "seconds": 78.61731806024909,
+            "rss_peak_bytes": 2346450944,
+            "forward": {
+              "calls": {
+                "image": 200,
+                "text": 5
+              },
+              "gpu_seconds": {
+                "image": 2.067766619682312,
+                "text": 0.027450528144836426
+              }
+            }
+          },
+          {
+            "pair": 4,
+            "seconds": 79.18288387451321,
+            "rss_peak_bytes": 2348105728,
+            "forward": {
+              "calls": {
+                "image": 200,
+                "text": 5
+              },
+              "gpu_seconds": {
+                "image": 2.061986015319824,
+                "text": 0.026836095809936525
+              }
+            }
+          },
+          {
+            "pair": 5,
+            "seconds": 79.51183766219765,
+            "rss_peak_bytes": 2346418176,
+            "forward": {
+              "calls": {
+                "image": 200,
+                "text": 5
+              },
+              "gpu_seconds": {
+                "image": 2.0594716110229494,
+                "text": 0.026912736415863038
+              }
+            }
+          }
+        ],
+        "pipeline_runs": [
+          {
+            "pair": 1,
+            "seconds": 813.2932865694165,
+            "rss_peak_bytes": 3271262208,
+            "forward": {
+              "calls": {
+                "image": 154,
+                "text": 0
+              },
+              "gpu_seconds": {
+                "image": 1.7251954879760742,
+                "text": 0.0
+              }
+            }
+          },
+          {
+            "pair": 2,
+            "seconds": 389.57897484488785,
+            "rss_peak_bytes": 3286728704,
+            "forward": {
+              "calls": {
+                "image": 154,
+                "text": 0
+              },
+              "gpu_seconds": {
+                "image": 1.6310313634872438,
+                "text": 0.0
+              }
+            }
+          },
+          {
+            "pair": 3,
+            "seconds": 362.30103757604957,
+            "rss_peak_bytes": 3278471168,
+            "forward": {
+              "calls": {
+                "image": 154,
+                "text": 0
+              },
+              "gpu_seconds": {
+                "image": 1.6557202548980714,
+                "text": 0.0
+              }
+            }
+          },
+          {
+            "pair": 4,
+            "seconds": 323.67446576058865,
+            "rss_peak_bytes": 3280269312,
+            "forward": {
+              "calls": {
+                "image": 154,
+                "text": 0
+              },
+              "gpu_seconds": {
+                "image": 1.6162266578674316,
+                "text": 0.0
+              }
+            }
+          },
+          {
+            "pair": 5,
+            "seconds": 315.50027661398053,
+            "rss_peak_bytes": 3287302144,
+            "forward": {
+              "calls": {
+                "image": 154,
+                "text": 0
+              },
+              "gpu_seconds": {
+                "image": 1.6633616933822633,
+                "text": 0.0
+              }
+            }
+          }
+        ],
+        "kept": [
+          154,
+          154,
+          154,
+          154,
+          154
+        ],
+        "model_load_seconds": [
+          3.259049542248249,
+          3.405260848812759,
+          7.759589512832463,
+          3.2837810460478067,
+          3.608134233392775
+        ],
+        "within_mode_decisions_equal": true
+      },
+      "batch": {
+        "feature_runs": [
+          {
+            "pair": 1,
+            "seconds": 58.353074265643954,
+            "rss_peak_bytes": 2560495616,
+            "forward": {
+              "calls": {
+                "image": 25,
+                "text": 1
+              },
+              "gpu_seconds": {
+                "image": 1.5001790771484376,
+                "text": 0.006425375938415527
+              }
+            }
+          },
+          {
+            "pair": 2,
+            "seconds": 57.24656714592129,
+            "rss_peak_bytes": 2593607680,
+            "forward": {
+              "calls": {
+                "image": 25,
+                "text": 1
+              },
+              "gpu_seconds": {
+                "image": 1.5073510398864747,
+                "text": 0.006037280082702636
+              }
+            }
+          },
+          {
+            "pair": 3,
+            "seconds": 57.34550364408642,
+            "rss_peak_bytes": 2629115904,
+            "forward": {
+              "calls": {
+                "image": 25,
+                "text": 1
+              },
+              "gpu_seconds": {
+                "image": 1.49709139251709,
+                "text": 0.006103040218353272
+              }
+            }
+          },
+          {
+            "pair": 4,
+            "seconds": 59.79899331741035,
+            "rss_peak_bytes": 2567045120,
+            "forward": {
+              "calls": {
+                "image": 25,
+                "text": 1
+              },
+              "gpu_seconds": {
+                "image": 1.5040672874450685,
+                "text": 0.007033599853515625
+              }
+            }
+          },
+          {
+            "pair": 5,
+            "seconds": 58.45756597816944,
+            "rss_peak_bytes": 2612940800,
+            "forward": {
+              "calls": {
+                "image": 25,
+                "text": 1
+              },
+              "gpu_seconds": {
+                "image": 1.4985565795898437,
+                "text": 0.0068055038452148435
+              }
+            }
+          }
+        ],
+        "pipeline_runs": [
+          {
+            "pair": 1,
+            "seconds": 151.31376997195184,
+            "rss_peak_bytes": 3436036096,
+            "forward": {
+              "calls": {
+                "image": 22,
+                "text": 0
+              },
+              "gpu_seconds": {
+                "image": 1.3389263668060303,
+                "text": 0.0
+              }
+            }
+          },
+          {
+            "pair": 2,
+            "seconds": 152.75225446000695,
+            "rss_peak_bytes": 3466436608,
+            "forward": {
+              "calls": {
+                "image": 22,
+                "text": 0
+              },
+              "gpu_seconds": {
+                "image": 1.2094347820281983,
+                "text": 0.0
+              }
+            }
+          },
+          {
+            "pair": 3,
+            "seconds": 150.9369637966156,
+            "rss_peak_bytes": 3569094656,
+            "forward": {
+              "calls": {
+                "image": 22,
+                "text": 0
+              },
+              "gpu_seconds": {
+                "image": 1.1986919021606446,
+                "text": 0.0
+              }
+            }
+          },
+          {
+            "pair": 4,
+            "seconds": 151.39451414626092,
+            "rss_peak_bytes": 3477270528,
+            "forward": {
+              "calls": {
+                "image": 22,
+                "text": 0
+              },
+              "gpu_seconds": {
+                "image": 1.187006814956665,
+                "text": 0.0
+              }
+            }
+          },
+          {
+            "pair": 5,
+            "seconds": 152.1751636499539,
+            "rss_peak_bytes": 3535314944,
+            "forward": {
+              "calls": {
+                "image": 22,
+                "text": 0
+              },
+              "gpu_seconds": {
+                "image": 1.1984865303039551,
+                "text": 0.0
+              }
+            }
+          }
+        ],
+        "kept": [
+          154,
+          154,
+          154,
+          154,
+          154
+        ],
+        "model_load_seconds": [
+          10.866323566064239,
+          3.241570519283414,
+          3.445704440586269,
+          3.453746668063104,
+          6.262533382512629
+        ],
+        "within_mode_decisions_equal": true
+      }
+    },
+    "decision_diagnostic": {
+      "changed_records": 19,
+      "changed_fields": {
+        "organized_name": 19,
+        "recognized_actors": 19
+      },
+      "retained_sources_equal": true,
+      "directory_counts_equal": true
+    }
+  },
+  "U3_export": {
+    "status": "passed",
+    "records": 10000,
+    "repeats": 5,
+    "checks": {
+      "both_modes_preserve_records": true,
+      "no_deferred_snapshot_replacement": true,
+      "deferred_restarted_reads_no_snapshot": true,
+      "eager_compatibility_snapshots_written": true,
+      "deferred_snapshot_unchanged_until_export": true,
+      "exports_equal": true,
+      "snapshots_match_SQLite": true,
+      "counts_and_history_match": true,
+      "source_unchanged": true,
+      "full_export_checks": true,
+      "full_export_labels_equal": true
+    },
+    "explicit_export": {
+      "repeats": 5,
+      "runs": {
+        "eager": [
+          {
+            "repeat": 1,
+            "seconds": 0.06799937319010496,
+            "cpu_seconds": 0.06833876500000002,
+            "decide_seconds": 0.22058524563908577,
+            "decide_plus_export_seconds": 0.28858461882919073,
+            "snapshot_replacements": [],
+            "export_count": 1,
+            "file_bytes": {
+              "review_queue.jsonl": 4280211,
+              "revisions.jsonl": 354,
+              "scene_labels.json": 39
+            },
+            "labels_sha256": "605775c04ae85b46df099d90665be0fe5030225c046e87983c933e5f39be26fa",
+            "checks": {
+              "snapshot_matches_SQLite": true,
+              "history_matches_SQLite": true,
+              "all_records_present": true,
+              "only_approved_exported": true,
+              "history_count": true,
+              "expected_snapshot_writes": true
+            }
+          },
+          {
+            "repeat": 2,
+            "seconds": 0.09050921257585287,
+            "cpu_seconds": 0.08210854300000037,
+            "decide_seconds": 0.2574537480250001,
+            "decide_plus_export_seconds": 0.34796296060085297,
+            "snapshot_replacements": [],
+            "export_count": 1,
+            "file_bytes": {
+              "review_queue.jsonl": 4280214,
+              "revisions.jsonl": 722,
+              "scene_labels.json": 39
+            },
+            "labels_sha256": "605775c04ae85b46df099d90665be0fe5030225c046e87983c933e5f39be26fa",
+            "checks": {
+              "snapshot_matches_SQLite": true,
+              "history_matches_SQLite": true,
+              "all_records_present": true,
+              "only_approved_exported": true,
+              "history_count": true,
+              "expected_snapshot_writes": true
+            }
+          },
+          {
+            "repeat": 3,
+            "seconds": 0.07234316878020763,
+            "cpu_seconds": 0.0705042029999996,
+            "decide_seconds": 0.21489778254181147,
+            "decide_plus_export_seconds": 0.2872409513220191,
+            "snapshot_replacements": [],
+            "export_count": 1,
+            "file_bytes": {
+              "review_queue.jsonl": 4280214,
+              "revisions.jsonl": 1090,
+              "scene_labels.json": 39
+            },
+            "labels_sha256": "605775c04ae85b46df099d90665be0fe5030225c046e87983c933e5f39be26fa",
+            "checks": {
+              "snapshot_matches_SQLite": true,
+              "history_matches_SQLite": true,
+              "all_records_present": true,
+              "only_approved_exported": true,
+              "history_count": true,
+              "expected_snapshot_writes": true
+            }
+          },
+          {
+            "repeat": 4,
+            "seconds": 0.06923648435622454,
+            "cpu_seconds": 0.06946829899999951,
+            "decide_seconds": 0.12794633116573095,
+            "decide_plus_export_seconds": 0.1971828155219555,
+            "snapshot_replacements": [],
+            "export_count": 1,
+            "file_bytes": {
+              "review_queue.jsonl": 4280214,
+              "revisions.jsonl": 1458,
+              "scene_labels.json": 39
+            },
+            "labels_sha256": "605775c04ae85b46df099d90665be0fe5030225c046e87983c933e5f39be26fa",
+            "checks": {
+              "snapshot_matches_SQLite": true,
+              "history_matches_SQLite": true,
+              "all_records_present": true,
+              "only_approved_exported": true,
+              "history_count": true,
+              "expected_snapshot_writes": true
+            }
+          },
+          {
+            "repeat": 5,
+            "seconds": 0.06841984950006008,
+            "cpu_seconds": 0.06870132999999967,
+            "decide_seconds": 0.1935150260105729,
+            "decide_plus_export_seconds": 0.261934875510633,
+            "snapshot_replacements": [],
+            "export_count": 1,
+            "file_bytes": {
+              "review_queue.jsonl": 4280214,
+              "revisions.jsonl": 1826,
+              "scene_labels.json": 39
+            },
+            "labels_sha256": "605775c04ae85b46df099d90665be0fe5030225c046e87983c933e5f39be26fa",
+            "checks": {
+              "snapshot_matches_SQLite": true,
+              "history_matches_SQLite": true,
+              "all_records_present": true,
+              "only_approved_exported": true,
+              "history_count": true,
+              "expected_snapshot_writes": true
+            }
+          }
+        ],
+        "deferred": [
+          {
+            "repeat": 1,
+            "seconds": 0.2486150050535798,
+            "cpu_seconds": 0.1890406640000002,
+            "decide_seconds": 0.001206548884510994,
+            "decide_plus_export_seconds": 0.2498215539380908,
+            "snapshot_replacements": [
+              "review_queue.jsonl",
+              "revisions.jsonl"
+            ],
+            "export_count": 1,
+            "file_bytes": {
+              "review_queue.jsonl": 4280211,
+              "revisions.jsonl": 354,
+              "scene_labels.json": 39
+            },
+            "labels_sha256": "605775c04ae85b46df099d90665be0fe5030225c046e87983c933e5f39be26fa",
+            "checks": {
+              "snapshot_matches_SQLite": true,
+              "history_matches_SQLite": true,
+              "all_records_present": true,
+              "only_approved_exported": true,
+              "history_count": true,
+              "expected_snapshot_writes": true
+            }
+          },
+          {
+            "repeat": 2,
+            "seconds": 0.2465961230918765,
+            "cpu_seconds": 0.2327403320000001,
+            "decide_seconds": 0.0012887883931398392,
+            "decide_plus_export_seconds": 0.24788491148501635,
+            "snapshot_replacements": [
+              "review_queue.jsonl",
+              "revisions.jsonl"
+            ],
+            "export_count": 1,
+            "file_bytes": {
+              "review_queue.jsonl": 4280214,
+              "revisions.jsonl": 722,
+              "scene_labels.json": 39
+            },
+            "labels_sha256": "605775c04ae85b46df099d90665be0fe5030225c046e87983c933e5f39be26fa",
+            "checks": {
+              "snapshot_matches_SQLite": true,
+              "history_matches_SQLite": true,
+              "all_records_present": true,
+              "only_approved_exported": true,
+              "history_count": true,
+              "expected_snapshot_writes": true
+            }
+          },
+          {
+            "repeat": 3,
+            "seconds": 0.3321344507858157,
+            "cpu_seconds": 0.24082584099999949,
+            "decide_seconds": 0.001297602429986,
+            "decide_plus_export_seconds": 0.3334320532158017,
+            "snapshot_replacements": [
+              "review_queue.jsonl",
+              "revisions.jsonl"
+            ],
+            "export_count": 1,
+            "file_bytes": {
+              "review_queue.jsonl": 4280214,
+              "revisions.jsonl": 1090,
+              "scene_labels.json": 39
+            },
+            "labels_sha256": "605775c04ae85b46df099d90665be0fe5030225c046e87983c933e5f39be26fa",
+            "checks": {
+              "snapshot_matches_SQLite": true,
+              "history_matches_SQLite": true,
+              "all_records_present": true,
+              "only_approved_exported": true,
+              "history_count": true,
+              "expected_snapshot_writes": true
+            }
+          },
+          {
+            "repeat": 4,
+            "seconds": 0.3259097635746002,
+            "cpu_seconds": 0.23275993099999948,
+            "decide_seconds": 0.0012246007099747658,
+            "decide_plus_export_seconds": 0.327134364284575,
+            "snapshot_replacements": [
+              "review_queue.jsonl",
+              "revisions.jsonl"
+            ],
+            "export_count": 1,
+            "file_bytes": {
+              "review_queue.jsonl": 4280214,
+              "revisions.jsonl": 1458,
+              "scene_labels.json": 39
+            },
+            "labels_sha256": "605775c04ae85b46df099d90665be0fe5030225c046e87983c933e5f39be26fa",
+            "checks": {
+              "snapshot_matches_SQLite": true,
+              "history_matches_SQLite": true,
+              "all_records_present": true,
+              "only_approved_exported": true,
+              "history_count": true,
+              "expected_snapshot_writes": true
+            }
+          },
+          {
+            "repeat": 5,
+            "seconds": 0.2812378406524658,
+            "cpu_seconds": 0.24045861300000038,
+            "decide_seconds": 0.024796168319880962,
+            "decide_plus_export_seconds": 0.3060340089723468,
+            "snapshot_replacements": [
+              "review_queue.jsonl",
+              "revisions.jsonl"
+            ],
+            "export_count": 1,
+            "file_bytes": {
+              "review_queue.jsonl": 4280214,
+              "revisions.jsonl": 1826,
+              "scene_labels.json": 39
+            },
+            "labels_sha256": "605775c04ae85b46df099d90665be0fe5030225c046e87983c933e5f39be26fa",
+            "checks": {
+              "snapshot_matches_SQLite": true,
+              "history_matches_SQLite": true,
+              "all_records_present": true,
+              "only_approved_exported": true,
+              "history_count": true,
+              "expected_snapshot_writes": true
+            }
+          }
+        ]
+      },
+      "median_seconds": {
+        "eager": 0.06923648435622454,
+        "deferred": 0.2812378406524658
+      },
+      "median_decide_plus_export_seconds": {
+        "eager": 0.2872409513220191,
+        "deferred": 0.3060340089723468
+      }
+    },
+    "source_sha256": {
+      "tools/benchmark_review_snapshots.py": "31e915a9576892e1591c2d5e040d849a7ad964b61940ace0f3d6f8542cd643aa",
+      "core_modules/organize/review_store.py": "f1b01faa5571b62e2b21160fdde0b1a6290e0a9d17e7e9ddfcc71329abd7049e",
+      "core_modules/organize/review_queue.py": "1fdd920d593949185c2adeeea51b9d102aed5d0dcd716f92bbd21377aa83584c"
+    },
+    "limitations": [
+      "Synthetic review payloads; same-version local function calls including summary.",
+      "Sequential modes on shared CPU/storage; timings are observations, not a controlled end-to-end gain.",
+      "No GPU inference, HTTP concurrency or quality ground truth."
+    ],
+    "daily_decide_and_summary_median_seconds": {
+      "eager": 0.1956258276477456,
+      "deferred": 0.0018283529207110405
+    }
+  },
+  "U3_http": {
+    "status": "passed",
+    "checks": {
+      "all_workflow_checks": true,
+      "originals_and_copies_unchanged": true,
+      "gallery_unchanged": true,
+      "sources_unchanged": true,
+      "output_decisions_repeat_equal": true
+    },
+    "input_count": 200,
+    "project_count": 4,
+    "repeats": 5,
+    "median_seconds": {
+      "workflow": 1167.330585022457,
+      "reason": 398.4658273626119,
+      "organize": 768.6375018870458,
+      "review": 0.21178430691361427,
+      "export": 0.022385014221072197
+    },
+    "warmed_setup_seconds": 19.353389063850045,
+    "formal_U2_U3_U8": "not_passed",
+    "limitations": [
+      "Same warmed service, independent empty feature cache per run, actual persistent HTTP tasks.",
+      "Existing confirmed photo labels reused by scripted probes; no new human GT or final test.",
+      "SigLIP2 processor/default feature workers; real SCRFD/ArcFace; shot and role classifiers disabled.",
+      "Shared CPU/GPU/storage; no baseline comparison or controlled speedup claim.",
+      "End-to-end time includes HTTP, polling, scripted review and export; excludes setup, model warmup and integrity audits.",
+      "Production lifespan startup and remote LLM disabled; deployment preparation and human review time not measured."
+    ],
+    "code_commit": "40f2a1ebbfbe0e05e651c163031b4dab10062448",
+    "source_sha256": {
+      "core_modules/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "core_modules/person_segmentation.py": "2c08508a2cf8be6487807a65873363e8dd69090674feb7897c1475945e6cf464",
+      "core_modules/person_detection.py": "dc3d4d62bcd1b4a007e6c10cb18efbfff068bf0486ffabe7c158d048f3e5fbd8",
+      "core_modules/shot_classify.py": "3f6f183ca73faab13506fface3e237edb9eeba108f68ac2eec9e82160ad6071b",
+      "core_modules/image_search.py": "e89ba11f2157441db1c45d15bca86a98d2099f4f999c386f48ee1b5cdb572ff1",
+      "core_modules/inpaint_lama.py": "e347d29de8a509f54fa69cbb9b03b261be71ac39d064286d2919645456eeea10",
+      "core_modules/organize/scene_change_points.py": "e088562a6120963e43325544eece270cbaf8e06ad4a5676e9d3e1c2ea93e6fde",
+      "core_modules/organize/review_queue.py": "1fdd920d593949185c2adeeea51b9d102aed5d0dcd716f92bbd21377aa83584c",
+      "core_modules/organize/thumbnail_cache.py": "a8e2e744ddc4faaa608b35e725720ac710c3726aca0027f15baaec8e0f56d38a",
+      "core_modules/organize/feature_cache.py": "f99fb91bbae6961055001632bc9e39f59a6b53df35b82fbed792caf8799f7f20",
+      "core_modules/organize/identity_registry.py": "faa4ff13202fd8d83abfb01b02bff76c5d6dd967c1252fe09075a8bf44178ab3",
+      "core_modules/organize/agent_runtime.py": "7ecc327554da3872c03b713c815aa866e1d3f4c4f2b56a3043fa4199ed96fe23",
+      "core_modules/organize/__init__.py": "8b084a9f378124b2b1a51563bf3c22444eb7ff33692017da28b2136ae56987ed",
+      "core_modules/organize/scene_split.py": "26ec6e42e1fa4cf0a5d75bf0b51eba0c8a3c39fc07a90f14523c1633a4e783a4",
+      "core_modules/organize/task_queue.py": "2f5bff3a7ed6fc7b08e8107ab56a9a9caedbd84f3c7c963cd752b1ef80070900",
+      "core_modules/organize/conversational_agent.py": "31f0cea67249b699374504b67fcdcbf4d57b502ea6d1575491c9b33088149f9c",
+      "core_modules/organize/llm_client.py": "93a6b5c7584f771f8c58ad599ab6b8345b472ce11c6b23ceaa8e4d04d4203c32",
+      "core_modules/organize/task_versions.py": "cb15de16972ec6ec7155be41d66a3c7de1c961ae8bf3fd0fbe07c2d2f84d8070",
+      "core_modules/organize/langchain_agent.py": "fb5e9700ce4474725c89718cf0d85361d6e6af5511995b308dc7ce481148ccc3",
+      "core_modules/organize/temporal_burst.py": "af532a92d875c18d820692648ac39abd2eb0626844b99f03b52c9e77ef11cb42",
+      "core_modules/organize/face_db_builder.py": "9d718a061b2aae908dfac5d3d25c99e3f9b3d763e59327b57228e99cdd4cb023",
+      "core_modules/organize/play_knowledge.py": "5e2f755d83091f7fbf7e8fb2eb7fda555a88fa7ec2067c219697938cd6814805",
+      "core_modules/organize/organize_task.py": "9be3c5cdff2114bf23074733232154362abee42c094e83a491a1c203da1fbeaa",
+      "core_modules/organize/face_database_task.py": "9dbe992419f72cd90b08e7e5b3beab61f63e1e5a90bc09e6ee3adee2f0586c0e",
+      "core_modules/organize/scene_reasoner.py": "671fd6f83fcbc4f66d57b0e2122362dd27e2a6ae05af79a9755e6e8f81a0bb4b",
+      "core_modules/organize/filename_parser.py": "43551da0b05639dbe220e6f4c56d0fdc15568558e99b42d6585b3e9303868d01",
+      "core_modules/organize/ocr_evidence.py": "e16a5f11b88b0121dc830fa1ce466ff4377ef92c1f2e0424d7894db8f3d4cf8c",
+      "core_modules/organize/task_artifacts.py": "9068f1707d69cffd057a3c81cf26c223af8f6a8192b59bfb7586741f3afea16b",
+      "core_modules/organize/smart_organizer.py": "cf684bc6f2ea7b44dc4801a27922c9749ffc350840c525eca1c26411a775eec6",
+      "core_modules/organize/embedding_gemma.py": "377fe8225f367431aae1d73152bcdab482747d5e312711089d5b0ebb265e8478",
+      "core_modules/organize/face_cluster_task.py": "1d577f04e070cdd148b597e6adb304fabd180ac147e4dc88210f6f7f24e886e5",
+      "core_modules/organize/face_cluster.py": "0835cd55e0e235e433d963722c2a24ba41828b36ab14807b72b7d2f5de60e12e",
+      "core_modules/organize/role_classifier.py": "e17f9cc4457e41f39955d9b5103e0fd815fa207a283a9351a343da2ee8116ad8",
+      "core_modules/organize/photo_agent_tools.py": "05fd29f7f5d70832be07fed00835311427c50e2bf023da9dc023ad2c66996b86",
+      "core_modules/organize/knowledge_task.py": "0a0964a6b373bd539a6ff4a05d11a5443ff37c841a77386b85583e6cba4d8ded",
+      "core_modules/organize/face_graph_cluster.py": "059d25c68e4e12eb5192a17cf30ea425a1d5f4138fcd485b1c759bd2cce7604e",
+      "core_modules/organize/actor_view.py": "204b49fec7e451ae867fb625d557d590a3cfb85f4fa03388b1b952f9cdc45c74",
+      "core_modules/organize/agent_tools.py": "1db51c6e57a3b7b3983ee56988016891643b0827578a266e92f8a8b4837aa540",
+      "core_modules/organize/burst_dedup.py": "d73278472929375f9c504e4e227eded7ac442b18236864e8bb8f1c9c2502900a",
+      "core_modules/organize/play_source.py": "18b2748343a350cae2857034a12ac0fd20d1bdc975434ed5423e164811800020",
+      "core_modules/organize/visual_evidence.py": "8dba2a2c5d6aa5430edbb0d104d0651332f4b5d12b288cf77f97b2acb943f203",
+      "core_modules/organize/multimodal_evidence.py": "643acda290949fac7695ccd6cd7643a496a8b07816af0607ec61fec133aa3825",
+      "core_modules/organize/review_store.py": "f1b01faa5571b62e2b21160fdde0b1a6290e0a9d17e7e9ddfcc71329abd7049e",
+      "core_modules/face_recognition/database.py": "65175c5e80cd2a74c02a88668df8d7b77639842f3b70c13180f67367f130f433",
+      "core_modules/face_recognition/__init__.py": "8b084a9f378124b2b1a51563bf3c22444eb7ff33692017da28b2136ae56987ed",
+      "core_modules/face_recognition/face_recognition.py": "ce7a10c85a86263663838c8aa5beef8dea136cec15c825053a1b49506ca5d23a",
+      "core_modules/face_recognition/trt_utils.py": "10930d19bab2ebca1bc8e6150b8f25d5c859c1a1cc3df6d2528d8128b18f3500",
+      "core_modules/face_recognition/arcface/__init__.py": "8b084a9f378124b2b1a51563bf3c22444eb7ff33692017da28b2136ae56987ed",
+      "core_modules/face_recognition/arcface/arcface_onnx.py": "0b01075ee75af7af859c86767f5d7ce0d80eaa2f7f2b7a4a29c17fcc93ec4180",
+      "core_modules/face_recognition/scrfd/__init__.py": "8b084a9f378124b2b1a51563bf3c22444eb7ff33692017da28b2136ae56987ed",
+      "core_modules/face_recognition/scrfd/scrfd_det.py": "e9d9f14c24ff6816bfb330a4d73f1bfa985b0078ecdb0959c7b7034adce70330",
+      "core_modules/face_recognition/scrfd/scrfd_model.py": "310d3628885d212fe47a42b56c2a20b722e8020c1786b15da0f8c89c16d78614",
+      "core_modules/tools/__init__.py": "3bc94a18a881ccada39e68aedd3607aff948e6c6fa65e8507d0083fb8ceb81a0",
+      "core_modules/tools/image_io.py": "4bbcef4b45321ddad8baed47d16e1d498f2fb6392fe707e9531138479784c55f",
+      "core_modules/tools/visualization.py": "f5ac71f7e9c34ddf5ea3fd3ab631fd5239316644bd2e8908221c57e176173260",
+      "core_modules/tools/logger.py": "7ea6afc0232d4b15a4e3d25027effeaf83eb5f47e01a2e2d77e0becdeafc6560",
+      "core_modules/tools/face_quality.py": "e15eefbcfcf59fa8fcc4cdf37ce05ba550209f82fc628ddbf95afc5546a32c92",
+      "config/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "config/base.py": "989fcb90dc2ec351112e31ef04c51d74325a3eba14b73a1b7c11c410f27ce6a7",
+      "app/server_ui.py": "009ce9ddd12fe971bdb4ed03c5b473cc53be3327a85671bda149845fbb58b10e",
+      "app/organize_tasks.py": "d646dcdbf4a1e21ca7dfc91594f2bb0af91b5c1809f8284c9d69d6562b833fcf",
+      "app/main.py": "cd00297f8c84ddaee0516d2550873a54c4dbada28c47b9dc1c6d2ac8aec9acf1",
+      "app/workspace_api.py": "9d9a8a1a643dab037cab98b56d57edb281016644707f19daa6be1c2af51f381c",
+      "app/photo_agent_cli.py": "68123c0aabd788e7d0a62623f7e839c6da0d4ce77e7acda8b96bba664b35e431",
+      "app/server.py": "1748a424508d500861c177eec16c68542d0be56f8f45f5932f0bd887d76881ea",
+      "tools/benchmark_workflow_costs.py": "561f82db6f69e983391735bf2b0f79c9bf38d3b456b19290823d31ac348ffd4a",
+      "tools/benchmark_feature_pipeline.py": "c2087ceb7e24e94fb839c9bdb3f9c2e24bcc40b78473f1dc3d9e6e844609a295"
+    },
+    "completed_at": "2026-10-28T15:19:24.112956+00:00",
+    "runs": [
+      {
+        "repeat": 1,
+        "seconds": 1005.2442518109456,
+        "resources": {
+          "forwards": {
+            "image": 200,
+            "text": 28
+          },
+          "rss_peak_bytes": 3425484800,
+          "whole_device_peak_bytes": 16993943552
+        },
+        "stage_seconds": {
+          "reason": 339.06930383387953,
+          "organize": 665.9310124199837,
+          "review": 0.21178430691361427,
+          "export": 0.022814718075096607
+        },
+        "total_kept": 145,
+        "total_failed": 0
+      },
+      {
+        "repeat": 2,
+        "seconds": 1220.3227797877043,
+        "resources": {
+          "forwards": {
+            "image": 200,
+            "text": 28
+          },
+          "rss_peak_bytes": 3537444864,
+          "whole_device_peak_bytes": 18067685376
+        },
+        "stage_seconds": {
+          "reason": 412.47093366924673,
+          "organize": 807.6108153527603,
+          "review": 0.20971634052693844,
+          "export": 0.022069048136472702
+        },
+        "total_kept": 145,
+        "total_failed": 0
+      },
+      {
+        "repeat": 3,
+        "seconds": 1167.330585022457,
+        "resources": {
+          "forwards": {
+            "image": 200,
+            "text": 28
+          },
+          "rss_peak_bytes": 3585032192,
+          "whole_device_peak_bytes": 18067685376
+        },
+        "stage_seconds": {
+          "reason": 398.4658273626119,
+          "organize": 768.6375018870458,
+          "review": 0.194159884005785,
+          "export": 0.022105597890913486
+        },
+        "total_kept": 145,
+        "total_failed": 0
+      },
+      {
+        "repeat": 4,
+        "seconds": 1132.2661061920226,
+        "resources": {
+          "forwards": {
+            "image": 200,
+            "text": 28
+          },
+          "rss_peak_bytes": 3539636224,
+          "whole_device_peak_bytes": 18067685376
+        },
+        "stage_seconds": {
+          "reason": 376.9807980051264,
+          "organize": 755.0126021970063,
+          "review": 0.24077205918729305,
+          "export": 0.022385014221072197
+        },
+        "total_kept": 145,
+        "total_failed": 0
+      },
+      {
+        "repeat": 5,
+        "seconds": 1305.8581879651174,
+        "resources": {
+          "forwards": {
+            "image": 200,
+            "text": 28
+          },
+          "rss_peak_bytes": 3518849024,
+          "whole_device_peak_bytes": 18067685376
+        },
+        "stage_seconds": {
+          "reason": 446.3942452063784,
+          "organize": 859.1225703395903,
+          "review": 0.30878677405416965,
+          "export": 0.02329864539206028
+        },
+        "total_kept": 145,
+        "total_failed": 0
+      }
+    ],
+    "hardware_observation": {
+      "samples": 2773,
+      "external_gpu_pids": [
+        6058,
+        16354
+      ],
+      "cpu_load_1min_range": [
+        1.8125,
+        7.775390625
+      ],
+      "controlled_environment": false,
+      "memory_note": "RSS includes the server; whole-device GPU memory includes external processes and is not isolated model usage."
+    }
+  },
+  "integrity_audit": {
+    "status": "passed",
+    "check_count": 2956,
+    "failed_checks": [],
+    "audit_source_sha256": "3f42ba47565c36fd1f4bbd582b4b7ac89ec67a9d1984cc0b79b0fc4eaf956811",
+    "global_repeat_min_cosines": {
+      "baseline": {
+        "images": 1.0,
+        "texts": 1.0
+      },
+      "batch": {
+        "images": 1.0,
+        "texts": 1.0
+      }
+    },
+    "decision_diagnostic": {
+      "changed_records": 19,
+      "changed_fields": {
+        "organized_name": 19,
+        "recognized_actors": 19
+      },
+      "retained_source_sets_equal": true,
+      "directory_counts_equal": true
+    },
+    "note": "Historical/current decision differences are reported separately, not relabelled as equal or quality GT."
+  },
+  "input_scope": {
+    "U2_images": 200,
+    "HTTP_images": 200,
+    "shared_images": 147,
+    "U2_source_bytes": 2027706451,
+    "HTTP_source_bytes": 2325859804,
+    "note": "Different manifests, directory grouping and workflow stages; no HTTP-versus-direct speedup computed."
+  },
+  "formal_acceptance": "not_passed",
+  "git_scope": "Only source, selected tests and aggregate reports; raw artifacts stay ignored in outputs."
+}

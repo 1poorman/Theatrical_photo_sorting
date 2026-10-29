@@ -20,6 +20,7 @@
 !test_ocr_evidence.py
 !test_organize_tasks.py
 !test_photo_partition_review.py
+!test_performance_protocol.py
 !test_quality_parallelism.py
 !test_quality_statistics.py
 !test_real_images.py
