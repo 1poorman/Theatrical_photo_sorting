@@ -19,7 +19,8 @@ import torch
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, PROJECT_ROOT)
-os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+# 本地默认使用物理 GPU1；容器或调用方设置的 GPU 可见性优先。
+os.environ.setdefault('CUDA_VISIBLE_DEVICES', '1')
 
 from core_modules.tools.logger import setup_logging, get_app_logger, log_key_action
 
@@ -34,7 +35,8 @@ from core_modules.face_recognition.face_recognition import FaceRecognitionSystem
 # ---------- 全局配置 ----------
 
 # 设备
-device = "cuda:1" if torch.cuda.is_available() else "cpu"
+# CUDA_VISIBLE_DEVICES 筛选后，第一块可见卡的进程内编号为 0。
+device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
 # 默认路径（统一参数中心 config/base.py）
 from config.base import (
@@ -45,6 +47,7 @@ from config.base import (
     SCRFD_MODEL_PATH as DEFAULT_SCRFD_MODEL_PATH,
     ARCFACE_MODEL_PATH as DEFAULT_ARCFACE_MODEL_PATH,
     KNOWN_FACE_THRESHOLD,
+    FACE_DEVICE,
     OUTPUT_DIR as DEFAULT_OUTPUT_DIR,
     TEMP_DIR,
 )
@@ -175,7 +178,7 @@ def initialize_models(detection_model_path=DEFAULT_DETECTION_MODEL_PATH,
                       scrfd_model_path=DEFAULT_SCRFD_MODEL_PATH,
                       arcface_model_path=DEFAULT_ARCFACE_MODEL_PATH):
     """初始化所有模型（带关键动作日志与逐模型耗时统计）"""
-    global detection_model, segpersones_model, inpainter_model, pose_model, face_recognition_model
+    global device, detection_model, segpersones_model, inpainter_model, pose_model, face_recognition_model
 
     def _load(name, fn):
         start = time.time()
@@ -188,7 +191,7 @@ def initialize_models(detection_model_path=DEFAULT_DETECTION_MODEL_PATH,
 
     try:
         if torch.cuda.is_available():
-            device = "cuda:1"
+            device = "cuda:0"
             logger.info("CUDA is available. Using device: %s (device count: %d)", device, torch.cuda.device_count())
         else:
             device = "cpu"
@@ -197,9 +200,8 @@ def initialize_models(detection_model_path=DEFAULT_DETECTION_MODEL_PATH,
         if os.path.exists(scrfd_model_path) and os.path.exists(arcface_model_path):
             def _load_face_recognition():
                 global face_recognition_model
-                # TensorRT 加速推理。注意：本进程通过 CUDA_VISIBLE_DEVICES=1 限定可见 GPU，
-                # 可见设备内编号固定为 0，故直接用 'tensorrt'（实际用哪块卡由环境变量决定）
-                fr_device = "tensorrt" if device.startswith("cuda") else device
+                # 尊重 TRANS_FACE_DEVICE；没有可见 GPU 时回退 CPU。
+                fr_device = FACE_DEVICE if device.startswith("cuda") else "cpu"
                 face_recognition_model = FaceRecognitionSystem(
                     scrfd_model_path, arcface_model_path, device=fr_device)
             _load("face_recognition", _load_face_recognition)

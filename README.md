@@ -356,17 +356,33 @@ python tests/acceptance_m7.py         # 四剧目全量验收（报告 outputs/a
 
 ## Docker
 
+默认一起启动可视化工作台（包含全部 API）和新的 Elasticsearch 8.12.2 向量库。宿主机需安装 Docker Compose V2、NVIDIA 驱动及 NVIDIA Container Toolkit，并准备 `weights/` 下的模型权重。镜像使用 PyTorch CUDA 12.8 构建，与 ONNX Runtime / TensorRT 的 CUDA 12 依赖保持一致。
+
 ```bash
-docker compose up -d --build   # API 端口 8198，需宿主机 NVIDIA 驱动 + nvidia-container-toolkit
+# Elasticsearch 要求 vm.max_map_count 至少为 262144；已满足时无需调整。
+sysctl vm.max_map_count
+sudo sysctl -w vm.max_map_count=262144
+
+# 构建并启动工作台和新向量库
+docker compose up -d --build
+docker compose ps
+docker compose logs -f theatrical-photo-sorting
 ```
 
-- 权重只读挂载，`data/outputs/logs` 与 TRT 引擎缓存均为 volume 持久化
-- ES 地址等参数通过 `TRANS_*` 环境变量在 compose 中覆盖（见 `docker-compose.yml`）
-- 如需可视化界面：映射 `8199:8199` 并将 command 改为 `python app/server_ui.py`
+工作台：`http://localhost:8199/organize`；API 文档：`http://localhost:8199/docs`；健康检查：`http://localhost:8199/api/health`。
+
+这里的新 ES 库用于人脸向量及人物信息。图像相似检索使用进程内 FAISS，不需要额外数据库容器：索引目录保存 `vector_index.faiss`、`image_paths.txt`、`embeddings.npy` 和 `model_info.txt`，放在 `/app/outputs/` 下即可随挂载持久化。人脸库改用本地 FAISS 则需要另行实现人物信息存储、增删更新和并发一致性。
+
+- 应用通过 Compose 内网的 `http://elasticsearch:9200` 访问新库，ES 不映射宿主机端口。数据库使用独立的 `elasticsearch_data` 命名卷；人脸模型首次成功初始化时自动创建空索引 `face_database_512`，原外部 ES 数据需另行导入。
+- 应用等待 ES 健康后启动；单节点索引存在未分配副本时的 `yellow` 状态也可正常读写。模型加载和首次 TRT 引擎构建需要几分钟，可查看应用日志确认各模型加载结果；`/api/health` 只确认 HTTP 服务运行。
+- 权重只读挂载；`data/`、`outputs/`、`logs/` 挂载宿主机目录；ES 数据、TRT 引擎和模型下载缓存通过命名卷持久化。业务表单填写容器内路径，例如 `/app/data/照片目录`、`/app/outputs/整理结果`。
+- 默认分配宿主机 GPU0，在容器内使用可见 GPU0。更改 GPU、端口、权重路径或 ES 密码，可复制 `docker.env.example` 为 `.env.docker`，编辑后运行 `docker compose --env-file .env.docker up -d --build`。ES 密码只在空数据卷首次初始化时设置，已有库需通过 ES 密码 API 更新。
+- `docker compose down` 停止服务并保留数据；后续 `up -d` 复用同一库。使用不同的 `-p` 项目名会创建另一套命名卷。`down -v` 会删除命名卷中的 ES 数据和缓存。
+- 镜像安装视觉服务和 `requirements/agent.txt` 的高级智能体依赖。现有 `.env` 不打包进镜像；如需使用大模型配置，启动时追加 `-f docker-compose.yml -f docker-compose.llm.yml`，将 `.env` 只读挂载至 `/app/.env`。连接地址应能从容器内访问。
 
 ## 注意事项
 
 - 需 **NVIDIA GPU**；无 GPU 自动回退 CPU 推理（速度大幅下降）
-- 服务默认使用物理 GPU1（`app/server.py` 中 `CUDA_VISIBLE_DEVICES=1`，可按需修改）
+- 本地服务默认使用物理 GPU1；`CUDA_VISIBLE_DEVICES` 可覆盖。Docker 默认分配物理 GPU0，可用 `DOCKER_GPU_DEVICE` 调整
 - `outputs/`、`logs/`、`weights/` 默认忽略；`data/ncpa_test/` 和 `data/face_database/` 不入库，`data/sample_images/` 样例保留；已跟踪的历史文件不受忽略规则影响
 - 依赖版本以 `requirements/vision.txt` 为准（ES 客户端 8.x 对应服务端 8.12）

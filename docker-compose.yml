@@ -1,13 +1,53 @@
-# Theatrical Photo Sorting 服务编排
-# 前提：宿主机已装 NVIDIA 驱动与 nvidia-container-toolkit
+# 应用 + 独立 Elasticsearch 向量库。
 # 启动：docker compose up -d --build
+# 可选参数见 docker.env.example；宿主机准备步骤见 README.md 的 Docker 章节。
 services:
+  elasticsearch:
+    image: ${DOCKER_ELASTIC_IMAGE:-docker.elastic.co/elasticsearch/elasticsearch:8.12.2}
+    environment:
+      discovery.type: single-node
+      cluster.name: theatrical-photo-sorting
+      xpack.security.enabled: "true"
+      xpack.security.autoconfiguration.enabled: "false"
+      xpack.security.http.ssl.enabled: "false"
+      bootstrap.memory_lock: "true"
+      ELASTIC_PASSWORD: ${DOCKER_ELASTIC_PASSWORD:-theatrical-local-password}
+      ES_JAVA_OPTS: "-Xms1g -Xmx1g"
+    mem_limit: 2g
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    # 使用 Compose 内网，不占用宿主机 9200/9300 端口。
+    expose:
+      - "9200"
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          curl --fail --silent --user "elastic:$${ELASTIC_PASSWORD}"
+          'http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s'
+          > /dev/null
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 60s
+
   theatrical-photo-sorting:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        DEPENDENCY_INDEX_URL: ${DOCKER_PIP_INDEX_URL:-https://pypi.org/simple}
     image: theatrical-photo-sorting:latest
-    container_name: theatrical-photo-sorting
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    command: ["python", "app/server_ui.py"]
+    init: true
 
     # GPU 支持
     deploy:
@@ -15,18 +55,17 @@ services:
         reservations:
           devices:
             - driver: nvidia
-              count: all
+              device_ids: ["${DOCKER_GPU_DEVICE:-0}"]
               capabilities: [gpu]
 
-    # 端口映射（API 8198；如需可视化界面改为 command: ["python", "app/server_ui.py"] 并映射 8199）
+    # 可视化工作台及全部 API 共用 8199 端口。
     ports:
-      - "8198:8198"
-      # - "8199:8199"
+      - "${DOCKER_UI_PORT:-8199}:8199"
 
     # 卷挂载
     volumes:
       # 模型权重（宿主机准备）
-      - ./weights:/app/weights:ro
+      - ${DOCKER_WEIGHTS_DIR:-./weights}:/app/weights:ro
       # 数据（人脸库、embedding 索引等）
       - ./data:/app/data
       # 输出与日志
@@ -34,22 +73,27 @@ services:
       - ./logs:/app/logs
       # TRT 引擎缓存（避免容器重建后重新构建引擎）
       - trt_cache:/app/core_modules/face_recognition/trt_cache
+      # 首次下载的 Torch Hub / Hugging Face 模型缓存。
+      - model_cache:/app/model_cache
 
     # 环境变量（config/base.py 支持 TRANS_<参数名> 覆盖）
     environment:
-      - CUDA_VISIBLE_DEVICES=0
-      - PYTHONUNBUFFERED=1
-      - TRANS_FACE_DEVICE=tensorrt
-      - TRANS_ELASTIC_URL=http://172.25.75.23:9200
-      - TRANS_ELASTIC_USER=elastic
-      - TRANS_ELASTIC_PASSWORD=elastic
+      CUDA_VISIBLE_DEVICES: "0"
+      PYTHONUNBUFFERED: "1"
+      TRANS_FACE_DEVICE: ${DOCKER_FACE_DEVICE:-tensorrt}
+      TRANS_ELASTIC_URL: http://elasticsearch:9200
+      TRANS_ELASTIC_USER: elastic
+      TRANS_ELASTIC_PASSWORD: ${DOCKER_ELASTIC_PASSWORD:-theatrical-local-password}
+      TORCH_HOME: /app/model_cache/torch
+      HF_HOME: /app/model_cache/huggingface
+      MODELSCOPE_CACHE: /app/model_cache/modelscope
 
     working_dir: /app
 
     restart: unless-stopped
 
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8198/api/health"]
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8199/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -57,4 +101,6 @@ services:
       start_period: 300s
 
 volumes:
+  elasticsearch_data:
   trt_cache:
+  model_cache:

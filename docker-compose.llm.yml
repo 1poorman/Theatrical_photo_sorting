@@ -1,0 +1,11 @@
+# 使用现有大模型配置（不将凭据打包进镜像）。
+# docker compose --env-file .env.docker -f docker-compose.yml -f docker-compose.llm.yml up -d
+services:
+  theatrical-photo-sorting:
+    volumes:
+      - type: bind
+        source: ./.env
+        target: /app/.env
+        read_only: true
+        bind:
+          create_host_path: false

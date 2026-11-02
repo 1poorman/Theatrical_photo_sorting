@@ -7,10 +7,14 @@ const path = require('node:path');
 const os = require('node:os');
 const assert = require('node:assert/strict');
 const {chromium} = require(process.env.PLAYWRIGHT_PATH || '/tmp/pwcli/node_modules/playwright');
-const root = path.resolve(__dirname, '..');
+const hostRoot = path.resolve(__dirname, '..');
+// Container API paths may differ from paths used by this browser process.
+const root = process.env.WORKSPACE_SERVER_ROOT || hostRoot;
 const base = process.env.WORKSPACE_URL || 'http://127.0.0.1:18299';
-const shots = process.env.WORKSPACE_SHOTS || path.join(root, 'outputs/workspace_qa');
-const fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'theatre-browser-'));
+const shots = process.env.WORKSPACE_SHOTS || path.join(hostRoot, 'outputs/workspace_qa');
+const fixtureHost = fs.mkdtempSync(path.join(process.env.WORKSPACE_FIXTURE_DIR || os.tmpdir(), 'theatre-browser-'));
+const fixture = process.env.WORKSPACE_SERVER_ROOT
+  ? path.join(root, path.relative(hostRoot, fixtureHost)) : fixtureHost;
 const play = path.join(root, 'data/ncpa_test/京剧《天下归心》');
 const photos = path.join(play, '【整理完成】京剧《天下归心》彩排');
 fs.mkdirSync(shots, {recursive: true});
@@ -409,6 +413,6 @@ fs.mkdirSync(shots, {recursive: true});
       fullQueueRequests: unexpectedQueueQueries.length, decisionPosts}, checks: ['empty/error states', 'real photo previews', 'knowledge ingest', 'offline scene analysis', 'background analysis refresh reuses task without resubmission', 'review accept/modify/reject', 'draft survives selection/search/reload/failure', 'revision conflict refreshes record and preserves draft', 'successful decision clears draft', 'search/filter', 'label download', 'organize payload', 'background organize refresh/cancel/resume/partial failures', 'cluster refresh/cancel/resume and persistent assign/ignore/restore/error', 'face database refresh/cancel/resume/partial report and dry-run/build payload', 'refresh persistence', 'responsive 1440/1024/768/540/390', 'escaped evidence', '10000 record metadata and bounded visible details/DOM', 'decision updates one record without queue reload', 'independent project contexts'], screenshots: shots}, null, 2));
   } finally {
     await browser.close();
-    fs.rmSync(fixture, {recursive: true, force: true});
+    if (process.env.WORKSPACE_KEEP_FIXTURE !== '1') fs.rmSync(fixtureHost, {recursive: true, force: true});
   }
 })().catch(error => { console.error(error); process.exitCode = 1; });

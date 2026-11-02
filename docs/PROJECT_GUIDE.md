@@ -76,7 +76,9 @@ python -m app.photo_agent_cli --session demo --model auto --protocol json
 
 ### Docker
 
-`docker compose up -d --build` 启动主 API，要求宿主机 GPU 驱动及 NVIDIA Container Toolkit。权重只读挂载，数据、输出、日志和 TRT 缓存持久化。当前 Dockerfile 只安装主依赖，不自动安装 LangChain 扩展；Compose 不自动注入 `.env` 中的模型配置。启用高级智能体需单独配置镜像依赖和模型配置挂载/环境变量。不可将含密钥的文件写入镜像。
+`docker compose up -d --build` 启动可视化工作台（8199，包含全部 API）和独立 Elasticsearch 8.12.2 向量库，应用等待 ES 健康后启动。宿主机需安装支持 CUDA 12.8 的 NVIDIA 驱动及 NVIDIA Container Toolkit，并保证 `vm.max_map_count >= 262144`。权重只读挂载，数据、输出、日志和 ES/TRT/模型缓存持久化。ES 仅在 Compose 内网开放 9200，独立数据卷首次使用时为空；人脸模型成功初始化时自动创建索引。配置示例见 `docker.env.example`，具体命令见 [README 的 Docker 章节](../README.md#docker)。
+
+Dockerfile 安装视觉服务、ModelScope framework 和 `requirements/agent.txt` 的 LangChain 依赖。现有 `.env` 不打包进镜像；启用大模型配置时追加 `-f docker-compose.yml -f docker-compose.llm.yml`，将配置只读挂载至 `/app/.env`，并使用容器可访问的模型端点。不要将含密钥的文件写入镜像。业务表单使用容器内路径，例如 `/app/data/...` 和 `/app/outputs/...`。
 
 ## 4. 配置与模型选择
 
@@ -86,14 +88,14 @@ python -m app.photo_agent_cli --session demo --model auto --protocol json
 | `TRANS_ELASTIC_URL`、`TRANS_ELASTIC_USER`、`TRANS_ELASTIC_PASSWORD` | ES 端点与凭据；部署时覆盖开发默认值 |
 | `TRANS_SIGLIP_WEIGHTS_ROOT` | SigLIP2 本地权重 |
 | `TRANS_KNOWN_FACE_THRESHOLD`、`TRANS_FACE_IMAGE_MAX_SIDE` | 识别阈值和图片缩放 |
-| `TRANS_FACE_DEVICE` | 配置模块提供此选项，但主服务初始化另行选择设备，不能保证强制 CPU |
+| `TRANS_FACE_DEVICE` | 人脸推理后端（如 `tensorrt`、`cuda`、`cpu`）；主服务尊重此配置，无可见 GPU 时回退 CPU |
 | `.env` 的 `small_diag_url/model/key` | 实际键名为 `small_diag_url`、`small_diag_model`、`small_diag_key` |
 | `.env` 的 `url`、`big_model_name`、`key` | 大模型端点、模型名和密钥 |
 | `AGENT_SMALL_URL/MODEL/KEY`、`AGENT_BIG_URL/MODEL/KEY` | 新智能体的环境变量覆盖，各斜杠项均有 `AGENT_SMALL_` / `AGENT_BIG_` 前缀 |
 
 `.env` 解析器支持 `key=value` 和 `key: value`，不是可直接 `source` 的 Shell 文件。不要在命令日志或文档输出实际密钥。
 
-主服务在可见 CUDA 存在时选择 TRT，否则 CPU；`app/server.py` 还设置 GPU 可见性，修改部署设备前应检查它和 `initialize_models()`，以实际 ORT providers 日志为准。授权外宿主机能使用 GPU 不代表受限沙箱也可使用，反之亦然。
+本地服务未指定 `CUDA_VISIBLE_DEVICES` 时默认使用物理 GPU1，显式设置优先；Docker 默认只分配物理 GPU0，可通过 `DOCKER_GPU_DEVICE` 调整。进程内第一块可见 GPU 的编号为 0，人脸推理后端由 `TRANS_FACE_DEVICE` 指定，以实际 ORT providers 日志为准。授权外宿主机能使用 GPU 不代表受限沙箱也可使用，反之亦然。
 
 新智能体 `model=auto` 顺序尝试小/大模型，`small` 或 `big` 单独选择；`protocol=json` 适配非原生工具调用模型，`native` 要求端点支持 tools。新智能体 `auto` 的行为与旧客户端 `cascade_enabled` 开关不可混为一谈。
 
@@ -153,7 +155,7 @@ CLI 注册 7 个工具；主 API 额外注册 `organize_photos`，依赖已加�
 | API/UI | `python tests/test_multimodal_api.py`、`python tests/test_scene_review_ui.py` | 主服务依赖；部分脚本清理 `outputs/agent`，请先阅读并隔离会话 |
 | GPU/ES/全量 | `python tests/acceptance_m7.py`、`python tests/test_face_cluster_api.py` | 权重、剧目数据、GPU/ES；可能写入正式库，不能直接在生产环境运行 |
 
-历史通过结果见多模态进度记录；新增 LangChain 12 项离线测试已通过，但真实 2B/大模型高级智能体全链路尚未验证。本次文档整理不重新运行会写库的验收。
+历史通过结果见多模态进度记录。2026-11-02 容器验收通过 18 项真实 HTTP 检查、21 项浏览器工作流、8 项重启与恢复检查及 14 项 LangChain 回归；已验证当前大模型端点的 JSON 工具调用。小模型与真实 native 协议仍未在本轮验收，详情及证据见 [Docker 功能验收](reports/docker_functional_20261102.md)。
 
 常见问题：
 

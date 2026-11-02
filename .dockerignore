@@ -7,6 +7,8 @@ __pycache__/
 # 虚拟环境
 venv/
 env/
+.venv/
+node_modules/
 
 # 模型权重（通过 volume 只读挂载）
 weights/
@@ -20,10 +22,20 @@ core_modules/face_recognition/trt_cache/
 # Git
 .git/
 .gitignore
+.agents/
+.codex/
+.aws/
+.env
+.env.*
+opencode.json
+third_party/
+tests/
 
 # Docker 文件本身
 Dockerfile
 docker-compose.yml
+docker-compose.*.yml
+docker.env.example
 .dockerignore
 
 # 文档（保留 README）
