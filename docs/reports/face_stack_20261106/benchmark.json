@@ -1,0 +1,913 @@
+{
+  "created_at": "2026-11-06T06:37:45.839551+00:00",
+  "device": "cpu",
+  "environment": {
+    "python": "3.10.20",
+    "platform": "Linux-5.4.0-190-generic-x86_64-with-glibc2.39",
+    "opencv": "4.13.0",
+    "numpy": "2.2.6",
+    "onnxruntime": "1.23.2"
+  },
+  "protocol": {
+    "recognition": "leave-one-source-photograph-out nearest-anchor and verification pairs",
+    "detection": "IoU>=0.5 agreement with historical SCRFD development boxes; not independent ground truth"
+  },
+  "dataset": {
+    "face_database": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/data/face_database",
+    "anchors": 109,
+    "identity_counts": {
+      "刘思妤（饰杏儿）": 7,
+      "孟宇（饰茶叶贩）": 2,
+      "张硕（饰说书人）": 5,
+      "彭国斌（饰雷廷昌）": 33,
+      "朱俊达（饰算命人）": 1,
+      "朱冠霖（饰万事不求人）": 2,
+      "杨淇（饰慈禧）": 8,
+      "泰然（饰贵宝）": 5,
+      "王吉（饰桃儿）": 3,
+      "王文杰（饰桂枝儿）": 17,
+      "王浩伟（饰播威利）": 3,
+      "王浩伟（饰烩五哥）": 2,
+      "胡博宇（饰税吏）": 1,
+      "董汶亮（饰李光照）": 4,
+      "薛天智（饰雷思起）": 16
+    }
+  },
+  "recognizers": {
+    "current_glint100": {
+      "path": "weights/arcface/Glint100.onnx",
+      "sha256": "4ab1d6435d639628a6f3e5008dd4f929edf4c4124b1a7169e1048f9fef534cdf",
+      "bytes": 260665334,
+      "parameters": 65156288,
+      "speed": {
+        "providers": [
+          "CPUExecutionProvider"
+        ],
+        "extraction_seconds": 16.992313575930893,
+        "faces_per_second": 6.414665049166421,
+        "timing": {
+          "batch_1": {
+            "batch_p50_ms": 208.53216154500842,
+            "batch_p95_ms": 224.38694662414488,
+            "per_face_p50_ms": 208.53216154500842,
+            "faces_per_second_from_p50": 4.795423365830146
+          },
+          "batch_32": {
+            "batch_p50_ms": 4560.366380959749,
+            "batch_p95_ms": 5151.5019247774035,
+            "per_face_p50_ms": 142.51144940499216,
+            "faces_per_second_from_p50": 7.016980068444733
+          }
+        }
+      },
+      "quality": {
+        "folder_identity": {
+          "anchors": 109,
+          "identities": 15,
+          "source_groups": 47,
+          "eligible_queries": 107,
+          "top1_accuracy": 0.8691588785046729,
+          "top5_accuracy": 0.9532710280373832,
+          "margin_p05": -0.05943060219287872,
+          "margin_p50": 0.2122269868850708,
+          "positive_pairs": 868,
+          "negative_pairs": 4885,
+          "verification": {
+            "auc": 0.853936389492899,
+            "eer": 0.23294081855015591,
+            "eer_threshold": 0.17139416933059692,
+            "tar_at_far_0.1": 0.5956221198156681,
+            "threshold_at_far_0.1": 0.24216057360172272,
+            "tar_at_far_0.01": 0.3444700460829493,
+            "threshold_at_far_0.01": 0.3708488941192627,
+            "tar_at_far_0.001": 0.2523041474654378,
+            "threshold_at_far_0.001": 0.4447479844093323
+          },
+          "fixed_thresholds": {
+            "0.4": {
+              "correct_accept_rate": 0.8317757009345794,
+              "wrong_accept_rate": 0.04672897196261682,
+              "rejection_rate": 0.12149532710280375
+            },
+            "0.55": {
+              "correct_accept_rate": 0.6074766355140186,
+              "wrong_accept_rate": 0.0,
+              "rejection_rate": 0.39252336448598135
+            }
+          },
+          "top1_failure_count": 14,
+          "confusions": [
+            {
+              "actual": "刘思妤（饰杏儿）",
+              "predicted": "彭国斌（饰雷廷昌）",
+              "count": 1
+            },
+            {
+              "actual": "彭国斌（饰雷廷昌）",
+              "predicted": "董汶亮（饰李光照）",
+              "count": 1
+            },
+            {
+              "actual": "彭国斌（饰雷廷昌）",
+              "predicted": "薛天智（饰雷思起）",
+              "count": 1
+            },
+            {
+              "actual": "彭国斌（饰雷廷昌）",
+              "predicted": "王文杰（饰桂枝儿）",
+              "count": 1
+            },
+            {
+              "actual": "杨淇（饰慈禧）",
+              "predicted": "朱冠霖（饰万事不求人）",
+              "count": 1
+            },
+            {
+              "actual": "泰然（饰贵宝）",
+              "predicted": "薛天智（饰雷思起）",
+              "count": 1
+            },
+            {
+              "actual": "王文杰（饰桂枝儿）",
+              "predicted": "王浩伟（饰播威利）",
+              "count": 1
+            },
+            {
+              "actual": "王浩伟（饰播威利）",
+              "predicted": "王文杰（饰桂枝儿）",
+              "count": 1
+            },
+            {
+              "actual": "王浩伟（饰播威利）",
+              "predicted": "薛天智（饰雷思起）",
+              "count": 1
+            },
+            {
+              "actual": "王浩伟（饰烩五哥）",
+              "predicted": "彭国斌（饰雷廷昌）",
+              "count": 1
+            },
+            {
+              "actual": "王浩伟（饰烩五哥）",
+              "predicted": "孟宇（饰茶叶贩）",
+              "count": 1
+            },
+            {
+              "actual": "董汶亮（饰李光照）",
+              "predicted": "彭国斌（饰雷廷昌）",
+              "count": 1
+            },
+            {
+              "actual": "董汶亮（饰李光照）",
+              "predicted": "泰然（饰贵宝）",
+              "count": 1
+            },
+            {
+              "actual": "薛天智（饰雷思起）",
+              "predicted": "彭国斌（饰雷廷昌）",
+              "count": 1
+            }
+          ]
+        },
+        "actor_identity": {
+          "anchors": 109,
+          "identities": 14,
+          "source_groups": 47,
+          "eligible_queries": 107,
+          "top1_accuracy": 0.8691588785046729,
+          "top5_accuracy": 0.9626168224299065,
+          "margin_p05": -0.050094917416572564,
+          "margin_p50": 0.2122269868850708,
+          "positive_pairs": 873,
+          "negative_pairs": 4880,
+          "verification": {
+            "auc": 0.8505053705894503,
+            "eer": 0.2346243404127467,
+            "eer_threshold": 0.17061223089694977,
+            "tar_at_far_0.1": 0.5922107674684994,
+            "threshold_at_far_0.1": 0.24216057360172272,
+            "tar_at_far_0.01": 0.3424971363115693,
+            "threshold_at_far_0.01": 0.3708488941192627,
+            "tar_at_far_0.001": 0.2508591065292096,
+            "threshold_at_far_0.001": 0.4447479844093323
+          },
+          "fixed_thresholds": {
+            "0.4": {
+              "correct_accept_rate": 0.8317757009345794,
+              "wrong_accept_rate": 0.04672897196261682,
+              "rejection_rate": 0.12149532710280375
+            },
+            "0.55": {
+              "correct_accept_rate": 0.6074766355140186,
+              "wrong_accept_rate": 0.0,
+              "rejection_rate": 0.39252336448598135
+            }
+          },
+          "top1_failure_count": 14,
+          "confusions": [
+            {
+              "actual": "刘思妤",
+              "predicted": "彭国斌",
+              "count": 1
+            },
+            {
+              "actual": "彭国斌",
+              "predicted": "董汶亮",
+              "count": 1
+            },
+            {
+              "actual": "彭国斌",
+              "predicted": "薛天智",
+              "count": 1
+            },
+            {
+              "actual": "彭国斌",
+              "predicted": "王文杰",
+              "count": 1
+            },
+            {
+              "actual": "杨淇",
+              "predicted": "朱冠霖",
+              "count": 1
+            },
+            {
+              "actual": "泰然",
+              "predicted": "薛天智",
+              "count": 1
+            },
+            {
+              "actual": "王文杰",
+              "predicted": "王浩伟",
+              "count": 1
+            },
+            {
+              "actual": "王浩伟",
+              "predicted": "王文杰",
+              "count": 1
+            },
+            {
+              "actual": "王浩伟",
+              "predicted": "薛天智",
+              "count": 1
+            },
+            {
+              "actual": "王浩伟",
+              "predicted": "彭国斌",
+              "count": 1
+            },
+            {
+              "actual": "王浩伟",
+              "predicted": "孟宇",
+              "count": 1
+            },
+            {
+              "actual": "董汶亮",
+              "predicted": "彭国斌",
+              "count": 1
+            },
+            {
+              "actual": "董汶亮",
+              "predicted": "泰然",
+              "count": 1
+            },
+            {
+              "actual": "薛天智",
+              "predicted": "彭国斌",
+              "count": 1
+            }
+          ]
+        }
+      }
+    },
+    "buffalo_l_r50": {
+      "path": "/tmp/face_stack_buffalo_l/w600k_r50.onnx",
+      "sha256": "4c06341c33c2ca1f86781dab0e829f88ad5b64be9fba56e56bc9ebdefc619e43",
+      "bytes": 174383860,
+      "parameters": 43590976,
+      "speed": {
+        "providers": [
+          "CPUExecutionProvider"
+        ],
+        "extraction_seconds": 4.865470791235566,
+        "faces_per_second": 22.402765256827266,
+        "timing": {
+          "batch_1": {
+            "batch_p50_ms": 56.17828015238047,
+            "batch_p95_ms": 64.98462674207984,
+            "per_face_p50_ms": 56.17828015238047,
+            "faces_per_second_from_p50": 17.800473729127262
+          },
+          "batch_32": {
+            "batch_p50_ms": 1471.3031006976962,
+            "batch_p95_ms": 1603.5402147565037,
+            "per_face_p50_ms": 45.97822189680301,
+            "faces_per_second_from_p50": 21.74942741901754
+          }
+        }
+      },
+      "quality": {
+        "folder_identity": {
+          "anchors": 109,
+          "identities": 15,
+          "source_groups": 47,
+          "eligible_queries": 107,
+          "top1_accuracy": 0.822429906542056,
+          "top5_accuracy": 0.9158878504672897,
+          "margin_p05": -0.09872499257326126,
+          "margin_p50": 0.16917338967323303,
+          "positive_pairs": 868,
+          "negative_pairs": 4885,
+          "verification": {
+            "auc": 0.7418840709592518,
+            "eer": 0.3273611025947012,
+            "eer_threshold": 0.13793814182281494,
+            "tar_at_far_0.1": 0.4769585253456221,
+            "threshold_at_far_0.1": 0.26352253556251526,
+            "tar_at_far_0.01": 0.2707373271889401,
+            "threshold_at_far_0.01": 0.4323333501815796,
+            "tar_at_far_0.001": 0.14170506912442396,
+            "threshold_at_far_0.001": 0.5464564561843872
+          },
+          "fixed_thresholds": {
+            "0.4": {
+              "correct_accept_rate": 0.8130841121495327,
+              "wrong_accept_rate": 0.12149532710280374,
+              "rejection_rate": 0.06542056074766356
+            },
+            "0.55": {
+              "correct_accept_rate": 0.5981308411214953,
+              "wrong_accept_rate": 0.018691588785046728,
+              "rejection_rate": 0.383177570093458
+            }
+          },
+          "top1_failure_count": 19,
+          "confusions": [
+            {
+              "actual": "王浩伟（饰播威利）",
+              "predicted": "彭国斌（饰雷廷昌）",
+              "count": 2
+            },
+            {
+              "actual": "王浩伟（饰烩五哥）",
+              "predicted": "彭国斌（饰雷廷昌）",
+              "count": 2
+            },
+            {
+              "actual": "薛天智（饰雷思起）",
+              "predicted": "彭国斌（饰雷廷昌）",
+              "count": 2
+            },
+            {
+              "actual": "孟宇（饰茶叶贩）",
+              "predicted": "彭国斌（饰雷廷昌）",
+              "count": 1
+            },
+            {
+              "actual": "彭国斌（饰雷廷昌）",
+              "predicted": "刘思妤（饰杏儿）",
+              "count": 1
+            },
+            {
+              "actual": "彭国斌（饰雷廷昌）",
+              "predicted": "董汶亮（饰李光照）",
+              "count": 1
+            },
+            {
+              "actual": "彭国斌（饰雷廷昌）",
+              "predicted": "薛天智（饰雷思起）",
+              "count": 1
+            },
+            {
+              "actual": "杨淇（饰慈禧）",
+              "predicted": "董汶亮（饰李光照）",
+              "count": 1
+            },
+            {
+              "actual": "泰然（饰贵宝）",
+              "predicted": "薛天智（饰雷思起）",
+              "count": 1
+            },
+            {
+              "actual": "王吉（饰桃儿）",
+              "predicted": "王文杰（饰桂枝儿）",
+              "count": 1
+            },
+            {
+              "actual": "王文杰（饰桂枝儿）",
+              "predicted": "刘思妤（饰杏儿）",
+              "count": 1
+            },
+            {
+              "actual": "王浩伟（饰播威利）",
+              "predicted": "孟宇（饰茶叶贩）",
+              "count": 1
+            },
+            {
+              "actual": "董汶亮（饰李光照）",
+              "predicted": "彭国斌（饰雷廷昌）",
+              "count": 1
+            },
+            {
+              "actual": "董汶亮（饰李光照）",
+              "predicted": "薛天智（饰雷思起）",
+              "count": 1
+            },
+            {
+              "actual": "董汶亮（饰李光照）",
+              "predicted": "泰然（饰贵宝）",
+              "count": 1
+            },
+            {
+              "actual": "薛天智（饰雷思起）",
+              "predicted": "董汶亮（饰李光照）",
+              "count": 1
+            }
+          ]
+        },
+        "actor_identity": {
+          "anchors": 109,
+          "identities": 14,
+          "source_groups": 47,
+          "eligible_queries": 107,
+          "top1_accuracy": 0.822429906542056,
+          "top5_accuracy": 0.9158878504672897,
+          "margin_p05": -0.09872499257326126,
+          "margin_p50": 0.16917338967323303,
+          "positive_pairs": 873,
+          "negative_pairs": 4880,
+          "verification": {
+            "auc": 0.7391541321615683,
+            "eer": 0.3299074700016901,
+            "eer_threshold": 0.1373806595802307,
+            "tar_at_far_0.1": 0.4742268041237113,
+            "threshold_at_far_0.1": 0.26352253556251526,
+            "tar_at_far_0.01": 0.26918671248568155,
+            "threshold_at_far_0.01": 0.4323333501815796,
+            "tar_at_far_0.001": 0.140893470790378,
+            "threshold_at_far_0.001": 0.5464564561843872
+          },
+          "fixed_thresholds": {
+            "0.4": {
+              "correct_accept_rate": 0.8130841121495327,
+              "wrong_accept_rate": 0.12149532710280374,
+              "rejection_rate": 0.06542056074766356
+            },
+            "0.55": {
+              "correct_accept_rate": 0.5981308411214953,
+              "wrong_accept_rate": 0.018691588785046728,
+              "rejection_rate": 0.383177570093458
+            }
+          },
+          "top1_failure_count": 19,
+          "confusions": [
+            {
+              "actual": "王浩伟",
+              "predicted": "彭国斌",
+              "count": 4
+            },
+            {
+              "actual": "薛天智",
+              "predicted": "彭国斌",
+              "count": 2
+            },
+            {
+              "actual": "孟宇",
+              "predicted": "彭国斌",
+              "count": 1
+            },
+            {
+              "actual": "彭国斌",
+              "predicted": "刘思妤",
+              "count": 1
+            },
+            {
+              "actual": "彭国斌",
+              "predicted": "董汶亮",
+              "count": 1
+            },
+            {
+              "actual": "彭国斌",
+              "predicted": "薛天智",
+              "count": 1
+            },
+            {
+              "actual": "杨淇",
+              "predicted": "董汶亮",
+              "count": 1
+            },
+            {
+              "actual": "泰然",
+              "predicted": "薛天智",
+              "count": 1
+            },
+            {
+              "actual": "王吉",
+              "predicted": "王文杰",
+              "count": 1
+            },
+            {
+              "actual": "王文杰",
+              "predicted": "刘思妤",
+              "count": 1
+            },
+            {
+              "actual": "王浩伟",
+              "predicted": "孟宇",
+              "count": 1
+            },
+            {
+              "actual": "董汶亮",
+              "predicted": "彭国斌",
+              "count": 1
+            },
+            {
+              "actual": "董汶亮",
+              "predicted": "薛天智",
+              "count": 1
+            },
+            {
+              "actual": "董汶亮",
+              "predicted": "泰然",
+              "count": 1
+            },
+            {
+              "actual": "薛天智",
+              "predicted": "董汶亮",
+              "count": 1
+            }
+          ]
+        }
+      }
+    },
+    "buffalo_s_mbf": {
+      "path": "/tmp/face_stack_buffalo_s/w600k_mbf.onnx",
+      "sha256": "9cc6e4a75f0e2bf0b1aed94578f144d15175f357bdc05e815e5c4a02b319eb4f",
+      "bytes": 13616099,
+      "parameters": 3400448,
+      "speed": {
+        "providers": [
+          "CPUExecutionProvider"
+        ],
+        "extraction_seconds": 0.6770776659250259,
+        "faces_per_second": 160.9859628896248,
+        "timing": {
+          "batch_1": {
+            "batch_p50_ms": 8.614961989223957,
+            "batch_p95_ms": 8.976356498897076,
+            "per_face_p50_ms": 8.614961989223957,
+            "faces_per_second_from_p50": 116.07712271404704
+          },
+          "batch_32": {
+            "batch_p50_ms": 184.94162196293473,
+            "batch_p95_ms": 200.86342999711633,
+            "per_face_p50_ms": 5.77942568634171,
+            "faces_per_second_from_p50": 173.02757302741355
+          }
+        }
+      },
+      "quality": {
+        "folder_identity": {
+          "anchors": 109,
+          "identities": 15,
+          "source_groups": 47,
+          "eligible_queries": 107,
+          "top1_accuracy": 0.7757009345794392,
+          "top5_accuracy": 0.9252336448598131,
+          "margin_p05": -0.1451768547296524,
+          "margin_p50": 0.13131198287010193,
+          "positive_pairs": 868,
+          "negative_pairs": 4885,
+          "verification": {
+            "auc": 0.7395049266776411,
+            "eer": 0.33983875684522824,
+            "eer_threshold": 0.17531251907348633,
+            "tar_at_far_0.1": 0.42857142857142855,
+            "threshold_at_far_0.1": 0.31430670619010925,
+            "tar_at_far_0.01": 0.24423963133640553,
+            "threshold_at_far_0.01": 0.4420144557952881,
+            "tar_at_far_0.001": 0.09907834101382489,
+            "threshold_at_far_0.001": 0.5772913694381714
+          },
+          "fixed_thresholds": {
+            "0.4": {
+              "correct_accept_rate": 0.7663551401869159,
+              "wrong_accept_rate": 0.17757009345794392,
+              "rejection_rate": 0.05607476635514019
+            },
+            "0.55": {
+              "correct_accept_rate": 0.5794392523364486,
+              "wrong_accept_rate": 0.04672897196261682,
+              "rejection_rate": 0.3738317757009346
+            }
+          },
+          "top1_failure_count": 24,
+          "confusions": [
+            {
+              "actual": "彭国斌（饰雷廷昌）",
+              "predicted": "董汶亮（饰李光照）",
+              "count": 2
+            },
+            {
+              "actual": "泰然（饰贵宝）",
+              "predicted": "薛天智（饰雷思起）",
+              "count": 2
+            },
+            {
+              "actual": "王吉（饰桃儿）",
+              "predicted": "刘思妤（饰杏儿）",
+              "count": 2
+            },
+            {
+              "actual": "刘思妤（饰杏儿）",
+              "predicted": "王浩伟（饰播威利）",
+              "count": 1
+            },
+            {
+              "actual": "刘思妤（饰杏儿）",
+              "predicted": "王文杰（饰桂枝儿）",
+              "count": 1
+            },
+            {
+              "actual": "刘思妤（饰杏儿）",
+              "predicted": "王吉（饰桃儿）",
+              "count": 1
+            },
+            {
+              "actual": "孟宇（饰茶叶贩）",
+              "predicted": "彭国斌（饰雷廷昌）",
+              "count": 1
+            },
+            {
+              "actual": "张硕（饰说书人）",
+              "predicted": "彭国斌（饰雷廷昌）",
+              "count": 1
+            },
+            {
+              "actual": "张硕（饰说书人）",
+              "predicted": "薛天智（饰雷思起）",
+              "count": 1
+            },
+            {
+              "actual": "彭国斌（饰雷廷昌）",
+              "predicted": "孟宇（饰茶叶贩）",
+              "count": 1
+            },
+            {
+              "actual": "朱冠霖（饰万事不求人）",
+              "predicted": "彭国斌（饰雷廷昌）",
+              "count": 1
+            },
+            {
+              "actual": "杨淇（饰慈禧）",
+              "predicted": "张硕（饰说书人）",
+              "count": 1
+            },
+            {
+              "actual": "王文杰（饰桂枝儿）",
+              "predicted": "彭国斌（饰雷廷昌）",
+              "count": 1
+            },
+            {
+              "actual": "王浩伟（饰播威利）",
+              "predicted": "杨淇（饰慈禧）",
+              "count": 1
+            },
+            {
+              "actual": "王浩伟（饰烩五哥）",
+              "predicted": "杨淇（饰慈禧）",
+              "count": 1
+            },
+            {
+              "actual": "王浩伟（饰烩五哥）",
+              "predicted": "彭国斌（饰雷廷昌）",
+              "count": 1
+            },
+            {
+              "actual": "董汶亮（饰李光照）",
+              "predicted": "彭国斌（饰雷廷昌）",
+              "count": 1
+            },
+            {
+              "actual": "董汶亮（饰李光照）",
+              "predicted": "薛天智（饰雷思起）",
+              "count": 1
+            },
+            {
+              "actual": "薛天智（饰雷思起）",
+              "predicted": "彭国斌（饰雷廷昌）",
+              "count": 1
+            },
+            {
+              "actual": "薛天智（饰雷思起）",
+              "predicted": "董汶亮（饰李光照）",
+              "count": 1
+            },
+            {
+              "actual": "薛天智（饰雷思起）",
+              "predicted": "泰然（饰贵宝）",
+              "count": 1
+            }
+          ]
+        },
+        "actor_identity": {
+          "anchors": 109,
+          "identities": 14,
+          "source_groups": 47,
+          "eligible_queries": 107,
+          "top1_accuracy": 0.7757009345794392,
+          "top5_accuracy": 0.9345794392523364,
+          "margin_p05": -0.1451768547296524,
+          "margin_p50": 0.13131198287010193,
+          "positive_pairs": 873,
+          "negative_pairs": 4880,
+          "verification": {
+            "auc": 0.7366744596548551,
+            "eer": 0.3413725517811203,
+            "eer_threshold": 0.17445096373558044,
+            "tar_at_far_0.1": 0.4261168384879725,
+            "threshold_at_far_0.1": 0.31430670619010925,
+            "tar_at_far_0.01": 0.24284077892325315,
+            "threshold_at_far_0.01": 0.4420144557952881,
+            "tar_at_far_0.001": 0.09851088201603665,
+            "threshold_at_far_0.001": 0.5772913694381714
+          },
+          "fixed_thresholds": {
+            "0.4": {
+              "correct_accept_rate": 0.7663551401869159,
+              "wrong_accept_rate": 0.17757009345794392,
+              "rejection_rate": 0.05607476635514019
+            },
+            "0.55": {
+              "correct_accept_rate": 0.5794392523364486,
+              "wrong_accept_rate": 0.04672897196261682,
+              "rejection_rate": 0.3738317757009346
+            }
+          },
+          "top1_failure_count": 24,
+          "confusions": [
+            {
+              "actual": "彭国斌",
+              "predicted": "董汶亮",
+              "count": 2
+            },
+            {
+              "actual": "泰然",
+              "predicted": "薛天智",
+              "count": 2
+            },
+            {
+              "actual": "王吉",
+              "predicted": "刘思妤",
+              "count": 2
+            },
+            {
+              "actual": "王浩伟",
+              "predicted": "杨淇",
+              "count": 2
+            },
+            {
+              "actual": "刘思妤",
+              "predicted": "王浩伟",
+              "count": 1
+            },
+            {
+              "actual": "刘思妤",
+              "predicted": "王文杰",
+              "count": 1
+            },
+            {
+              "actual": "刘思妤",
+              "predicted": "王吉",
+              "count": 1
+            },
+            {
+              "actual": "孟宇",
+              "predicted": "彭国斌",
+              "count": 1
+            },
+            {
+              "actual": "张硕",
+              "predicted": "彭国斌",
+              "count": 1
+            },
+            {
+              "actual": "张硕",
+              "predicted": "薛天智",
+              "count": 1
+            },
+            {
+              "actual": "彭国斌",
+              "predicted": "孟宇",
+              "count": 1
+            },
+            {
+              "actual": "朱冠霖",
+              "predicted": "彭国斌",
+              "count": 1
+            },
+            {
+              "actual": "杨淇",
+              "predicted": "张硕",
+              "count": 1
+            },
+            {
+              "actual": "王文杰",
+              "predicted": "彭国斌",
+              "count": 1
+            },
+            {
+              "actual": "王浩伟",
+              "predicted": "彭国斌",
+              "count": 1
+            },
+            {
+              "actual": "董汶亮",
+              "predicted": "彭国斌",
+              "count": 1
+            },
+            {
+              "actual": "董汶亮",
+              "predicted": "薛天智",
+              "count": 1
+            },
+            {
+              "actual": "薛天智",
+              "predicted": "彭国斌",
+              "count": 1
+            },
+            {
+              "actual": "薛天智",
+              "predicted": "董汶亮",
+              "count": 1
+            },
+            {
+              "actual": "薛天智",
+              "predicted": "泰然",
+              "count": 1
+            }
+          ]
+        }
+      }
+    }
+  },
+  "detectors": {
+    "scrfd_10g": {
+      "path": "weights/scrfd/scrfd_10g_bnkps.onnx",
+      "sha256": "731cbbfd269144e37a71d976f646dc4099dd2a232170316edb596b6a4943e5a2",
+      "bytes": 16923485,
+      "parameters": 4225842,
+      "agreement": {
+        "images": 292,
+        "reference_faces": 1095,
+        "detections": 1223,
+        "matched_iou_0_5": 1090,
+        "reference_recall": 0.9954337899543378,
+        "prediction_precision_against_reference": 0.8912510220768601,
+        "matched_iou_p50": 0.9688378572463989,
+        "latency_p50_ms": 88.17231794819236,
+        "latency_p95_ms": 99.88275109790266,
+        "images_per_second_from_p50": 11.341428049873574,
+        "providers": [
+          "CPUExecutionProvider"
+        ],
+        "reference_recall_by_sqrt_area_px": {
+          "160+": 1.0,
+          "40-79": 0.992603550295858,
+          "80-159": 1.0
+        }
+      }
+    },
+    "scrfd_500m": {
+      "path": "/tmp/face_stack_buffalo_s/det_500m.onnx",
+      "sha256": "5e4447f50245bbd7966bd6c0fa52938c61474a04ec7def48753668a9d8b4ea3a",
+      "bytes": 2524817,
+      "parameters": 626332,
+      "agreement": {
+        "images": 292,
+        "reference_faces": 1095,
+        "detections": 1224,
+        "matched_iou_0_5": 1013,
+        "reference_recall": 0.9251141552511416,
+        "prediction_precision_against_reference": 0.8276143790849673,
+        "matched_iou_p50": 0.8803564310073853,
+        "latency_p50_ms": 18.475718330591917,
+        "latency_p95_ms": 20.701026218011975,
+        "images_per_second_from_p50": 54.125094467596945,
+        "providers": [
+          "CPUExecutionProvider"
+        ],
+        "reference_recall_by_sqrt_area_px": {
+          "160+": 0.967741935483871,
+          "40-79": 0.8964497041420119,
+          "80-159": 0.9716494845360825
+        }
+      }
+    }
+  },
+  "limitations": [
+    "The labeled face anchors are a small development set from one theatrical production, not an independent final test.",
+    "Identity folder labels and crop quality were not re-annotated in this run.",
+    "Historical detection boxes originate from SCRFD and measure regression agreement, not unbiased detector accuracy.",
+    "Latency is single-process sequential inference on the reported host and is not a service SLA."
+  ]
+}
