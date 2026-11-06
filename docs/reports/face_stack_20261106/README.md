@@ -1,145 +1,175 @@
-# 戏剧照片人脸检测、识别与向量检索选型实验
+# 戏剧照片人脸检测、识别与向量检索扩展选型实验
 
 日期：2026-11-06
 
 ## 结论
 
-不存在脱离数据、算力、许可和部署形态的“全局最优”人脸方案。对本项目当前的目标——高分辨率戏剧剧照、多人远景小脸、离线批量处理、在线增量图库、准确率优先——最有证据支持的主方案是：
+原先只比较 SCRFD 不同规模和 ArcFace 不同骨干，不能支持跨算法“最优”结论。本次扩展为 4 个检测候选、5 个单识别模型、2 个双模型融合方案，并复用 3 个检索后端实验。
+
+对本项目“远景小脸优先、自动命名错误接收率低于 2%、在线增量图库”的目标，当前开发集上证据最强的候选组合是：
 
 ```text
 最长边 1920 解码
-  → SCRFD-10G-KPS 检测
-  → 5 点相似变换对齐到 112×112
-  → R100/Glint100 ArcFace 512 维 L2 特征
-  → Qdrant 精确余弦检索
-  → 按演员去重、阈值与最佳/次佳分差判定
-  → 剧目和角色只作为元数据，不进入演员身份主键
+  → SCRFD-10G-KPS 检测与 5 点定位
+  → 统一对齐后生成模型原生尺寸输入
+  → 0.9 × current Glint100/ArcFace + 0.1 × FaceNet/InceptionResNet-V1
+  → 两个 L2 特征按 sqrt(0.9)、sqrt(0.1) 缩放后拼接为 1024 维
+  → Qdrant exact cosine
+  → 按 actor_id 去重，以绝对阈值、最佳/次佳演员分差和质量共同判定
 ```
 
-这是“当前项目、已测候选、准确率优先、在线服务”的最优解，不是学术界所有模型的绝对第一：
+各子目标的赢家并不相同：
 
-- 当前 Glint100 在真实戏剧锚定脸上的跨照片 Top-1 为 **86.92%**，优于 R50/WebFace600K 的 **82.24%** 和 MobileFaceNet 的 **77.57%**。
-- SCRFD-500M 的 CPU 检测吞吐约为 10G 的 **4.77 倍**，但只保留 **92.51%** 的历史 10G 框；40–79 像素脸保留率为 **89.64%**，不适合作为小脸密集的默认模型。
-- 真实 89×512 人脸库中，Qdrant 精确查询 p50 **2.253 ms**、recall@10 **100%**，优于现有 ES 的 **5.776 ms**；常驻 FAISS 仍以 **0.015 ms** 最快，但不提供在线数据库的持久化、并发增量更新和元数据过滤能力。
-- 当前 `known_threshold=0.55` 在这个开发集上没有误接收，但正确接收率只有 **60.75%**、拒识率 **39.25%**。它是保守阈值，不是已经完成独立校准的最优阈值。
+- **检测召回**：SCRFD-10G 对 1095 个历史开发框保留 **99.54%**，40–79 px 小脸保留 **99.26%**；RetinaFace-R34 为 94.61%/91.86%，YuNet 为 87.58%/82.25%。这项本地口径偏向生成历史框的 SCRFD，不能替代独立人工检测真值。
+- **单模型闭集排序**：FaceNet Top-1 **90.65%**、AUC **91.14%**、EER **17.99%**，优于 current ArcFace 的 86.92%/85.05%/23.46%。所以 ArcFace 不是所有指标上的最佳单模型。
+- **低误接收自动命名**：各模型分别校准到错误接收率不超过 2% 后，current ArcFace 正确接收 **82.24%**，FaceNet 只有 **55.14%**；FaceNet 的少数错误匹配分数偏高。
+- **综合排序融合**：70% ArcFace + 30% FaceNet 的 Top-1 **94.39%**、Top-5 **97.20%**，是已测排序最佳。
+- **自动接收融合**：90% ArcFace + 10% FaceNet 在错误接收 1.87% 时正确接收 **87.85%**、拒识 10.28%，是开发集上该业务约束的最佳结果。
+- **在线检索**：Qdrant exact 在真实 89×512 人脸库上 p50 **2.253 ms**、recall@10 **100%**；FAISS Flat 以 0.015 ms 更快，但不提供同等在线持久化、增量更新和 payload 过滤。
 
-现阶段不能宣布“生产最终验收通过”。还缺两个一票否决项：独立人工标注终测集，以及现有 SCRFD/Glint100 权重的来源与商用许可证明。InsightFace 官方模型库明确声明其预训练模型仅供非商业研究；仓库中的两个现有权重没有随附来源清单或许可文件。
+严格表述是：**SCRFD-10G + ArcFace/FaceNet 小比例融合 + Qdrant exact 是当前项目开发数据上最佳已测组合；融合权重和阈值是在同一开发集上选择的，必须经过独立数据确认后才能替换当前单 ArcFace 基线。**
 
-## 1. 问题分解与判定标准
+## 1. 判定目标
 
-端到端身份识别不是单个模型排行榜问题，而是四个误差源的串联：
+端到端系统拆成四个独立问题：
 
-1. 检测器是否找全小脸并给出可靠 5 点关键点。
-2. 对齐和特征模型能否抵抗侧脸、浓妆、头饰、暗光与年龄变化。
-3. 图库身份和锚点是否正确，阈值是否在独立数据上校准。
-4. 检索层是否返回真实最近邻，并满足更新、过滤、持久化和并发要求。
+1. 检测器能否找全多人剧照中的远景小脸并输出稳定关键点。
+2. 特征模型能否抵抗侧脸、暗光、浓妆、头饰和不同场次。
+3. 阈值能否在低错误接收的前提下减少拒识，而不是只提高闭集 Top-1。
+4. 检索后端能否保持精确最近邻，同时支持在线更新、过滤和持久化。
 
-本次按以下优先级选型：身份误识和小脸漏检优先于模型大小；在精度接近时比较吞吐；上线方案还必须满足许可、可追溯、可维护和失败显式化。
+本轮排序只看技术指标，优先级为：错误接收约束、小脸漏检、正确接收/Top-1、吞吐、工程复杂度。
 
-## 2. 原理与同类方法
+## 2. 候选原理与覆盖范围
 
-### 2.1 检测与对齐
+### 2.1 检测器
 
-SCRFD 通过样本重分配和网络计算量重分配，在多种 FLOPs 档位上优化精度—速度前沿。10G-KPS 输出框和 5 个关键点，正好满足 ArcFace 标准对齐。官方模型库的 WIDER FACE 单尺度 VGA 数据如下：
+| 家族 | 核心思路 | 本轮状态 |
+| --- | --- | --- |
+| SCRFD | 重新分配训练样本与网络计算量，优化小脸精度—速度前沿 | 本地实测 10G、500M |
+| RetinaFace | 单阶段多尺度检测，同时回归框和五点关键点 | 本地实测 R34；引用原论文/公开 WIDER FACE 数据 |
+| YuNet | 极小型 CNN 检测器，面向 OpenCV/边缘 CPU | 本地实测 2023mar |
+| MTCNN | P/R/O-Net 三级级联 | 原理对比；架构较老，密集小脸通常吞吐不足 |
+| BlazeFace/MediaPipe | 移动端轻量 anchor 检测 | 原理对比；目标偏自拍视频而非剧照小脸 |
+| CenterFace/YOLO-Face | anchor-free 或通用 YOLO 检测改造 | 原理对比；本轮没有统一来源、统一 640 输入的可复现权重 |
 
-| 检测器 | Easy AP | Medium AP | Hard AP | FLOPs | 参数量 | 官方推理时间 |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| SCRFD-500M-KPS | 90.97 | 88.44 | 69.49 | 0.5G | 0.57M | 3.6 ms |
-| SCRFD-2.5G-KPS | 93.80 | 92.02 | 77.13 | 2.5G | 0.82M | 4.3 ms |
-| **SCRFD-10G-KPS** | **95.40** | **94.01** | **82.80** | 10G | 4.23M | 5.0 ms |
+SCRFD 官方单尺度 VGA WIDER FACE Easy/Medium/Hard AP：500M 为 90.97/88.44/69.49，10G 为 95.40/94.01/82.80。RetinaFace 官方 R50 的 96.5/95.6/90.4 使用多尺度测试，不能直接当作与 SCRFD 单尺度数字同口径的胜负；本轮 RetinaFace-R34 实现公开的对应 Hard AP 为 88.90，也需要结合本地结果判断。
 
-RetinaFace-R50 的官方模型库数据为 96.5/95.6/90.4，但使用多尺度测试，不能与 SCRFD 的单尺度 VGA 数字直接横比；它说明 RetinaFace 仍是绝对检测精度候选，不证明换入本项目后端到端身份准确率一定提高。当前项目需要稳定的 5 点关键点、TensorRT 路径和批量吞吐，SCRFD-10G 是更成熟的工程平衡点。
+### 2.2 识别模型
 
-### 2.2 特征学习
+| 家族 | 训练/网络特点 | 本轮状态 |
+| --- | --- | --- |
+| ArcFace R100/R50/MobileFaceNet | 加性角度间隔；比较三个训练包/骨干规模 | 本地实测 |
+| FaceNet/InceptionResNet-V1 | 160×160 输入，VGGFace2 权重，512 维归一化特征 | 本地实测 |
+| SFace | sigmoid-constrained hypersphere loss，OpenCV 128 维模型 | 本地实测 |
+| ArcFace + FaceNet | 两个归一化空间的加权余弦分数融合 | 本地实测 70/30、90/10 |
+| AdaFace | 根据特征范数估计质量并自适应间隔 | 论文和方法对比，未做同口径本地推理 |
+| MagFace | 特征模长同时编码身份和质量 | 论文和方法对比，未做同口径本地推理 |
+| CurricularFace/Sub-center ArcFace | 课程式难样本学习；多子中心抗脏标签 | 论文和方法对比，未做同口径本地推理 |
 
-- ArcFace 在归一化特征和类别权重之间加入可解释的加性角度间隔，训练出适合余弦比较的身份空间。当前模型属于这一范式。
-- Sub-center ArcFace 为每个身份设置多个子中心，降低脏标签和外观多模态的影响，适合复杂训练集。
-- CurricularFace 随训练阶段调整难样本权重，先学易样本再强化难样本。
-- AdaFace 根据特征范数估计图像质量并自适应调整间隔，针对低质量脸有更强理论针对性。
-- MagFace 让特征模长同时表达可识别质量，可用于图库质量筛选。
+本轮不再用“没有本地实测的论文榜单”证明优于或弱于本项目模型。AdaFace、MagFace 和 CurricularFace 仍是下一批重要候选，但结论只在实际跑过的模型集合内成立。
 
-AdaFace/MagFace 很适合戏剧暗光、浓妆和远景脸，值得作为下一轮 R100 同骨干对照；但本轮没有获得许可与来源均满足要求、且与当前预处理严格同口径的权重，因此不能用论文结果替代本地实验，也不能声称它们已优于当前 Glint100。
+融合实现不是对分数事后随意相加。若 ArcFace 特征为 `a`、FaceNet 特征为 `f`，二者已分别 L2 归一化，则构造：
 
-### 2.3 向量检索
+```text
+g = concat(sqrt(w) × a, sqrt(1-w) × f)
+```
 
-人脸特征已经 L2 归一化，余弦相似度等价于内积排序。小型图库使用精确搜索可以避免 ANN 漏掉真实最近邻，从而保持阈值和分差语义稳定。
+`g` 的模长仍为 1，其余弦相似度严格等于 `w·cos(a1,a2) + (1-w)·cos(f1,f2)`，可以直接使用普通 1024 维余弦向量库。
 
-- 常驻 FAISS `IndexFlatIP`：单进程离线延迟最低，适合嵌入式或只读批处理。
-- Qdrant 精确搜索：延迟略高，但具备持久化、增删、过滤、服务化并发和模型集合隔离，适合当前在线图库。
-- Elasticsearch：能够工作，但当前精确 `script_score` 更慢、客户端依赖更重。
-- Qdrant HNSW：只有在大图库上经过真实人脸分布的 recall/latency 校准后才能启用；不能仅因更快而替换精确搜索。
+### 2.3 检索后端
+
+- FAISS `IndexFlatIP`：单进程、只读、内存常驻时延最低。
+- Qdrant exact：精确余弦，支持持久化、在线增删、payload 过滤和集合隔离。
+- Elasticsearch `script_score`：可以精确搜索，但当前实测更慢。
+- Qdrant HNSW：只有在真实人脸分布上完成 recall/误识/延迟校准后才能启用。
 
 ## 3. 实验协议
 
 原始聚合数据见 [benchmark.json](benchmark.json)，复现脚本见 [benchmark_face_stack.py](../../../tools/benchmark_face_stack.py)。
 
-### 3.1 识别实验
+### 3.1 识别
 
 | 项目 | 口径 |
 | --- | --- |
-| 数据 | `data/face_database` 的 109 张锚定脸 |
-| 标签 | 15 个“演员＋角色”目录；规范化后为 14 名演员 |
-| 来源组 | 47 张不同原始拍摄文件 |
-| 有效 query | 107；只有一个来源的演员不进入跨照片查询 |
-| 防泄漏 | query 不与同一原始照片的任何脸比较；相同内容哈希也排除 |
-| 识别 | 所有剩余锚点精确余弦检索，报告 Top-1/Top-5 |
+| 数据 | `data/face_database` 的 109 张演员锚定脸 |
+| 标签 | 15 个“演员＋角色”目录，规范化为 14 名演员 |
+| 来源 | 47 张不同原始拍摄文件 |
+| 有效 query | 107；只有一个拍摄来源的演员不参加跨照片查询 |
+| 防泄漏 | query 不与同一原始照片或相同内容哈希的脸比较 |
+| 排序 | 剩余锚点精确余弦，报告 Top-1/Top-5 |
 | 验证 | 跨来源正负对，报告 ROC AUC、EER、TAR@FAR |
-| 推理 | 同一主机 CPU、ONNX Runtime 1.23.2，顺序单进程 |
+| 自动接收 | 对每个模型单独扫描阈值，在错误接收率 ≤2% 下最大化正确接收率 |
+| 输入 | ArcFace/SFace 使用 112×112；FaceNet 使用原生 160×160；都从同一现有锚定脸缩放 |
+| 推理 | 同一主机 CPU，顺序单进程；融合速度按两个模型串行之和计算 |
 
-三个候选都使用 112×112 输入、512 维输出和相同预处理：
+实测候选：
 
-| 名称 | 模型 | 参数 | 文件大小 | 权重 SHA256 前缀 |
+| 名称 | 家族 | 参数 | 维度 | SHA256 前缀 |
 | --- | --- | ---: | ---: | --- |
-| current_glint100 | 本仓库 R100/Glint100 | 65.16M | 248.59 MiB | `4ab1d6435d63` |
-| buffalo_l_r50 | 官方 Buffalo-L R50@WebFace600K | 43.59M | 166.31 MiB | `4c06341c33c2` |
-| buffalo_s_mbf | 官方 Buffalo-S MobileFaceNet@WebFace600K | 3.40M | 12.99 MiB | `9cc6e4a75f0e` |
+| current_glint100 | R100/ArcFace 类 | 65.16M | 512 | `4ab1d6435d63` |
+| buffalo_l_r50 | R50/ArcFace | 43.59M | 512 | `4c06341c33c2` |
+| buffalo_s_mbf | MobileFaceNet/ArcFace | 3.40M | 512 | `9cc6e4a75f0e` |
+| opencv_sface | SFace | 9.67M | 128 | `0ba9fbfa01b5` |
+| facenet_vggface2 | InceptionResNet-V1/FaceNet | 23.48M | 512 | `281cebca8662` |
+| ArcFace/FaceNet 融合 | 加权拼接 | 88.64M | 1024 | 上述两个哈希 |
 
-当前文件的命名、参数量和结构与 InsightFace R100/Glint360K 系列相符，但仓库没有来源清单，所以这里只把它称为 `current_glint100`，不把官方某个模型包的公开分数直接绑定到该哈希。
+### 3.2 检测
 
-### 3.2 检测实验
+使用逐脸复核包的 292 张真实戏剧剧照、1095 个历史框，统一最长边 1920、网络输入 640×640、检测阈值 0.3、预测面积至少 1600 px²，IoU≥0.5 视为匹配。
 
-使用已有逐脸复核包的 292 张真实戏剧剧照和 1095 个历史框。历史框来自此前 SCRFD 流程，面积门槛为 1600 px²。本次重新运行 10G 和官方 500M，在 IoU≥0.5 时视为匹配，并按参考框面积平方根分层。
+候选为 SCRFD-10G、SCRFD-500M、YuNet-2023mar、RetinaFace-R34。历史框来自此前 SCRFD 流程，因此这是**对 SCRFD 有利的回归一致性测试**，不是独立人工真值。未匹配预测也不能直接称为误检。
 
-这是回归一致性实验，不是独立检测真值：10G 对自身历史框的高召回主要证明重跑一致；500M 的相对保留率和速度差异有决策价值，但“未匹配预测”不能直接称为误检。
+### 3.3 检索
 
-### 3.3 检索实验
-
-直接复用已完成的 [Qdrant 在线向量库对比](../qdrant_20261102/README.md)：真实 89×512 人脸 gallery、20 个 query，以及 1万/10万合成扩容测试。该实验把特征提取排除在检索计时之外，并以 FAISS 精确结果计算 recall@10。
+复用 [Qdrant 在线向量库对比](../qdrant_20261102/README.md)：真实 89×512 gallery、20 个 query，以及 1万/10万合成扩容测试。以 FAISS 精确结果计算 recall@10，特征提取不计入检索时延。
 
 ## 4. 实验结果
 
-### 4.1 识别质量与速度
+### 4.1 单模型与融合识别
 
-| 模型 | Top-1 | Top-5 | ROC AUC | EER | CPU batch=1 p50 | CPU batch=32 每脸 | 吞吐 |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| **current_glint100** | **86.92%** | **96.26%** | **85.05%** | **23.46%** | 208.53 ms | 142.51 ms | 6.41 脸/s |
-| buffalo_l_r50 | 82.24% | 91.59% | 73.92% | 32.99% | 56.18 ms | 45.98 ms | 22.40 脸/s |
-| buffalo_s_mbf | 77.57% | 93.46% | 73.67% | 34.14% | 8.61 ms | 5.78 ms | 160.99 脸/s |
+| 模型 | Top-1 | Top-5 | ROC AUC | EER | CPU batch=1 | batch=32 每脸 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| current_glint100 | 86.92% | 96.26% | 85.05% | 23.46% | 227.91 ms | 139.44 ms |
+| buffalo_l_r50 | 82.24% | 91.59% | 73.92% | 32.99% | 55.40 ms | 49.86 ms |
+| buffalo_s_mbf | 77.57% | 93.46% | 73.67% | 34.14% | 8.71 ms | 5.87 ms |
+| opencv_sface | 76.64% | 88.79% | 78.87% | 29.43% | 12.78 ms | 11.94 ms |
+| **facenet_vggface2** | 90.65% | 95.33% | **91.14%** | **17.99%** | 49.42 ms | 11.12 ms |
+| **70% ArcFace + 30% FaceNet** | **94.39%** | **97.20%** | 90.11% | 19.14% | 277.33 ms | 150.56 ms |
+| 90% ArcFace + 10% FaceNet | 91.59% | **97.20%** | 87.34% | 21.88% | 277.33 ms | 150.56 ms |
 
-R50 和 MobileFaceNet 分别约快 3.5 倍和 25 倍，但 Top-1 分别下降 4.68 和 9.35 个百分点。按项目既定“精度低于参考 10% 以上即排除”的规则，MobileFaceNet 已接近一票否决边界；考虑舞台小脸和错误身份的业务代价，不应成为最终识别默认。
+FaceNet 推翻了“R100 ArcFace 是已测最佳单模型”的原结论：它的 Top-1 高 3.73 个百分点，AUC 高 6.09 个百分点。70/30 融合进一步把 Top-1 提高到 94.39%，说明两种特征空间的错误并不完全重合。
 
-固定阈值 `0.55` 的闭集查询结果：
+### 4.2 低错误接收工作点
 
-| 模型 | 正确接收 | 错误接收 | 拒识 |
-| --- | ---: | ---: | ---: |
-| **current_glint100** | **60.75%** | **0.00%** | 39.25% |
-| buffalo_l_r50 | 59.81% | 1.87% | 38.32% |
-| buffalo_s_mbf | 57.94% | 4.67% | 37.38% |
+固定使用同一个 `0.55` 阈值跨模型没有意义，因为不同损失的分数尺度不同。下表对每个候选独立扫描开发集阈值，在错误接收率不超过 2% 时最大化正确接收：
 
-当前模型在保守阈值下最好，但 39.25% 拒识率说明阈值和图库质量仍是主要瓶颈。不能直接把阈值降到 `0.4`：当前模型在该开发集的错误接收率会上升到 **4.67%**。正确做法是建立独立 validation/test，联合选择绝对阈值、最佳/次佳演员分差和图库质量门槛。
+| 模型 | 阈值 | 正确接收 | 错误接收 | 拒识 |
+| --- | ---: | ---: | ---: | ---: |
+| current_glint100 | 0.4280 | 82.24% | 1.87% | 15.89% |
+| buffalo_l_r50 | 0.5425 | 64.49% | 1.87% | 33.64% |
+| buffalo_s_mbf | 0.6246 | 39.25% | 0.93% | 59.81% |
+| opencv_sface | 0.6354 | 43.93% | 1.87% | 54.21% |
+| facenet_vggface2 | 0.8297 | 55.14% | 0.93% | 43.93% |
+| 70% ArcFace + 30% FaceNet | 0.4714 | 86.92% | 1.87% | 11.21% |
+| **90% ArcFace + 10% FaceNet** | **0.4047** | **87.85%** | **1.87%** | **10.28%** |
 
-本次 CPU 数字用于候选相对比较。项目已有 TensorRT FP16 测量中，当前 SCRFD-10G 为 **7.40 ms/图**、ArcFace 单脸为 **1.76 ms**，端到端主要瓶颈是大图解码而不是当前两个模型；见 [推理优化报告](../../optimization_report.md)。
+FaceNet 适合候选排序和人工复核，但单独用于低误识自动接收并不占优。90/10 融合只比 70/30 多正确接收 1 个 query；这个权重差异很小且来自同一开发集，不应在独立验证前固化为生产常量。
 
-### 4.2 检测回归
+### 4.3 检测回归
 
 | 模型 | 参数 | CPU p50 | 吞吐 | 历史框保留率 | 40–79 px | 80–159 px | ≥160 px |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| **SCRFD-10G-KPS** | 4.23M | 88.17 ms | 11.34 图/s | **99.54%** | **99.26%** | **100%** | **100%** |
-| SCRFD-500M-KPS | 0.63M | 18.48 ms | 54.13 图/s | 92.51% | 89.64% | 97.16% | 96.77% |
+| **SCRFD-10G-KPS** | 4.23M | 87.44 ms | 11.44 图/s | **99.54%** | **99.26%** | **100%** | **100%** |
+| RetinaFace-R34 | 22.11M | 162.03 ms | 6.17 图/s | 94.61% | 91.86% | 99.23% | 96.77% |
+| SCRFD-500M-KPS | 0.63M | **18.25 ms** | **54.80 图/s** | 92.51% | 89.64% | 97.16% | 96.77% |
+| YuNet-2023mar | 0.05M | 18.28 ms | 54.69 图/s | 87.58% | 82.25% | 96.13% | 96.77% |
 
-500M 快 4.77 倍，但总体少保留 7.03 个百分点，40–79 像素脸少保留 9.62 个百分点。这个方向与 WIDER FACE 官方 Hard AP 的 82.80 对 69.49 一致。项目已有 TensorRT 后，10G 推理只占完整大图流程的小部分，因此用 500M 换速度不划算。
+在这个偏向 SCRFD 的本地回归口径下，10G 同时领先 RetinaFace-R34 4.93 个总体百分点和 7.40 个小脸百分点，且 CPU 快约 1.85 倍。RetinaFace 的公开 WIDER FACE 结果仍说明它可能在独立检测真值上更强，因此不能把本表解释成通用检测器排行榜。
 
-### 4.3 检索后端
+SCRFD-500M 和 YuNet 速度几乎相同，但 500M 的总体/小脸保留率分别高 4.93/7.39 个百分点；在本项目轻量档中也应优先 500M，而不是 YuNet。
+
+### 4.4 检索后端
 
 | 真实 89×512 人脸 | p50 | p95 | recall@10 | 适用性 |
 | --- | ---: | ---: | ---: | --- |
@@ -147,55 +177,78 @@ R50 和 MobileFaceNet 分别约快 3.5 倍和 25 倍，但 Top-1 分别下降 4.
 | **Qdrant 精确** | **2.253 ms** | **2.821 ms** | **100%** | 在线增删、持久化、过滤的推荐默认 |
 | Elasticsearch 精确 | 5.776 ms | 6.655 ms | 100% | 可回退，不是当前首选 |
 
-10 万条 768 维合成向量中，Qdrant exact=false 的 p50 为 10.480 ms，但 recall@10 只有 44.70%；精确模式 p50 24.213 ms、recall@10 100%。这不是人脸百万库结论，却足以证明 ANN 参数未经真实分布校准时不能默认启用。
+10 万条 768 维合成向量中，Qdrant ANN p50 10.480 ms，但 recall@10 只有 44.70%；exact p50 24.213 ms、recall@10 100%。ANN 参数未经真实人脸分布校准时不能默认启用。
 
-在当前 109 锚点规模，2 ms 检索相对图片解码、检测和特征提取很小。Qdrant 的价值是在线状态管理，不是让数学上的点积比 FAISS 更快。
+## 5. 推荐方案
 
-## 5. 最终推荐方案
+### 5.1 准确率优先候选
 
-### 5.1 主生产档：准确率优先
-
-1. 保留 SCRFD-10G-KPS，输入最长边 1920，检测阈值 0.3；对小脸保留现有 20 px 下限和业务质量过滤。
-2. 所有 query 和 gallery 都必须使用 SCRFD 5 点到 ArcFace 112×112 模板的同一相似变换。不要仅凭图片是 160×160 就假设已经正确对齐；清单中记录对齐版本、原图哈希、框和关键点。
-3. 保留当前 R100/Glint100 ArcFace 作为已测质量最佳模型，特征 L2 归一化。模型权重变化必须创建新集合，禁止混用向量空间。
-4. Qdrant 使用 Cosine 和 `exact=true`。图库较小时不建立 HNSW；规模扩大后以真实脸分布要求至少 recall@1/10、误识率和未知拒识均达门槛再切换。
-5. 身份主键改为稳定 `actor_id`；剧目、角色、组别和时间作为 payload。当前“王浩伟（饰播威利）/王浩伟（饰烩五哥）”不能继续成为两个生物身份。
-6. 每名演员保留 3–5 个跨场次、姿态、妆造和光照的高质量锚点，内容哈希去重。检索要过取足够多的原始锚点后按 `actor_id` 去重，保证能得到两个不同演员用于歧义分差，而不是让同一演员的大量锚点占满 top-k。
-7. 最终判定同时使用绝对相似度、最佳/次佳演员分差和人脸质量；低质量或分差不足返回“未知/待复核”，不强制闭集命名。
+1. 检测保留 SCRFD-10G-KPS，统一最长边 1920、输入 640、阈值 0.3。
+2. 保存原框、五点关键点、对齐版本和来源哈希；为 ArcFace 生成 112×112，为 FaceNet 生成 160×160，query/gallery 必须完全同口径。
+3. 当前 ArcFace 继续作为低误接收基线；新增 FaceNet 特征进行影子评估。
+4. 独立验证若确认融合收益，则用 1024 维加权拼接向量新建 Qdrant collection；不得与既有 512 维 ArcFace 集合混用。
+5. 以错误接收上限先筛阈值，再比较正确接收率；同时加入最佳/次佳演员分差和质量拒识。
+6. 使用稳定 `actor_id` 作为身份主键，剧目、角色、组别作为 payload；检索后按演员去重。
+7. Qdrant 保持 Cosine、`exact=true`。只有真实图库扩容实验满足 recall 和误识门槛后才启用 HNSW。
 
 ### 5.2 轻量档
 
-SCRFD-500M + MobileFaceNet 只适合 CPU 预览、边缘设备或候选预筛，不应写入最终演员身份。可采用“500M 快扫，10G 对低分/小脸区域复检”的级联，但必须另做端到端召回实验后才能上线。
+SCRFD-500M + MobileFaceNet 可用于 CPU 预览或候选预筛。YuNet 与 500M 速度相近但本地小脸保留更低；SFace 比 MobileFaceNet 慢且本地 Top-1 更低，因此没有形成更优轻量组合。
 
-### 5.3 下一轮研究候选
+### 5.3 后续必须补测
 
-最值得比较的不是再换一个向量数据库，而是使用相同 R100 骨干和合法训练数据测试 AdaFace 或 Sub-center ArcFace，并增加图库质量模型。候选必须从零重建独立集合，不能与当前 ArcFace 特征混存。
+- 用独立人工 bbox 比较 SCRFD-10G、RetinaFace-R34/R50、YuNet，消除 SCRFD 历史框偏置。
+- 在统一对齐、统一演员划分下加入 AdaFace、MagFace、CurricularFace/Sub-center ArcFace。
+- 单独建立包含 unknown 的 validation/test，冻结融合权重、阈值和分差后再评 final test。
+- 按小脸、姿态、暗光、遮挡、妆造、剧目和演员分层报告置信区间。
 
-## 6. 仍需完成的证明
+## 6. 证据边界
 
-本轮是开发实验，不能代替正式验收：
+- 109 张脸只来自单一话剧，类别不均衡；两个演员只有单一拍摄来源。
+- 现有锚定脸未在本轮重新人工确认统一五点对齐；FaceNet 与 ArcFace 的输入尺寸不同。
+- 检测参考框来自 SCRFD，不是独立人工真值。
+- 不同检测器使用相同数值阈值 0.3，但分数并未校准；正式比较应在独立真值上画完整 PR 曲线。
+- 70/30、90/10 融合权重和阈值均在这 107 个 query 上选择，存在明显开发集过拟合风险。
+- Qdrant 的真实向量实测是 512 维；1024 维融合集合仍需补测延迟、内存和磁盘占用。
+- 当前数据已用于选型，不能再充当锁定终测集。
 
-- 109 张锚定脸来自单一话剧且类别极不均衡，最多类别 33 张，两个演员只有单来源；没有跨剧目、跨年份和未知身份终测。
-- 文件夹标签没有在本轮逐脸人工复核；292 张检测图的历史框来自 SCRFD，不是独立人工 bbox。
-- 当前测试数据已参与开发，不得再作为锁定 final test。
-- 需要至少 200 张独立戏剧照片的检测标注，以及按演员隔离、包含 unknown 的 gallery/query；按小脸、妆造、遮挡、性别/年龄和剧目分层报告置信区间。
-- 正式门槛建议保持项目原约束：正常脸识别准确率 ≥95%、异人误识率 <2%，并新增 unknown false accept、检测漏检和不可评价比例。
-- 当前 Glint100/SCRFD 权重必须补齐下载 URL、原始哈希、模型卡、训练数据说明和许可。若用于商业服务，应购买授权或用许可合规数据重训等价模型。
-
-因此，严格表述应为：**SCRFD-10G + current Glint100/ArcFace + Qdrant exact 是本项目当前证据下的最佳已测组合；它尚未被独立终测和许可审计证明为最终可商用最优方案。**
+因此本轮证明的是“已测候选在当前开发数据上的相对表现”，不是对所有人脸模型的数学全局最优证明。
 
 ## 7. 复现
 
-对照权重来自 InsightFace 官方 `buffalo_l.zip` 与 `buffalo_s.zip`，下载到临时目录，不纳入仓库。运行：
+扩展对照权重均下载到 `/tmp`，不纳入仓库：
+
+- YuNet、SFace：OpenCV Zoo 对应模型目录中的官方 ONNX。
+- RetinaFace-R34：`yakhyo/retinaface-pytorch` v0.0.1 release 的 `retinaface_r34.onnx`。
+- FaceNet：`timesler/facenet-pytorch` 与其 v2.2.9 VGGFace2 checkpoint。
+- ArcFace R50/MobileFaceNet、SCRFD-500M：InsightFace `buffalo_l`、`buffalo_s` 模型包。
+
+将 facenet-pytorch 安装到临时目录，不修改项目依赖环境：
 
 ```bash
-/home/huachenghao/.conda/envs/face_scrfd_arcface/bin/python tools/benchmark_face_stack.py \
+/home/huachenghao/.conda/envs/face_scrfd_arcface/bin/python -m pip install \
+  --no-deps --no-build-isolation --target /tmp/facenet_deps \
+  /tmp/facenet-pytorch-master
+```
+
+然后运行：
+
+```bash
+PYTHONPATH=/tmp/facenet_deps \
+/home/huachenghao/.conda/envs/face_scrfd_arcface/bin/python \
+  tools/benchmark_face_stack.py \
   --device cpu --timing-rounds 10 \
   --recognizer current_glint100=weights/arcface/Glint100.onnx \
   --recognizer buffalo_l_r50=/tmp/face_stack_buffalo_l/w600k_r50.onnx \
   --recognizer buffalo_s_mbf=/tmp/face_stack_buffalo_s/w600k_mbf.onnx \
+  --sface-recognizer opencv_sface=/tmp/face_recognition_sface_fresh.onnx \
+  --facenet-recognizer facenet_vggface2=/tmp/facenet_vggface2.pt \
+  --ensemble arcface70_facenet30=current_glint100,facenet_vggface2,0.7 \
+  --ensemble arcface90_facenet10=current_glint100,facenet_vggface2,0.9 \
   --detector scrfd_10g=weights/scrfd/scrfd_10g_bnkps.onnx \
   --detector scrfd_500m=/tmp/face_stack_buffalo_s/det_500m.onnx \
+  --yunet-detector yunet_2023mar=/tmp/face_detection_yunet_2023mar.onnx \
+  --retinaface-detector retinaface_r34=/tmp/retinaface_r34.onnx \
   --output docs/reports/face_stack_20261106/benchmark.json
 ```
 
@@ -203,11 +256,19 @@ SCRFD-500M + MobileFaceNet 只适合 CPU 预览、边缘设备或候选预筛，
 
 访问日期均为 2026-11-06。
 
-- [SCRFD: Sample and Computation Redistribution for Efficient Face Detection](https://arxiv.org/abs/2105.04714)
-- [ArcFace: Additive Angular Margin Loss for Deep Face Recognition](https://arxiv.org/abs/1801.07698)
-- [RetinaFace: Single-stage Dense Face Localisation in the Wild](https://arxiv.org/abs/1905.00641)
+- [SCRFD](https://arxiv.org/abs/2105.04714)
+- [RetinaFace](https://arxiv.org/abs/1905.00641)
+- [YuNet](https://github.com/opencv/opencv_zoo/tree/main/models/face_detection_yunet)
+- [ArcFace](https://arxiv.org/abs/1801.07698)
+- [FaceNet](https://arxiv.org/abs/1503.03832) 与 [facenet-pytorch](https://github.com/timesler/facenet-pytorch)
+- [SFace](https://arxiv.org/abs/2205.12010) 与 [OpenCV Zoo SFace](https://github.com/opencv/opencv_zoo/tree/main/models/face_recognition_sface)
 - [CurricularFace](https://arxiv.org/abs/2004.00288)
 - [AdaFace](https://arxiv.org/abs/2204.00964)
 - [MagFace](https://arxiv.org/abs/2103.06627)
-- [InsightFace Model Zoo](https://github.com/deepinsight/insightface/tree/master/model_zoo)：模型包、公开精度、SCRFD/RetinaFace 表格及预训练模型非商用声明
-- [Qdrant](https://github.com/qdrant/qdrant)：向量、payload、过滤和服务能力；本项目实际数字以本地对比报告为准
+- [InsightFace Model Zoo](https://github.com/deepinsight/insightface/tree/master/model_zoo)
+- [RetinaFace PyTorch/ONNX 对照实现](https://github.com/yakhyo/retinaface-pytorch)
+- [Qdrant](https://github.com/qdrant/qdrant)
+
+## 9. 商用结论说明
+
+本轮按要求没有用商业许可问题排除任何候选，所有排名只讨论技术表现。若进入真实商业部署，仍需分别核对 InsightFace 模型包、FaceNet VGGFace2 权重、OpenCV Zoo 模型以及训练数据的授权范围；许可审计不改变本实验数值，但可能改变最终可上线模型。

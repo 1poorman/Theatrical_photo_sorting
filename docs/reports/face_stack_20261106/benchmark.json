@@ -1,5 +1,5 @@
 {
-  "created_at": "2026-11-06T06:37:45.839551+00:00",
+  "created_at": "2026-11-06T07:52:46.795980+00:00",
   "device": "cpu",
   "environment": {
     "python": "3.10.20",
@@ -39,24 +39,25 @@
       "sha256": "4ab1d6435d639628a6f3e5008dd4f929edf4c4124b1a7169e1048f9fef534cdf",
       "bytes": 260665334,
       "parameters": 65156288,
+      "family": "ArcFace-compatible ONNX",
       "speed": {
         "providers": [
           "CPUExecutionProvider"
         ],
-        "extraction_seconds": 16.992313575930893,
-        "faces_per_second": 6.414665049166421,
+        "extraction_seconds": 17.872753724455833,
+        "faces_per_second": 6.098668491741817,
         "timing": {
           "batch_1": {
-            "batch_p50_ms": 208.53216154500842,
-            "batch_p95_ms": 224.38694662414488,
-            "per_face_p50_ms": 208.53216154500842,
-            "faces_per_second_from_p50": 4.795423365830146
+            "batch_p50_ms": 227.91038593277335,
+            "batch_p95_ms": 255.66561338491735,
+            "per_face_p50_ms": 227.91038593277335,
+            "faces_per_second_from_p50": 4.387689467977864
           },
           "batch_32": {
-            "batch_p50_ms": 4560.366380959749,
-            "batch_p95_ms": 5151.5019247774035,
-            "per_face_p50_ms": 142.51144940499216,
-            "faces_per_second_from_p50": 7.016980068444733
+            "batch_p50_ms": 4462.038971018046,
+            "batch_p95_ms": 4952.885441342369,
+            "per_face_p50_ms": 139.43871784431394,
+            "faces_per_second_from_p50": 7.171609259320066
           }
         }
       },
@@ -93,6 +94,26 @@
               "correct_accept_rate": 0.6074766355140186,
               "wrong_accept_rate": 0.0,
               "rejection_rate": 0.39252336448598135
+            }
+          },
+          "calibrated_closed_set_operating_points": {
+            "max_wrong_accept_rate_0": {
+              "threshold": 0.4837133586406708,
+              "correct_accept_rate": 0.8037383177570093,
+              "wrong_accept_rate": 0.0,
+              "rejection_rate": 0.19626168224299068
+            },
+            "max_wrong_accept_rate_0.01": {
+              "threshold": 0.4837133586406708,
+              "correct_accept_rate": 0.8037383177570093,
+              "wrong_accept_rate": 0.0,
+              "rejection_rate": 0.19626168224299068
+            },
+            "max_wrong_accept_rate_0.02": {
+              "threshold": 0.4280017912387848,
+              "correct_accept_rate": 0.822429906542056,
+              "wrong_accept_rate": 0.018691588785046728,
+              "rejection_rate": 0.15887850467289721
             }
           },
           "top1_failure_count": 14,
@@ -203,6 +224,26 @@
               "rejection_rate": 0.39252336448598135
             }
           },
+          "calibrated_closed_set_operating_points": {
+            "max_wrong_accept_rate_0": {
+              "threshold": 0.4837133586406708,
+              "correct_accept_rate": 0.8037383177570093,
+              "wrong_accept_rate": 0.0,
+              "rejection_rate": 0.19626168224299068
+            },
+            "max_wrong_accept_rate_0.01": {
+              "threshold": 0.4837133586406708,
+              "correct_accept_rate": 0.8037383177570093,
+              "wrong_accept_rate": 0.0,
+              "rejection_rate": 0.19626168224299068
+            },
+            "max_wrong_accept_rate_0.02": {
+              "threshold": 0.4280017912387848,
+              "correct_accept_rate": 0.822429906542056,
+              "wrong_accept_rate": 0.018691588785046728,
+              "rejection_rate": 0.15887850467289721
+            }
+          },
           "top1_failure_count": 14,
           "confusions": [
             {
@@ -284,24 +325,25 @@
       "sha256": "4c06341c33c2ca1f86781dab0e829f88ad5b64be9fba56e56bc9ebdefc619e43",
       "bytes": 174383860,
       "parameters": 43590976,
+      "family": "ArcFace-compatible ONNX",
       "speed": {
         "providers": [
           "CPUExecutionProvider"
         ],
-        "extraction_seconds": 4.865470791235566,
-        "faces_per_second": 22.402765256827266,
+        "extraction_seconds": 4.972671463154256,
+        "faces_per_second": 21.919807252027727,
         "timing": {
           "batch_1": {
-            "batch_p50_ms": 56.17828015238047,
-            "batch_p95_ms": 64.98462674207984,
-            "per_face_p50_ms": 56.17828015238047,
-            "faces_per_second_from_p50": 17.800473729127262
+            "batch_p50_ms": 55.403091944754124,
+            "batch_p95_ms": 60.60524522326886,
+            "per_face_p50_ms": 55.403091944754124,
+            "faces_per_second_from_p50": 18.049534148692683
           },
           "batch_32": {
-            "batch_p50_ms": 1471.3031006976962,
-            "batch_p95_ms": 1603.5402147565037,
-            "per_face_p50_ms": 45.97822189680301,
-            "faces_per_second_from_p50": 21.74942741901754
+            "batch_p50_ms": 1595.643199980259,
+            "batch_p95_ms": 1636.345781153068,
+            "per_face_p50_ms": 49.86384999938309,
+            "faces_per_second_from_p50": 20.05460869973682
           }
         }
       },
@@ -338,6 +380,26 @@
               "correct_accept_rate": 0.5981308411214953,
               "wrong_accept_rate": 0.018691588785046728,
               "rejection_rate": 0.383177570093458
+            }
+          },
+          "calibrated_closed_set_operating_points": {
+            "max_wrong_accept_rate_0": {
+              "threshold": 0.6381205320358276,
+              "correct_accept_rate": 0.38317757009345793,
+              "wrong_accept_rate": 0.0,
+              "rejection_rate": 0.6168224299065421
+            },
+            "max_wrong_accept_rate_0.01": {
+              "threshold": 0.6381205320358276,
+              "correct_accept_rate": 0.38317757009345793,
+              "wrong_accept_rate": 0.0,
+              "rejection_rate": 0.6168224299065421
+            },
+            "max_wrong_accept_rate_0.02": {
+              "threshold": 0.5425438284873962,
+              "correct_accept_rate": 0.6448598130841121,
+              "wrong_accept_rate": 0.018691588785046728,
+              "rejection_rate": 0.33644859813084116
             }
           },
           "top1_failure_count": 19,
@@ -458,6 +520,26 @@
               "rejection_rate": 0.383177570093458
             }
           },
+          "calibrated_closed_set_operating_points": {
+            "max_wrong_accept_rate_0": {
+              "threshold": 0.6381205320358276,
+              "correct_accept_rate": 0.38317757009345793,
+              "wrong_accept_rate": 0.0,
+              "rejection_rate": 0.6168224299065421
+            },
+            "max_wrong_accept_rate_0.01": {
+              "threshold": 0.6381205320358276,
+              "correct_accept_rate": 0.38317757009345793,
+              "wrong_accept_rate": 0.0,
+              "rejection_rate": 0.6168224299065421
+            },
+            "max_wrong_accept_rate_0.02": {
+              "threshold": 0.5425438284873962,
+              "correct_accept_rate": 0.6448598130841121,
+              "wrong_accept_rate": 0.018691588785046728,
+              "rejection_rate": 0.33644859813084116
+            }
+          },
           "top1_failure_count": 19,
           "confusions": [
             {
@@ -544,24 +626,25 @@
       "sha256": "9cc6e4a75f0e2bf0b1aed94578f144d15175f357bdc05e815e5c4a02b319eb4f",
       "bytes": 13616099,
       "parameters": 3400448,
+      "family": "ArcFace-compatible ONNX",
       "speed": {
         "providers": [
           "CPUExecutionProvider"
         ],
-        "extraction_seconds": 0.6770776659250259,
-        "faces_per_second": 160.9859628896248,
+        "extraction_seconds": 0.631422127597034,
+        "faces_per_second": 172.626196067621,
         "timing": {
           "batch_1": {
-            "batch_p50_ms": 8.614961989223957,
-            "batch_p95_ms": 8.976356498897076,
-            "per_face_p50_ms": 8.614961989223957,
-            "faces_per_second_from_p50": 116.07712271404704
+            "batch_p50_ms": 8.707730565220118,
+            "batch_p95_ms": 9.11620226688683,
+            "per_face_p50_ms": 8.707730565220118,
+            "faces_per_second_from_p50": 114.84048484390853
           },
           "batch_32": {
-            "batch_p50_ms": 184.94162196293473,
-            "batch_p95_ms": 200.86342999711633,
-            "per_face_p50_ms": 5.77942568634171,
-            "faces_per_second_from_p50": 173.02757302741355
+            "batch_p50_ms": 187.81928345561028,
+            "batch_p95_ms": 190.58982012793422,
+            "per_face_p50_ms": 5.869352607987821,
+            "faces_per_second_from_p50": 170.37654180787547
           }
         }
       },
@@ -598,6 +681,26 @@
               "correct_accept_rate": 0.5794392523364486,
               "wrong_accept_rate": 0.04672897196261682,
               "rejection_rate": 0.3738317757009346
+            }
+          },
+          "calibrated_closed_set_operating_points": {
+            "max_wrong_accept_rate_0": {
+              "threshold": 0.6989367604255676,
+              "correct_accept_rate": 0.205607476635514,
+              "wrong_accept_rate": 0.0,
+              "rejection_rate": 0.794392523364486
+            },
+            "max_wrong_accept_rate_0.01": {
+              "threshold": 0.6246168613433838,
+              "correct_accept_rate": 0.3925233644859813,
+              "wrong_accept_rate": 0.009345794392523364,
+              "rejection_rate": 0.5981308411214954
+            },
+            "max_wrong_accept_rate_0.02": {
+              "threshold": 0.6246168613433838,
+              "correct_accept_rate": 0.3925233644859813,
+              "wrong_accept_rate": 0.009345794392523364,
+              "rejection_rate": 0.5981308411214954
             }
           },
           "top1_failure_count": 24,
@@ -743,6 +846,26 @@
               "rejection_rate": 0.3738317757009346
             }
           },
+          "calibrated_closed_set_operating_points": {
+            "max_wrong_accept_rate_0": {
+              "threshold": 0.6989367604255676,
+              "correct_accept_rate": 0.205607476635514,
+              "wrong_accept_rate": 0.0,
+              "rejection_rate": 0.794392523364486
+            },
+            "max_wrong_accept_rate_0.01": {
+              "threshold": 0.6246168613433838,
+              "correct_accept_rate": 0.3925233644859813,
+              "wrong_accept_rate": 0.009345794392523364,
+              "rejection_rate": 0.5981308411214954
+            },
+            "max_wrong_accept_rate_0.02": {
+              "threshold": 0.6246168613433838,
+              "correct_accept_rate": 0.3925233644859813,
+              "wrong_accept_rate": 0.009345794392523364,
+              "rejection_rate": 0.5981308411214954
+            }
+          },
           "top1_failure_count": 24,
           "confusions": [
             {
@@ -848,6 +971,999 @@
           ]
         }
       }
+    },
+    "opencv_sface": {
+      "path": "/tmp/face_recognition_sface_fresh.onnx",
+      "sha256": "0ba9fbfa01b5270c96627c4ef784da859931e02f04419c829e83484087c34e79",
+      "bytes": 38696353,
+      "parameters": 9667074,
+      "family": "SFace/OpenCV FaceRecognizerSF",
+      "speed": {
+        "providers": [
+          "OpenCV DNN CPU"
+        ],
+        "extraction_seconds": 1.3351036151871085,
+        "faces_per_second": 81.64160351309076,
+        "timing": {
+          "batch_1": {
+            "batch_p50_ms": 12.77706678956747,
+            "batch_p95_ms": 15.128052188083528,
+            "per_face_p50_ms": 12.77706678956747,
+            "faces_per_second_from_p50": 78.26522444231912
+          },
+          "batch_32": {
+            "batch_p50_ms": 381.99380272999406,
+            "batch_p95_ms": 396.20275776833296,
+            "per_face_p50_ms": 11.937306335312314,
+            "faces_per_second_from_p50": 83.77099254308757
+          }
+        }
+      },
+      "quality": {
+        "folder_identity": {
+          "anchors": 109,
+          "identities": 15,
+          "source_groups": 47,
+          "eligible_queries": 107,
+          "top1_accuracy": 0.7663551401869159,
+          "top5_accuracy": 0.8878504672897196,
+          "margin_p05": -0.165252423286438,
+          "margin_p50": 0.09088760614395142,
+          "positive_pairs": 868,
+          "negative_pairs": 4885,
+          "verification": {
+            "auc": 0.7914319675108131,
+            "eer": 0.2914896301572103,
+            "eer_threshold": 0.2589152753353119,
+            "tar_at_far_0.1": 0.4608294930875576,
+            "threshold_at_far_0.1": 0.37449413537979126,
+            "tar_at_far_0.01": 0.1935483870967742,
+            "threshold_at_far_0.01": 0.5312775373458862,
+            "tar_at_far_0.001": 0.08525345622119816,
+            "threshold_at_far_0.001": 0.6200090646743774
+          },
+          "fixed_thresholds": {
+            "0.4": {
+              "correct_accept_rate": 0.7663551401869159,
+              "wrong_accept_rate": 0.21495327102803738,
+              "rejection_rate": 0.01869158878504673
+            },
+            "0.55": {
+              "correct_accept_rate": 0.6915887850467289,
+              "wrong_accept_rate": 0.102803738317757,
+              "rejection_rate": 0.20560747663551404
+            }
+          },
+          "calibrated_closed_set_operating_points": {
+            "max_wrong_accept_rate_0": {
+              "threshold": 0.6937307715415955,
+              "correct_accept_rate": 0.32710280373831774,
+              "wrong_accept_rate": 0.0,
+              "rejection_rate": 0.6728971962616823
+            },
+            "max_wrong_accept_rate_0.01": {
+              "threshold": 0.6937307715415955,
+              "correct_accept_rate": 0.32710280373831774,
+              "wrong_accept_rate": 0.0,
+              "rejection_rate": 0.6728971962616823
+            },
+            "max_wrong_accept_rate_0.02": {
+              "threshold": 0.6354076266288757,
+              "correct_accept_rate": 0.4392523364485981,
+              "wrong_accept_rate": 0.018691588785046728,
+              "rejection_rate": 0.5420560747663552
+            }
+          },
+          "top1_failure_count": 25,
+          "confusions": [
+            {
+              "actual": "薛天智（饰雷思起）",
+              "predicted": "彭国斌（饰雷廷昌）",
+              "count": 5
+            },
+            {
+              "actual": "孟宇（饰茶叶贩）",
+              "predicted": "彭国斌（饰雷廷昌）",
+              "count": 2
+            },
+            {
+              "actual": "彭国斌（饰雷廷昌）",
+              "predicted": "薛天智（饰雷思起）",
+              "count": 2
+            },
+            {
+              "actual": "王吉（饰桃儿）",
+              "predicted": "刘思妤（饰杏儿）",
+              "count": 2
+            },
+            {
+              "actual": "王文杰（饰桂枝儿）",
+              "predicted": "刘思妤（饰杏儿）",
+              "count": 2
+            },
+            {
+              "actual": "王浩伟（饰烩五哥）",
+              "predicted": "彭国斌（饰雷廷昌）",
+              "count": 2
+            },
+            {
+              "actual": "刘思妤（饰杏儿）",
+              "predicted": "王文杰（饰桂枝儿）",
+              "count": 1
+            },
+            {
+              "actual": "张硕（饰说书人）",
+              "predicted": "薛天智（饰雷思起）",
+              "count": 1
+            },
+            {
+              "actual": "彭国斌（饰雷廷昌）",
+              "predicted": "孟宇（饰茶叶贩）",
+              "count": 1
+            },
+            {
+              "actual": "杨淇（饰慈禧）",
+              "predicted": "刘思妤（饰杏儿）",
+              "count": 1
+            },
+            {
+              "actual": "泰然（饰贵宝）",
+              "predicted": "薛天智（饰雷思起）",
+              "count": 1
+            },
+            {
+              "actual": "王吉（饰桃儿）",
+              "predicted": "杨淇（饰慈禧）",
+              "count": 1
+            },
+            {
+              "actual": "王文杰（饰桂枝儿）",
+              "predicted": "彭国斌（饰雷廷昌）",
+              "count": 1
+            },
+            {
+              "actual": "王浩伟（饰播威利）",
+              "predicted": "彭国斌（饰雷廷昌）",
+              "count": 1
+            },
+            {
+              "actual": "董汶亮（饰李光照）",
+              "predicted": "彭国斌（饰雷廷昌）",
+              "count": 1
+            },
+            {
+              "actual": "董汶亮（饰李光照）",
+              "predicted": "薛天智（饰雷思起）",
+              "count": 1
+            }
+          ]
+        },
+        "actor_identity": {
+          "anchors": 109,
+          "identities": 14,
+          "source_groups": 47,
+          "eligible_queries": 107,
+          "top1_accuracy": 0.7663551401869159,
+          "top5_accuracy": 0.8878504672897196,
+          "margin_p05": -0.165252423286438,
+          "margin_p50": 0.09088760614395142,
+          "positive_pairs": 873,
+          "negative_pairs": 4880,
+          "verification": {
+            "auc": 0.7887219968828048,
+            "eer": 0.2943247328788988,
+            "eer_threshold": 0.2580370008945465,
+            "tar_at_far_0.1": 0.4581901489117984,
+            "threshold_at_far_0.1": 0.37449413537979126,
+            "tar_at_far_0.01": 0.19243986254295534,
+            "threshold_at_far_0.01": 0.5312775373458862,
+            "tar_at_far_0.001": 0.08476517754868271,
+            "threshold_at_far_0.001": 0.6200090646743774
+          },
+          "fixed_thresholds": {
+            "0.4": {
+              "correct_accept_rate": 0.7663551401869159,
+              "wrong_accept_rate": 0.21495327102803738,
+              "rejection_rate": 0.01869158878504673
+            },
+            "0.55": {
+              "correct_accept_rate": 0.6915887850467289,
+              "wrong_accept_rate": 0.102803738317757,
+              "rejection_rate": 0.20560747663551404
+            }
+          },
+          "calibrated_closed_set_operating_points": {
+            "max_wrong_accept_rate_0": {
+              "threshold": 0.6937307715415955,
+              "correct_accept_rate": 0.32710280373831774,
+              "wrong_accept_rate": 0.0,
+              "rejection_rate": 0.6728971962616823
+            },
+            "max_wrong_accept_rate_0.01": {
+              "threshold": 0.6937307715415955,
+              "correct_accept_rate": 0.32710280373831774,
+              "wrong_accept_rate": 0.0,
+              "rejection_rate": 0.6728971962616823
+            },
+            "max_wrong_accept_rate_0.02": {
+              "threshold": 0.6354076266288757,
+              "correct_accept_rate": 0.4392523364485981,
+              "wrong_accept_rate": 0.018691588785046728,
+              "rejection_rate": 0.5420560747663552
+            }
+          },
+          "top1_failure_count": 25,
+          "confusions": [
+            {
+              "actual": "薛天智",
+              "predicted": "彭国斌",
+              "count": 5
+            },
+            {
+              "actual": "王浩伟",
+              "predicted": "彭国斌",
+              "count": 3
+            },
+            {
+              "actual": "孟宇",
+              "predicted": "彭国斌",
+              "count": 2
+            },
+            {
+              "actual": "彭国斌",
+              "predicted": "薛天智",
+              "count": 2
+            },
+            {
+              "actual": "王吉",
+              "predicted": "刘思妤",
+              "count": 2
+            },
+            {
+              "actual": "王文杰",
+              "predicted": "刘思妤",
+              "count": 2
+            },
+            {
+              "actual": "刘思妤",
+              "predicted": "王文杰",
+              "count": 1
+            },
+            {
+              "actual": "张硕",
+              "predicted": "薛天智",
+              "count": 1
+            },
+            {
+              "actual": "彭国斌",
+              "predicted": "孟宇",
+              "count": 1
+            },
+            {
+              "actual": "杨淇",
+              "predicted": "刘思妤",
+              "count": 1
+            },
+            {
+              "actual": "泰然",
+              "predicted": "薛天智",
+              "count": 1
+            },
+            {
+              "actual": "王吉",
+              "predicted": "杨淇",
+              "count": 1
+            },
+            {
+              "actual": "王文杰",
+              "predicted": "彭国斌",
+              "count": 1
+            },
+            {
+              "actual": "董汶亮",
+              "predicted": "彭国斌",
+              "count": 1
+            },
+            {
+              "actual": "董汶亮",
+              "predicted": "薛天智",
+              "count": 1
+            }
+          ]
+        }
+      }
+    },
+    "facenet_vggface2": {
+      "path": "/tmp/facenet_vggface2.pt",
+      "sha256": "281cebca8662831adb987a874bdcb36e73f5b1c6dc5ee5878f305e985625d99b",
+      "bytes": 111898327,
+      "parameters": 23482624,
+      "family": "FaceNet/InceptionResnetV1 VGGFace2",
+      "speed": {
+        "providers": [
+          "cpu"
+        ],
+        "extraction_seconds": 1.2332575414329767,
+        "faces_per_second": 88.38380981911374,
+        "timing": {
+          "batch_1": {
+            "batch_p50_ms": 49.42418169230223,
+            "batch_p95_ms": 51.63557534106076,
+            "per_face_p50_ms": 49.42418169230223,
+            "faces_per_second_from_p50": 20.23301076031268
+          },
+          "batch_32": {
+            "batch_p50_ms": 355.82596622407436,
+            "batch_p95_ms": 375.9235947858542,
+            "per_face_p50_ms": 11.119561444502324,
+            "faces_per_second_from_p50": 89.93160431650071
+          }
+        }
+      },
+      "quality": {
+        "folder_identity": {
+          "anchors": 109,
+          "identities": 15,
+          "source_groups": 47,
+          "eligible_queries": 107,
+          "top1_accuracy": 0.9065420560747663,
+          "top5_accuracy": 0.9532710280373832,
+          "margin_p05": -0.052058786153793335,
+          "margin_p50": 0.17744052410125732,
+          "positive_pairs": 868,
+          "negative_pairs": 4885,
+          "verification": {
+            "auc": 0.9140199236824853,
+            "eer": 0.17843617487936836,
+            "eer_threshold": 0.46863245964050293,
+            "tar_at_far_0.1": 0.7338709677419355,
+            "threshold_at_far_0.1": 0.5321396589279175,
+            "tar_at_far_0.01": 0.4112903225806452,
+            "threshold_at_far_0.01": 0.6870900392532349,
+            "tar_at_far_0.001": 0.16820276497695852,
+            "threshold_at_far_0.001": 0.8086087703704834
+          },
+          "fixed_thresholds": {
+            "0.4": {
+              "correct_accept_rate": 0.9065420560747663,
+              "wrong_accept_rate": 0.09345794392523364,
+              "rejection_rate": 0.0
+            },
+            "0.55": {
+              "correct_accept_rate": 0.9065420560747663,
+              "wrong_accept_rate": 0.07476635514018691,
+              "rejection_rate": 0.01869158878504673
+            }
+          },
+          "calibrated_closed_set_operating_points": {
+            "max_wrong_accept_rate_0": {
+              "threshold": 0.8329659700393677,
+              "correct_accept_rate": 0.5420560747663551,
+              "wrong_accept_rate": 0.0,
+              "rejection_rate": 0.4579439252336449
+            },
+            "max_wrong_accept_rate_0.01": {
+              "threshold": 0.8296616673469543,
+              "correct_accept_rate": 0.5514018691588785,
+              "wrong_accept_rate": 0.009345794392523364,
+              "rejection_rate": 0.4392523364485982
+            },
+            "max_wrong_accept_rate_0.02": {
+              "threshold": 0.8296616673469543,
+              "correct_accept_rate": 0.5514018691588785,
+              "wrong_accept_rate": 0.009345794392523364,
+              "rejection_rate": 0.4392523364485982
+            }
+          },
+          "top1_failure_count": 10,
+          "confusions": [
+            {
+              "actual": "王浩伟（饰烩五哥）",
+              "predicted": "孟宇（饰茶叶贩）",
+              "count": 2
+            },
+            {
+              "actual": "刘思妤（饰杏儿）",
+              "predicted": "王吉（饰桃儿）",
+              "count": 1
+            },
+            {
+              "actual": "刘思妤（饰杏儿）",
+              "predicted": "王文杰（饰桂枝儿）",
+              "count": 1
+            },
+            {
+              "actual": "孟宇（饰茶叶贩）",
+              "predicted": "王浩伟（饰烩五哥）",
+              "count": 1
+            },
+            {
+              "actual": "彭国斌（饰雷廷昌）",
+              "predicted": "泰然（饰贵宝）",
+              "count": 1
+            },
+            {
+              "actual": "泰然（饰贵宝）",
+              "predicted": "薛天智（饰雷思起）",
+              "count": 1
+            },
+            {
+              "actual": "董汶亮（饰李光照）",
+              "predicted": "薛天智（饰雷思起）",
+              "count": 1
+            },
+            {
+              "actual": "董汶亮（饰李光照）",
+              "predicted": "泰然（饰贵宝）",
+              "count": 1
+            },
+            {
+              "actual": "薛天智（饰雷思起）",
+              "predicted": "董汶亮（饰李光照）",
+              "count": 1
+            }
+          ]
+        },
+        "actor_identity": {
+          "anchors": 109,
+          "identities": 14,
+          "source_groups": 47,
+          "eligible_queries": 107,
+          "top1_accuracy": 0.9065420560747663,
+          "top5_accuracy": 0.9532710280373832,
+          "margin_p05": -0.052058786153793335,
+          "margin_p50": 0.17744052410125732,
+          "positive_pairs": 873,
+          "negative_pairs": 4880,
+          "verification": {
+            "auc": 0.9114315155953655,
+            "eer": 0.17987883311738306,
+            "eer_threshold": 0.46751946210861206,
+            "tar_at_far_0.1": 0.7296678121420389,
+            "threshold_at_far_0.1": 0.5321396589279175,
+            "tar_at_far_0.01": 0.40893470790378006,
+            "threshold_at_far_0.01": 0.6870900392532349,
+            "tar_at_far_0.001": 0.1672394043528064,
+            "threshold_at_far_0.001": 0.8086087703704834
+          },
+          "fixed_thresholds": {
+            "0.4": {
+              "correct_accept_rate": 0.9065420560747663,
+              "wrong_accept_rate": 0.09345794392523364,
+              "rejection_rate": 0.0
+            },
+            "0.55": {
+              "correct_accept_rate": 0.9065420560747663,
+              "wrong_accept_rate": 0.07476635514018691,
+              "rejection_rate": 0.01869158878504673
+            }
+          },
+          "calibrated_closed_set_operating_points": {
+            "max_wrong_accept_rate_0": {
+              "threshold": 0.8329659700393677,
+              "correct_accept_rate": 0.5420560747663551,
+              "wrong_accept_rate": 0.0,
+              "rejection_rate": 0.4579439252336449
+            },
+            "max_wrong_accept_rate_0.01": {
+              "threshold": 0.8296616673469543,
+              "correct_accept_rate": 0.5514018691588785,
+              "wrong_accept_rate": 0.009345794392523364,
+              "rejection_rate": 0.4392523364485982
+            },
+            "max_wrong_accept_rate_0.02": {
+              "threshold": 0.8296616673469543,
+              "correct_accept_rate": 0.5514018691588785,
+              "wrong_accept_rate": 0.009345794392523364,
+              "rejection_rate": 0.4392523364485982
+            }
+          },
+          "top1_failure_count": 10,
+          "confusions": [
+            {
+              "actual": "王浩伟",
+              "predicted": "孟宇",
+              "count": 2
+            },
+            {
+              "actual": "刘思妤",
+              "predicted": "王吉",
+              "count": 1
+            },
+            {
+              "actual": "刘思妤",
+              "predicted": "王文杰",
+              "count": 1
+            },
+            {
+              "actual": "孟宇",
+              "predicted": "王浩伟",
+              "count": 1
+            },
+            {
+              "actual": "彭国斌",
+              "predicted": "泰然",
+              "count": 1
+            },
+            {
+              "actual": "泰然",
+              "predicted": "薛天智",
+              "count": 1
+            },
+            {
+              "actual": "董汶亮",
+              "predicted": "薛天智",
+              "count": 1
+            },
+            {
+              "actual": "董汶亮",
+              "predicted": "泰然",
+              "count": 1
+            },
+            {
+              "actual": "薛天智",
+              "predicted": "董汶亮",
+              "count": 1
+            }
+          ]
+        }
+      }
+    },
+    "arcface70_facenet30": {
+      "components": {
+        "current_glint100": 0.7,
+        "facenet_vggface2": 0.30000000000000004
+      },
+      "sha256": {
+        "current_glint100": "4ab1d6435d639628a6f3e5008dd4f929edf4c4124b1a7169e1048f9fef534cdf",
+        "facenet_vggface2": "281cebca8662831adb987a874bdcb36e73f5b1c6dc5ee5878f305e985625d99b"
+      },
+      "bytes": 372563661,
+      "parameters": 88638912,
+      "family": "score fusion via weighted concatenation",
+      "speed": {
+        "providers": [
+          "CPUExecutionProvider",
+          "cpu"
+        ],
+        "extraction_seconds": 19.10601126588881,
+        "faces_per_second": 5.705010767716059,
+        "timing": {
+          "batch_1": {
+            "batch_p50_ms": 277.3345676250756,
+            "batch_p95_ms": 307.30118872597814,
+            "per_face_p50_ms": 277.3345676250756,
+            "faces_per_second_from_p50": 3.60575318310801
+          },
+          "batch_32": {
+            "batch_p50_ms": 4817.8649372421205,
+            "batch_p95_ms": 5328.809036128223,
+            "per_face_p50_ms": 150.55827928881627,
+            "faces_per_second_from_p50": 6.641946259771593
+          }
+        }
+      },
+      "quality": {
+        "folder_identity": {
+          "anchors": 109,
+          "identities": 15,
+          "source_groups": 47,
+          "eligible_queries": 107,
+          "top1_accuracy": 0.9439252336448598,
+          "top5_accuracy": 0.9719626168224299,
+          "margin_p05": -0.005348126434479416,
+          "margin_p50": 0.21996197890747515,
+          "positive_pairs": 868,
+          "negative_pairs": 4885,
+          "verification": {
+            "auc": 0.9044703290898028,
+            "eer": 0.1912208915659241,
+            "eer_threshold": 0.2581885665312428,
+            "tar_at_far_0.1": 0.6751152073732719,
+            "threshold_at_far_0.1": 0.31415614596395963,
+            "tar_at_far_0.01": 0.39746543778801846,
+            "threshold_at_far_0.01": 0.43747297019579395,
+            "tar_at_far_0.001": 0.2799539170506912,
+            "threshold_at_far_0.001": 0.5155072684272537
+          },
+          "fixed_thresholds": {
+            "0.4": {
+              "correct_accept_rate": 0.9065420560747663,
+              "wrong_accept_rate": 0.056074766355140186,
+              "rejection_rate": 0.03738317757009346
+            },
+            "0.55": {
+              "correct_accept_rate": 0.7757009345794392,
+              "wrong_accept_rate": 0.009345794392523364,
+              "rejection_rate": 0.2149532710280374
+            }
+          },
+          "calibrated_closed_set_operating_points": {
+            "max_wrong_accept_rate_0": {
+              "threshold": 0.5583084328490548,
+              "correct_accept_rate": 0.7663551401869159,
+              "wrong_accept_rate": 0.0,
+              "rejection_rate": 0.23364485981308414
+            },
+            "max_wrong_accept_rate_0.01": {
+              "threshold": 0.5492840040704307,
+              "correct_accept_rate": 0.794392523364486,
+              "wrong_accept_rate": 0.009345794392523364,
+              "rejection_rate": 0.19626168224299068
+            },
+            "max_wrong_accept_rate_0.02": {
+              "threshold": 0.47140972508349943,
+              "correct_accept_rate": 0.8691588785046729,
+              "wrong_accept_rate": 0.018691588785046728,
+              "rejection_rate": 0.11214953271028039
+            }
+          },
+          "top1_failure_count": 6,
+          "confusions": [
+            {
+              "actual": "刘思妤（饰杏儿）",
+              "predicted": "王文杰（饰桂枝儿）",
+              "count": 1
+            },
+            {
+              "actual": "彭国斌（饰雷廷昌）",
+              "predicted": "薛天智（饰雷思起）",
+              "count": 1
+            },
+            {
+              "actual": "泰然（饰贵宝）",
+              "predicted": "薛天智（饰雷思起）",
+              "count": 1
+            },
+            {
+              "actual": "王浩伟（饰烩五哥）",
+              "predicted": "彭国斌（饰雷廷昌）",
+              "count": 1
+            },
+            {
+              "actual": "王浩伟（饰烩五哥）",
+              "predicted": "孟宇（饰茶叶贩）",
+              "count": 1
+            },
+            {
+              "actual": "董汶亮（饰李光照）",
+              "predicted": "泰然（饰贵宝）",
+              "count": 1
+            }
+          ]
+        },
+        "actor_identity": {
+          "anchors": 109,
+          "identities": 14,
+          "source_groups": 47,
+          "eligible_queries": 107,
+          "top1_accuracy": 0.9439252336448598,
+          "top5_accuracy": 0.9719626168224299,
+          "margin_p05": -0.005348126434479416,
+          "margin_p50": 0.21996197890747515,
+          "positive_pairs": 873,
+          "negative_pairs": 4880,
+          "verification": {
+            "auc": 0.9010867932323061,
+            "eer": 0.19144637391320676,
+            "eer_threshold": 0.2578432152242626,
+            "tar_at_far_0.1": 0.6712485681557846,
+            "threshold_at_far_0.1": 0.31415614596395963,
+            "tar_at_far_0.01": 0.3951890034364261,
+            "threshold_at_far_0.01": 0.43747297019579395,
+            "tar_at_far_0.001": 0.27835051546391754,
+            "threshold_at_far_0.001": 0.5155072684272537
+          },
+          "fixed_thresholds": {
+            "0.4": {
+              "correct_accept_rate": 0.9065420560747663,
+              "wrong_accept_rate": 0.056074766355140186,
+              "rejection_rate": 0.03738317757009346
+            },
+            "0.55": {
+              "correct_accept_rate": 0.7757009345794392,
+              "wrong_accept_rate": 0.009345794392523364,
+              "rejection_rate": 0.2149532710280374
+            }
+          },
+          "calibrated_closed_set_operating_points": {
+            "max_wrong_accept_rate_0": {
+              "threshold": 0.5583084328490548,
+              "correct_accept_rate": 0.7663551401869159,
+              "wrong_accept_rate": 0.0,
+              "rejection_rate": 0.23364485981308414
+            },
+            "max_wrong_accept_rate_0.01": {
+              "threshold": 0.5492840040704307,
+              "correct_accept_rate": 0.794392523364486,
+              "wrong_accept_rate": 0.009345794392523364,
+              "rejection_rate": 0.19626168224299068
+            },
+            "max_wrong_accept_rate_0.02": {
+              "threshold": 0.47140972508349943,
+              "correct_accept_rate": 0.8691588785046729,
+              "wrong_accept_rate": 0.018691588785046728,
+              "rejection_rate": 0.11214953271028039
+            }
+          },
+          "top1_failure_count": 6,
+          "confusions": [
+            {
+              "actual": "刘思妤",
+              "predicted": "王文杰",
+              "count": 1
+            },
+            {
+              "actual": "彭国斌",
+              "predicted": "薛天智",
+              "count": 1
+            },
+            {
+              "actual": "泰然",
+              "predicted": "薛天智",
+              "count": 1
+            },
+            {
+              "actual": "王浩伟",
+              "predicted": "彭国斌",
+              "count": 1
+            },
+            {
+              "actual": "王浩伟",
+              "predicted": "孟宇",
+              "count": 1
+            },
+            {
+              "actual": "董汶亮",
+              "predicted": "泰然",
+              "count": 1
+            }
+          ]
+        }
+      }
+    },
+    "arcface90_facenet10": {
+      "components": {
+        "current_glint100": 0.9,
+        "facenet_vggface2": 0.09999999999999998
+      },
+      "sha256": {
+        "current_glint100": "4ab1d6435d639628a6f3e5008dd4f929edf4c4124b1a7169e1048f9fef534cdf",
+        "facenet_vggface2": "281cebca8662831adb987a874bdcb36e73f5b1c6dc5ee5878f305e985625d99b"
+      },
+      "bytes": 372563661,
+      "parameters": 88638912,
+      "family": "score fusion via weighted concatenation",
+      "speed": {
+        "providers": [
+          "CPUExecutionProvider",
+          "cpu"
+        ],
+        "extraction_seconds": 19.10601126588881,
+        "faces_per_second": 5.705010767716059,
+        "timing": {
+          "batch_1": {
+            "batch_p50_ms": 277.3345676250756,
+            "batch_p95_ms": 307.30118872597814,
+            "per_face_p50_ms": 277.3345676250756,
+            "faces_per_second_from_p50": 3.60575318310801
+          },
+          "batch_32": {
+            "batch_p50_ms": 4817.8649372421205,
+            "batch_p95_ms": 5328.809036128223,
+            "per_face_p50_ms": 150.55827928881627,
+            "faces_per_second_from_p50": 6.641946259771593
+          }
+        }
+      },
+      "quality": {
+        "folder_identity": {
+          "anchors": 109,
+          "identities": 15,
+          "source_groups": 47,
+          "eligible_queries": 107,
+          "top1_accuracy": 0.9158878504672897,
+          "top5_accuracy": 0.9719626168224299,
+          "margin_p05": -0.02573553566649313,
+          "margin_p50": 0.21453567327837497,
+          "positive_pairs": 868,
+          "negative_pairs": 4885,
+          "verification": {
+            "auc": 0.8769250362012933,
+            "eer": 0.21767342424142372,
+            "eer_threshold": 0.19815340401091344,
+            "tar_at_far_0.1": 0.6255760368663594,
+            "threshold_at_far_0.1": 0.26265479740117137,
+            "tar_at_far_0.01": 0.3548387096774194,
+            "threshold_at_far_0.01": 0.39395825778213345,
+            "tar_at_far_0.001": 0.27880184331797236,
+            "threshold_at_far_0.001": 0.4578088598394749
+          },
+          "fixed_thresholds": {
+            "0.4": {
+              "correct_accept_rate": 0.8785046728971962,
+              "wrong_accept_rate": 0.018691588785046728,
+              "rejection_rate": 0.10280373831775702
+            },
+            "0.55": {
+              "correct_accept_rate": 0.6915887850467289,
+              "wrong_accept_rate": 0.0,
+              "rejection_rate": 0.30841121495327106
+            }
+          },
+          "calibrated_closed_set_operating_points": {
+            "max_wrong_accept_rate_0": {
+              "threshold": 0.482770184238123,
+              "correct_accept_rate": 0.8130841121495327,
+              "wrong_accept_rate": 0.0,
+              "rejection_rate": 0.1869158878504673
+            },
+            "max_wrong_accept_rate_0.01": {
+              "threshold": 0.44997743577468763,
+              "correct_accept_rate": 0.8411214953271028,
+              "wrong_accept_rate": 0.009345794392523364,
+              "rejection_rate": 0.14953271028037385
+            },
+            "max_wrong_accept_rate_0.02": {
+              "threshold": 0.40473736038777475,
+              "correct_accept_rate": 0.8785046728971962,
+              "wrong_accept_rate": 0.018691588785046728,
+              "rejection_rate": 0.10280373831775702
+            }
+          },
+          "top1_failure_count": 9,
+          "confusions": [
+            {
+              "actual": "彭国斌（饰雷廷昌）",
+              "predicted": "董汶亮（饰李光照）",
+              "count": 1
+            },
+            {
+              "actual": "彭国斌（饰雷廷昌）",
+              "predicted": "薛天智（饰雷思起）",
+              "count": 1
+            },
+            {
+              "actual": "彭国斌（饰雷廷昌）",
+              "predicted": "王文杰（饰桂枝儿）",
+              "count": 1
+            },
+            {
+              "actual": "泰然（饰贵宝）",
+              "predicted": "薛天智（饰雷思起）",
+              "count": 1
+            },
+            {
+              "actual": "王浩伟（饰播威利）",
+              "predicted": "王文杰（饰桂枝儿）",
+              "count": 1
+            },
+            {
+              "actual": "王浩伟（饰播威利）",
+              "predicted": "薛天智（饰雷思起）",
+              "count": 1
+            },
+            {
+              "actual": "王浩伟（饰烩五哥）",
+              "predicted": "彭国斌（饰雷廷昌）",
+              "count": 1
+            },
+            {
+              "actual": "王浩伟（饰烩五哥）",
+              "predicted": "孟宇（饰茶叶贩）",
+              "count": 1
+            },
+            {
+              "actual": "董汶亮（饰李光照）",
+              "predicted": "泰然（饰贵宝）",
+              "count": 1
+            }
+          ]
+        },
+        "actor_identity": {
+          "anchors": 109,
+          "identities": 14,
+          "source_groups": 47,
+          "eligible_queries": 107,
+          "top1_accuracy": 0.9158878504672897,
+          "top5_accuracy": 0.9719626168224299,
+          "margin_p05": -0.02573553566649313,
+          "margin_p50": 0.21453567327837497,
+          "positive_pairs": 873,
+          "negative_pairs": 4880,
+          "verification": {
+            "auc": 0.8734317784913526,
+            "eer": 0.2188191275608886,
+            "eer_threshold": 0.19780366087753398,
+            "tar_at_far_0.1": 0.6219931271477663,
+            "threshold_at_far_0.1": 0.26265479740117137,
+            "tar_at_far_0.01": 0.3528064146620848,
+            "threshold_at_far_0.01": 0.39395825778213345,
+            "tar_at_far_0.001": 0.27720504009163804,
+            "threshold_at_far_0.001": 0.4578088598394749
+          },
+          "fixed_thresholds": {
+            "0.4": {
+              "correct_accept_rate": 0.8785046728971962,
+              "wrong_accept_rate": 0.018691588785046728,
+              "rejection_rate": 0.10280373831775702
+            },
+            "0.55": {
+              "correct_accept_rate": 0.6915887850467289,
+              "wrong_accept_rate": 0.0,
+              "rejection_rate": 0.30841121495327106
+            }
+          },
+          "calibrated_closed_set_operating_points": {
+            "max_wrong_accept_rate_0": {
+              "threshold": 0.482770184238123,
+              "correct_accept_rate": 0.8130841121495327,
+              "wrong_accept_rate": 0.0,
+              "rejection_rate": 0.1869158878504673
+            },
+            "max_wrong_accept_rate_0.01": {
+              "threshold": 0.44997743577468763,
+              "correct_accept_rate": 0.8411214953271028,
+              "wrong_accept_rate": 0.009345794392523364,
+              "rejection_rate": 0.14953271028037385
+            },
+            "max_wrong_accept_rate_0.02": {
+              "threshold": 0.40473736038777475,
+              "correct_accept_rate": 0.8785046728971962,
+              "wrong_accept_rate": 0.018691588785046728,
+              "rejection_rate": 0.10280373831775702
+            }
+          },
+          "top1_failure_count": 9,
+          "confusions": [
+            {
+              "actual": "彭国斌",
+              "predicted": "董汶亮",
+              "count": 1
+            },
+            {
+              "actual": "彭国斌",
+              "predicted": "薛天智",
+              "count": 1
+            },
+            {
+              "actual": "彭国斌",
+              "predicted": "王文杰",
+              "count": 1
+            },
+            {
+              "actual": "泰然",
+              "predicted": "薛天智",
+              "count": 1
+            },
+            {
+              "actual": "王浩伟",
+              "predicted": "王文杰",
+              "count": 1
+            },
+            {
+              "actual": "王浩伟",
+              "predicted": "薛天智",
+              "count": 1
+            },
+            {
+              "actual": "王浩伟",
+              "predicted": "彭国斌",
+              "count": 1
+            },
+            {
+              "actual": "王浩伟",
+              "predicted": "孟宇",
+              "count": 1
+            },
+            {
+              "actual": "董汶亮",
+              "predicted": "泰然",
+              "count": 1
+            }
+          ]
+        }
+      }
     }
   },
   "detectors": {
@@ -856,6 +1972,7 @@
       "sha256": "731cbbfd269144e37a71d976f646dc4099dd2a232170316edb596b6a4943e5a2",
       "bytes": 16923485,
       "parameters": 4225842,
+      "family": "SCRFD",
       "agreement": {
         "images": 292,
         "reference_faces": 1095,
@@ -864,9 +1981,9 @@
         "reference_recall": 0.9954337899543378,
         "prediction_precision_against_reference": 0.8912510220768601,
         "matched_iou_p50": 0.9688378572463989,
-        "latency_p50_ms": 88.17231794819236,
-        "latency_p95_ms": 99.88275109790266,
-        "images_per_second_from_p50": 11.341428049873574,
+        "latency_p50_ms": 87.44369028136134,
+        "latency_p95_ms": 99.58343412727118,
+        "images_per_second_from_p50": 11.43593090344622,
         "providers": [
           "CPUExecutionProvider"
         ],
@@ -882,6 +1999,7 @@
       "sha256": "5e4447f50245bbd7966bd6c0fa52938c61474a04ec7def48753668a9d8b4ea3a",
       "bytes": 2524817,
       "parameters": 626332,
+      "family": "SCRFD",
       "agreement": {
         "images": 292,
         "reference_faces": 1095,
@@ -890,9 +2008,9 @@
         "reference_recall": 0.9251141552511416,
         "prediction_precision_against_reference": 0.8276143790849673,
         "matched_iou_p50": 0.8803564310073853,
-        "latency_p50_ms": 18.475718330591917,
-        "latency_p95_ms": 20.701026218011975,
-        "images_per_second_from_p50": 54.125094467596945,
+        "latency_p50_ms": 18.248167354613543,
+        "latency_p95_ms": 21.36111087165773,
+        "images_per_second_from_p50": 54.80002350741143,
         "providers": [
           "CPUExecutionProvider"
         ],
@@ -902,12 +2020,69 @@
           "80-159": 0.9716494845360825
         }
       }
+    },
+    "yunet_2023mar": {
+      "path": "/tmp/face_detection_yunet_2023mar.onnx",
+      "sha256": "8f2383e4dd3cfbb4553ea8718107fc0423210dc964f9f4280604804ed2552fa4",
+      "bytes": 232589,
+      "parameters": 53121,
+      "family": "YuNet",
+      "agreement": {
+        "images": 292,
+        "reference_faces": 1095,
+        "detections": 1428,
+        "matched_iou_0_5": 959,
+        "reference_recall": 0.8757990867579909,
+        "prediction_precision_against_reference": 0.6715686274509803,
+        "matched_iou_p50": 0.8274673223495483,
+        "latency_p50_ms": 18.2840246707201,
+        "latency_p95_ms": 24.874564912170158,
+        "images_per_second_from_p50": 54.69255363680364,
+        "providers": [
+          "OpenCV DNN CPU"
+        ],
+        "reference_recall_by_sqrt_area_px": {
+          "160+": 0.967741935483871,
+          "40-79": 0.8224852071005917,
+          "80-159": 0.961340206185567
+        }
+      }
+    },
+    "retinaface_r34": {
+      "path": "/tmp/retinaface_r34.onnx",
+      "sha256": "bd0263dc2a465d32859555cb1741f2d98991eb0053696e8ee33fec583d30e630",
+      "bytes": 88502283,
+      "parameters": 22114080,
+      "family": "RetinaFace",
+      "agreement": {
+        "images": 292,
+        "reference_faces": 1095,
+        "detections": 1221,
+        "matched_iou_0_5": 1036,
+        "reference_recall": 0.9461187214611873,
+        "prediction_precision_against_reference": 0.8484848484848485,
+        "matched_iou_p50": 0.8744164705276489,
+        "latency_p50_ms": 162.02813992276788,
+        "latency_p95_ms": 171.17410534992814,
+        "images_per_second_from_p50": 6.1717674502506705,
+        "providers": [
+          "CPUExecutionProvider"
+        ],
+        "reference_recall_by_sqrt_area_px": {
+          "160+": 0.967741935483871,
+          "40-79": 0.9186390532544378,
+          "80-159": 0.9922680412371134
+        }
+      }
     }
   },
   "limitations": [
     "The labeled face anchors are a small development set from one theatrical production, not an independent final test.",
     "Identity folder labels and crop quality were not re-annotated in this run.",
+    "Existing anchor crops were not re-verified for a shared five-point alignment before resizing to each native model input.",
     "Historical detection boxes originate from SCRFD and measure regression agreement, not unbiased detector accuracy.",
+    "Detector confidence scores are not calibrated across families; the shared numeric threshold is not an equal-precision operating point.",
+    "Fusion weights and recognition thresholds were selected on the same development queries reported here.",
     "Latency is single-process sequential inference on the reported host and is not a service SLA."
   ]
 }
