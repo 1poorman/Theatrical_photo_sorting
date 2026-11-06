@@ -42,3 +42,4 @@
 !test_visual_fact_review_browser.cjs
 !test_workspace.py
 !test_workspace_browser.cjs
+!test_vector_store.py

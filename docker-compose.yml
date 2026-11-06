@@ -1,8 +1,33 @@
-# 应用 + 独立 Elasticsearch 向量库。
+# 应用 + Qdrant 在线向量库；--profile legacy 可同时启动旧 ES。
 # 启动：docker compose up -d --build
 # 可选参数见 docker.env.example；宿主机准备步骤见 README.md 的 Docker 章节。
 services:
+  qdrant:
+    image: ${DOCKER_QDRANT_IMAGE:-qdrant/qdrant:v1.20.0}
+    environment:
+      QDRANT__TELEMETRY_DISABLED: "true"
+      QDRANT__STORAGE__PERFORMANCE__MAX_SEARCH_THREADS: "4"
+      QDRANT__STORAGE__OPTIMIZERS__MAX_OPTIMIZATION_THREADS: "2"
+    mem_limit: ${DOCKER_QDRANT_MEMORY:-4g}
+    volumes:
+      - qdrant_data:/qdrant/storage
+    expose:
+      - "6333"
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          bash -c 'exec 3<>/dev/tcp/127.0.0.1/6333;
+          printf "GET /readyz HTTP/1.0\r\n\r\n" >&3;
+          read -r status <&3; [[ "$${status}" == *" 200 "* ]]'
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
   elasticsearch:
+    profiles: [legacy]
     image: ${DOCKER_ELASTIC_IMAGE:-docker.elastic.co/elasticsearch/elasticsearch:8.12.2}
     environment:
       discovery.type: single-node
@@ -44,7 +69,7 @@ services:
         DEPENDENCY_INDEX_URL: ${DOCKER_PIP_INDEX_URL:-https://pypi.org/simple}
     image: theatrical-photo-sorting:latest
     depends_on:
-      elasticsearch:
+      qdrant:
         condition: service_healthy
     command: ["python", "app/server_ui.py"]
     init: true
@@ -81,6 +106,9 @@ services:
       CUDA_VISIBLE_DEVICES: "0"
       PYTHONUNBUFFERED: "1"
       TRANS_FACE_DEVICE: ${DOCKER_FACE_DEVICE:-tensorrt}
+      TRANS_IMAGE_VECTOR_BACKEND: ${DOCKER_IMAGE_VECTOR_BACKEND:-qdrant}
+      TRANS_FACE_VECTOR_BACKEND: ${DOCKER_FACE_VECTOR_BACKEND:-qdrant}
+      TRANS_QDRANT_URL: http://qdrant:6333
       TRANS_ELASTIC_URL: http://elasticsearch:9200
       TRANS_ELASTIC_USER: elastic
       TRANS_ELASTIC_PASSWORD: ${DOCKER_ELASTIC_PASSWORD:-theatrical-local-password}
@@ -101,6 +129,7 @@ services:
       start_period: 300s
 
 volumes:
+  qdrant_data:
   elasticsearch_data:
   trt_cache:
   model_cache:
