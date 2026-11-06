@@ -9,6 +9,17 @@ from core_modules.tools.logger import get_app_logger
 
 logger = get_app_logger()
 
+
+def create_face_database(model_signature, backend=None):
+    from config.base import FACE_VECTOR_BACKEND
+    backend = backend or FACE_VECTOR_BACKEND
+    if backend == 'elasticsearch':
+        return FaceDatabase()
+    if backend == 'qdrant':
+        from core_modules.face_recognition.qdrant_database import QdrantFaceDatabase
+        return QdrantFaceDatabase(model_signature)
+    raise ValueError('face_vector_backend_must_be_elasticsearch_or_qdrant')
+
 class FaceDatabase:
     def __init__(self, host=ELASTIC_URL,
      user = ELASTIC_USER, password = ELASTIC_PASSWORD, index_name=ELASTIC_FACE_INDEX):
@@ -249,4 +260,3 @@ class FaceDatabase:
             row["score"] = score
             content.append(row)
         return content
-    

@@ -47,6 +47,9 @@ app = FastAPI(
 
 from app.workspace_api import router as workspace_router
 app.include_router(workspace_router)
+from app.vector_api import router as vector_router
+from core_modules.vector_store import VectorStoreError
+app.include_router(vector_router)
 from app.organize_tasks import router as task_router, shutdown as shutdown_tasks
 app.include_router(task_router)
 
@@ -359,9 +362,10 @@ async def process_image(image: UploadFile = File(...)):
 # ---------- 图像嵌入检索 ----------
 
 @app.post("/api/embedding/build_index")
-async def build_embedding_index(image_folder: str = Form(...),
+def build_embedding_index(image_folder: str = Form(...),
                                 index_save_path: str = Form(...),
-                                model_name: str = Form("resnet50")):
+                                model_name: str = Form("resnet50"),
+                                backend: str = Form(''), metadata_json: str = Form('{}')):
     """构建图像 embedding 索引
     Form 参数:
     - image_folder: 图片文件夹路径
@@ -375,7 +379,8 @@ async def build_embedding_index(image_folder: str = Form(...),
             return JSONResponse(status_code=400, content=srv.get_error(message=f"Image folder does not exist: {image_folder}"))
 
         vector_db, embedder, index_save_dir = build_index(
-            image_folder, index_save_path, model_name, use_optimized=True)
+            image_folder, index_save_path, model_name, use_optimized=True,
+            backend=backend or None, metadata=json.loads(metadata_json))
         srv.last_index_path = index_save_dir
 
         return JSONResponse({
@@ -384,17 +389,23 @@ async def build_embedding_index(image_folder: str = Form(...),
             "data": {
                 "index_path": index_save_dir,
                 "model_name": model_name,
-                "image_count": len(vector_db.image_paths) if hasattr(vector_db, 'image_paths') else 0
+                "image_count": (vector_db.image_count if hasattr(vector_db, 'image_count') else len(vector_db.image_paths)),
+                "backend": getattr(vector_db, 'backend', 'faiss')
             }
         })
+    except ValueError as e:
+        return JSONResponse(status_code=400, content=srv.get_error(message=str(e)))
+    except VectorStoreError as e:
+        return JSONResponse(status_code=503, content=srv.get_error(message=str(e)))
     except Exception as e:
         return JSONResponse(status_code=500, content=srv.get_error(message=f"Error building embedding index: {str(e)}"))
 
 
 @app.post("/api/embedding/search")
-async def search_similar_images(query_image: UploadFile = File(...),
+def search_similar_images(query_image: UploadFile = File(...),
                                 index_path: str = Form(None),
-                                top_k: int = Form(5)):
+                                top_k: int = Form(5), filters_json: str = Form('{}'),
+                                exact: bool = Form(True)):
     """相似图片检索
     Form 参数:
     - query_image: 查询图片文件
@@ -419,9 +430,12 @@ async def search_similar_images(query_image: UploadFile = File(...),
         query_filename = secure_filename(query_image.filename)
         query_image_path = os.path.join(temp_dir, query_filename)
         with open(query_image_path, "wb") as f:
-            f.write(await query_image.read())
+            f.write(query_image.file.read())
 
-        results, merged_img, model_name = search_image(query_image_path, index_path, top_k=top_k)
+        if not 1 <= top_k <= 10000:
+            raise ValueError('top_k_must_be_between_1_and_10000')
+        results, merged_img, model_name = search_image(query_image_path, index_path, top_k=top_k,
+                                                      filters=json.loads(filters_json), exact=exact)
 
         combined_result_path = None
         if results and merged_img:
@@ -450,6 +464,10 @@ async def search_similar_images(query_image: UploadFile = File(...),
                 "similar_image_names": similar_image_names
             }
         })
+    except ValueError as e:
+        return JSONResponse(status_code=400, content=srv.get_error(message=str(e)))
+    except VectorStoreError as e:
+        return JSONResponse(status_code=503, content=srv.get_error(message=str(e)))
     except Exception as e:
         return JSONResponse(status_code=500, content=srv.get_error(message=f"Error in image search: {str(e)}"))
     finally:

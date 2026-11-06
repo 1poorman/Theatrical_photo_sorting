@@ -59,6 +59,15 @@ ELASTIC_USER = os.environ.get('TRANS_ELASTIC_USER', 'elastic')
 ELASTIC_PASSWORD = os.environ.get('TRANS_ELASTIC_PASSWORD', 'elastic')
 ELASTIC_FACE_INDEX = 'face_database_512'
 
+# Online vector storage. Local execution retains legacy defaults; Compose uses Qdrant.
+IMAGE_VECTOR_BACKEND = os.environ.get('TRANS_IMAGE_VECTOR_BACKEND', 'faiss')
+FACE_VECTOR_BACKEND = os.environ.get('TRANS_FACE_VECTOR_BACKEND', 'elasticsearch')
+QDRANT_URL = os.environ.get('TRANS_QDRANT_URL', 'http://localhost:6333')
+QDRANT_API_KEY = os.environ.get('TRANS_QDRANT_API_KEY', '')
+QDRANT_TIMEOUT = float(os.environ.get('TRANS_QDRANT_TIMEOUT', '60'))
+QDRANT_PREFIX = os.environ.get('TRANS_QDRANT_PREFIX', 'theatre')
+QDRANT_HNSW_EF = int(os.environ.get('TRANS_QDRANT_HNSW_EF', '128'))
+
 # ---------- 人脸识别参数 ----------
 # 识别时图像最长边（含降采样解码的目标下限）
 FACE_IMAGE_MAX_SIDE = int(os.environ.get('TRANS_FACE_IMAGE_MAX_SIDE', '1920'))

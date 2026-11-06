@@ -2,7 +2,7 @@ import os, sys, random, time
 import numpy as np
 from tqdm import tqdm
 from core_modules.face_recognition.scrfd.scrfd_det import SCRFDDetector
-from core_modules.face_recognition.database import FaceDatabase
+from core_modules.face_recognition.database import create_face_database
 from core_modules.face_recognition.arcface.arcface_onnx import ArcFaceFeatureExtractor
 from core_modules.tools.visualization import VisualizationUtils
 from core_modules.tools.image_io import imread_reduced, list_images
@@ -32,7 +32,7 @@ class FaceRecognitionSystem:
         self.device = device
         self.detector = SCRFDDetector(detect_path, device=device)
         self.extractor = ArcFaceFeatureExtractor(extractor_path, device=device)
-        self.database = FaceDatabase()
+        self.database = create_face_database(self.extractor.model_signature)
         self.visualizer = VisualizationUtils()
 
     def build_face_database(self, image_folder, label_file=None, first_run=False):

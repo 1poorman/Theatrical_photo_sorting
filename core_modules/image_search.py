@@ -1072,8 +1072,17 @@ def create_web_searcher(index_path: str) -> ImageSearcher:
 
 
 def build_index(image_folder: str, index_save_path: str, model_name: str = 'resnet50', 
-               use_optimized: bool = True) -> Tuple[VectorDatabase, ImageEmbedder]:
+               use_optimized: bool = True, backend=None, metadata=None) -> Tuple[VectorDatabase, ImageEmbedder]:
     """Build image index"""
+    from config.base import IMAGE_VECTOR_BACKEND
+    backend = backend or IMAGE_VECTOR_BACKEND
+    if backend == 'qdrant':
+        from core_modules.qdrant_images import build
+        return build(image_folder, index_save_path, model_name, metadata=metadata)
+    if backend != 'faiss':
+        raise ValueError('image_vector_backend_must_be_faiss_or_qdrant')
+    if os.path.isfile(os.path.join(index_save_path, model_name, 'vector_store.json')):
+        raise ValueError('faiss_rebuild_requires_a_new_path_for_qdrant_index')
     print(f"Initializing image embedder (model: {model_name})...")
     embedder = ImageEmbedder(model_name=model_name)
     index_save_dir = os.path.join(index_save_path, model_name)
@@ -1121,8 +1130,15 @@ def build_index(image_folder: str, index_save_path: str, model_name: str = 'resn
 
 def search_image(query_image_path: str, index_path: str, top_k: int = 5, 
                 show_results: bool = False, save_results: bool = False,
-                use_qe: bool = False, use_rerank: bool = False) -> Tuple[List[Dict], Image.Image, str]:
+                use_qe: bool = False, use_rerank: bool = False, filters=None, exact=True) -> Tuple[List[Dict], Image.Image, str]:
     """Search for similar images"""
+    if os.path.isfile(os.path.join(index_path, 'vector_store.json')):
+        if use_qe or use_rerank:
+            raise ValueError('query_expansion_and_reranking_require_offline_faiss')
+        from core_modules.qdrant_images import search
+        return search(query_image_path, index_path, top_k, filters, exact)
+    if filters:
+        raise ValueError('metadata_filter_requires_qdrant')
     # Get model info from index
     model_info_path = os.path.join(index_path, "model_info.txt")
     model_name = "resnet50"  # Default model
