@@ -1,0 +1,524 @@
+{
+  "at": "2026-11-02T07:58:15.063377+00:00",
+  "cpu_threads": 4,
+  "warmup_requests": 3,
+  "hnsw_ef": 128,
+  "hnsw_m": 16,
+  "datasets": [
+    {
+      "dataset": "real_images",
+      "source_kind": "real",
+      "count": 128,
+      "dimension": 768,
+      "query_vectors": 32,
+      "faiss_write_seconds": 0.09131848532706499,
+      "qdrant_upload_seconds": 0.1251898529008031,
+      "qdrant_index_wait_seconds": 0.0019021835178136826,
+      "qdrant_indexed_vectors": 0,
+      "collection": "benchmark_7cf08c2df5f04ba883c1d3f243669c8b",
+      "qdrant_status": "green",
+      "measurements": [
+        {
+          "backend": "faiss_reload",
+          "requests": 100,
+          "first_request_ms": 1.0465281084179878,
+          "p50_ms": 0.39608171209692955,
+          "p95_ms": 0.5063152406364679,
+          "mean_ms": 0.41352206841111183,
+          "sequential_qps": 2418.2506240654334,
+          "client_peak_rss_bytes": 49459200,
+          "rss_method": "proc_self_VmRSS_sample_2ms",
+          "client_import_rss_bytes": 47951872,
+          "recall_at_10": 1.0,
+          "tie_aware_recall_at_10": 1.0,
+          "max_returned_score_error": 2.384185791015625e-07
+        },
+        {
+          "backend": "faiss_resident",
+          "requests": 100,
+          "first_request_ms": 0.10811630636453629,
+          "p50_ms": 0.019453931599855423,
+          "p95_ms": 0.024340953677892685,
+          "mean_ms": 0.021816454827785492,
+          "sequential_qps": 45836.96149964739,
+          "client_peak_rss_bytes": 49410048,
+          "rss_method": "proc_self_VmRSS_sample_2ms",
+          "client_import_rss_bytes": 47894528,
+          "recall_at_10": 1.0,
+          "tie_aware_recall_at_10": 1.0,
+          "max_returned_score_error": 2.384185791015625e-07
+        },
+        {
+          "backend": "qdrant_exact",
+          "requests": 100,
+          "first_request_ms": 44.798413291573524,
+          "p50_ms": 2.8609992004930973,
+          "p95_ms": 3.6454873159527743,
+          "mean_ms": 2.9532192274928093,
+          "sequential_qps": 338.61353423767616,
+          "client_peak_rss_bytes": 48721920,
+          "rss_method": "proc_self_VmRSS_sample_2ms",
+          "client_import_rss_bytes": 47943680,
+          "recall_at_10": 1.0,
+          "tie_aware_recall_at_10": 1.0,
+          "max_returned_score_error": 2.960789490247251e-07
+        },
+        {
+          "backend": "qdrant_ann",
+          "requests": 100,
+          "first_request_ms": 6.028030067682266,
+          "p50_ms": 2.7069421485066414,
+          "p95_ms": 3.2491841819137335,
+          "mean_ms": 2.768028574064374,
+          "sequential_qps": 361.26794693151305,
+          "client_peak_rss_bytes": 48812032,
+          "rss_method": "proc_self_VmRSS_sample_2ms",
+          "client_import_rss_bytes": 47964160,
+          "recall_at_10": 1.0,
+          "tie_aware_recall_at_10": 1.0,
+          "max_returned_score_error": 2.960789490247251e-07
+        }
+      ],
+      "qdrant_server_rss_bytes_after": null,
+      "qdrant_collection_disk": {
+        "logical_bytes": 487068803,
+        "allocated_bytes": 1490944
+      },
+      "faiss_persistent_bytes": 789823,
+      "filter_correct": true,
+      "qdrant_segments": 8,
+      "qdrant_config": {
+        "params": {
+          "vectors": {
+            "size": 768,
+            "distance": "Cosine",
+            "memory": "cold"
+          },
+          "shard_number": 1,
+          "replication_factor": 1,
+          "write_consistency_factor": 1,
+          "on_disk_payload": true
+        },
+        "hnsw_config": {
+          "m": 16,
+          "ef_construct": 100,
+          "full_scan_threshold": 10000,
+          "max_indexing_threads": 0,
+          "on_disk": false,
+          "memory": "cold"
+        },
+        "optimizer_config": {
+          "deleted_threshold": 0.2,
+          "vacuum_min_vector_number": 1000,
+          "default_segment_number": 0,
+          "max_segment_size": null,
+          "memmap_threshold": null,
+          "indexing_threshold": 10000,
+          "flush_interval_sec": 5,
+          "max_optimization_threads": 2,
+          "prevent_unoptimized": null
+        },
+        "wal_config": {
+          "wal_capacity_mb": 4,
+          "wal_segments_ahead": 0,
+          "wal_retain_closed": 1
+        },
+        "quantization_config": null
+      },
+      "approximate_query_mode": "flat_small_collection"
+    },
+    {
+      "dataset": "real_faces",
+      "source_kind": "real",
+      "count": 89,
+      "dimension": 512,
+      "query_vectors": 20,
+      "faiss_write_seconds": 0.0005626091733574867,
+      "qdrant_upload_seconds": 0.1543404906988144,
+      "qdrant_index_wait_seconds": 0.001534762792289257,
+      "qdrant_indexed_vectors": 0,
+      "collection": "benchmark_53d881648fba4d9ab942fecd02dafe0a",
+      "qdrant_status": "green",
+      "measurements": [
+        {
+          "backend": "faiss_reload",
+          "requests": 100,
+          "first_request_ms": 19.797605462372303,
+          "p50_ms": 0.3286781720817089,
+          "p95_ms": 0.48662745393812656,
+          "mean_ms": 0.36214984953403473,
+          "sequential_qps": 2761.287906888997,
+          "client_peak_rss_bytes": 49512448,
+          "rss_method": "proc_self_VmRSS_sample_2ms",
+          "client_import_rss_bytes": 47996928,
+          "recall_at_10": 1.0,
+          "tie_aware_recall_at_10": 1.0,
+          "max_returned_score_error": 8.940696716308594e-08
+        },
+        {
+          "backend": "faiss_resident",
+          "requests": 100,
+          "first_request_ms": 0.10591000318527222,
+          "p50_ms": 0.015389174222946167,
+          "p95_ms": 0.028532510623335786,
+          "mean_ms": 0.01864722929894924,
+          "sequential_qps": 53627.26998033693,
+          "client_peak_rss_bytes": 48889856,
+          "rss_method": "proc_self_VmRSS_sample_2ms",
+          "client_import_rss_bytes": 47845376,
+          "recall_at_10": 1.0,
+          "tie_aware_recall_at_10": 1.0,
+          "max_returned_score_error": 8.940696716308594e-08
+        },
+        {
+          "backend": "qdrant_exact",
+          "requests": 100,
+          "first_request_ms": 43.26232336461544,
+          "p50_ms": 2.2534802556037903,
+          "p95_ms": 2.821119874715804,
+          "mean_ms": 2.3208293691277504,
+          "sequential_qps": 430.88044873192695,
+          "client_peak_rss_bytes": 48803840,
+          "rss_method": "proc_self_VmRSS_sample_2ms",
+          "client_import_rss_bytes": 47939584,
+          "recall_at_10": 1.0,
+          "tie_aware_recall_at_10": 1.0,
+          "max_returned_score_error": 1.2269866944691898e-07
+        },
+        {
+          "backend": "qdrant_ann",
+          "requests": 100,
+          "first_request_ms": 5.548609420657158,
+          "p50_ms": 2.3217485286295414,
+          "p95_ms": 2.7900456916540857,
+          "mean_ms": 2.3494631703943014,
+          "sequential_qps": 425.6291448195691,
+          "client_peak_rss_bytes": 48734208,
+          "rss_method": "proc_self_VmRSS_sample_2ms",
+          "client_import_rss_bytes": 47853568,
+          "recall_at_10": 1.0,
+          "tie_aware_recall_at_10": 1.0,
+          "max_returned_score_error": 1.2269866944691898e-07
+        },
+        {
+          "backend": "elasticsearch",
+          "requests": 100,
+          "first_request_ms": 8.35938099771738,
+          "p50_ms": 5.776211619377136,
+          "p95_ms": 6.655473913997412,
+          "mean_ms": 5.85101094096899,
+          "sequential_qps": 170.91063580106538,
+          "client_peak_rss_bytes": 104087552,
+          "rss_method": "proc_self_VmRSS_sample_2ms",
+          "client_import_rss_bytes": 103489536,
+          "recall_at_10": 1.0,
+          "tie_aware_recall_at_10": 1.0,
+          "max_returned_score_error": 9.393524169620804e-08
+        }
+      ],
+      "es_upload_seconds": 0.42290183808654547,
+      "es_primary_store_bytes": 465065,
+      "qdrant_server_rss_bytes_after": null,
+      "qdrant_collection_disk": {
+        "logical_bytes": 453521745,
+        "allocated_bytes": 966656
+      },
+      "faiss_persistent_bytes": 366932,
+      "filter_correct": true,
+      "qdrant_segments": 8,
+      "qdrant_config": {
+        "params": {
+          "vectors": {
+            "size": 512,
+            "distance": "Cosine",
+            "memory": "cold"
+          },
+          "shard_number": 1,
+          "replication_factor": 1,
+          "write_consistency_factor": 1,
+          "on_disk_payload": true
+        },
+        "hnsw_config": {
+          "m": 16,
+          "ef_construct": 100,
+          "full_scan_threshold": 10000,
+          "max_indexing_threads": 0,
+          "on_disk": false,
+          "memory": "cold"
+        },
+        "optimizer_config": {
+          "deleted_threshold": 0.2,
+          "vacuum_min_vector_number": 1000,
+          "default_segment_number": 0,
+          "max_segment_size": null,
+          "memmap_threshold": null,
+          "indexing_threshold": 10000,
+          "flush_interval_sec": 5,
+          "max_optimization_threads": 2,
+          "prevent_unoptimized": null
+        },
+        "wal_config": {
+          "wal_capacity_mb": 4,
+          "wal_segments_ahead": 0,
+          "wal_retain_closed": 1
+        },
+        "quantization_config": null
+      },
+      "approximate_query_mode": "flat_small_collection"
+    },
+    {
+      "dataset": "synthetic_images_10000",
+      "source_kind": "synthetic",
+      "count": 10000,
+      "dimension": 768,
+      "query_vectors": 32,
+      "faiss_write_seconds": 0.07313757296651602,
+      "qdrant_upload_seconds": 11.743318662978709,
+      "qdrant_index_wait_seconds": 300.6917602242902,
+      "qdrant_indexed_vectors": 10000,
+      "collection": "benchmark_0a994fdde14140f5a576ecbf12310f72",
+      "qdrant_status": "green",
+      "measurements": [
+        {
+          "backend": "faiss_reload",
+          "requests": 100,
+          "first_request_ms": 49.93640165776014,
+          "p50_ms": 29.99691152945161,
+          "p95_ms": 51.05874636210501,
+          "mean_ms": 36.37300593778491,
+          "sequential_qps": 27.492916084815047,
+          "client_peak_rss_bytes": 144908288,
+          "rss_method": "proc_self_VmRSS_sample_2ms",
+          "client_import_rss_bytes": 47882240,
+          "recall_at_10": 1.0,
+          "tie_aware_recall_at_10": 1.0,
+          "max_returned_score_error": 9.685754776000977e-08
+        },
+        {
+          "backend": "faiss_resident",
+          "requests": 100,
+          "first_request_ms": 3.340207040309906,
+          "p50_ms": 2.3047998547554016,
+          "p95_ms": 2.7286063879728317,
+          "mean_ms": 2.4202604312449694,
+          "sequential_qps": 413.1786757698655,
+          "client_peak_rss_bytes": 82063360,
+          "rss_method": "proc_self_VmRSS_sample_2ms",
+          "client_import_rss_bytes": 48111616,
+          "recall_at_10": 1.0,
+          "tie_aware_recall_at_10": 1.0,
+          "max_returned_score_error": 9.685754776000977e-08
+        },
+        {
+          "backend": "qdrant_exact",
+          "requests": 100,
+          "first_request_ms": 381.1922576278448,
+          "p50_ms": 4.612015560269356,
+          "p95_ms": 19.54871299676596,
+          "mean_ms": 6.481776973232627,
+          "sequential_qps": 154.27868069661068,
+          "client_peak_rss_bytes": 48873472,
+          "rss_method": "proc_self_VmRSS_sample_2ms",
+          "client_import_rss_bytes": 47976448,
+          "recall_at_10": 1.0,
+          "tie_aware_recall_at_10": 1.0,
+          "max_returned_score_error": 4.6061935418673094e-08
+        },
+        {
+          "backend": "qdrant_ann",
+          "requests": 100,
+          "first_request_ms": 29.157327488064766,
+          "p50_ms": 5.299023352563381,
+          "p95_ms": 7.488960912451148,
+          "mean_ms": 5.623229769989848,
+          "sequential_qps": 177.83374340077967,
+          "client_peak_rss_bytes": 48775168,
+          "rss_method": "proc_self_VmRSS_sample_2ms",
+          "client_import_rss_bytes": 47910912,
+          "recall_at_10": 0.9840000000000001,
+          "tie_aware_recall_at_10": 0.9840000000000001,
+          "max_returned_score_error": 4.6061935418673094e-08
+        }
+      ],
+      "qdrant_server_rss_bytes_after": null,
+      "qdrant_collection_disk": {
+        "logical_bytes": 344415948,
+        "allocated_bytes": 40796160
+      },
+      "faiss_persistent_bytes": 61709063,
+      "filter_correct": true,
+      "final_index_config_wait_seconds": 2.0182249872013927,
+      "qdrant_segments": 8,
+      "qdrant_config": {
+        "params": {
+          "vectors": {
+            "size": 768,
+            "distance": "Cosine",
+            "memory": "cold"
+          },
+          "shard_number": 1,
+          "replication_factor": 1,
+          "write_consistency_factor": 1,
+          "on_disk_payload": true
+        },
+        "hnsw_config": {
+          "m": 16,
+          "ef_construct": 100,
+          "full_scan_threshold": 1000,
+          "max_indexing_threads": 0,
+          "on_disk": false,
+          "memory": "cold"
+        },
+        "optimizer_config": {
+          "deleted_threshold": 0.2,
+          "vacuum_min_vector_number": 1000,
+          "default_segment_number": 0,
+          "max_segment_size": null,
+          "memmap_threshold": null,
+          "indexing_threshold": 1000,
+          "flush_interval_sec": 5,
+          "max_optimization_threads": 2,
+          "prevent_unoptimized": null
+        },
+        "wal_config": {
+          "wal_capacity_mb": 4,
+          "wal_segments_ahead": 0,
+          "wal_retain_closed": 1
+        },
+        "quantization_config": null
+      },
+      "approximate_query_mode": "hnsw_with_possible_unindexed_tail"
+    },
+    {
+      "dataset": "synthetic_images_100000",
+      "source_kind": "synthetic",
+      "count": 100000,
+      "dimension": 768,
+      "query_vectors": 32,
+      "faiss_write_seconds": 1.1651685563847423,
+      "qdrant_upload_seconds": 123.08488425053656,
+      "qdrant_index_wait_seconds": 4.056575993075967,
+      "qdrant_indexed_vectors": 100000,
+      "collection": "benchmark_bc5ec899c5f64daeb8151246d85e3c27",
+      "qdrant_status": "green",
+      "measurements": [
+        {
+          "backend": "faiss_reload",
+          "requests": 100,
+          "first_request_ms": 1124.3039071559906,
+          "p50_ms": 752.9455246403813,
+          "p95_ms": 2046.2850384414196,
+          "mean_ms": 948.9882465265691,
+          "sequential_qps": 1.0537538306297691,
+          "client_peak_rss_bytes": 680865792,
+          "rss_method": "proc_self_VmRSS_sample_2ms",
+          "client_import_rss_bytes": 47919104,
+          "recall_at_10": 1.0,
+          "tie_aware_recall_at_10": 1.0,
+          "max_returned_score_error": 1.043081283569336e-07
+        },
+        {
+          "backend": "faiss_resident",
+          "requests": 100,
+          "first_request_ms": 22.819732315838337,
+          "p50_ms": 24.45618575438857,
+          "p95_ms": 28.49014569073915,
+          "mean_ms": 24.921811828389764,
+          "sequential_qps": 40.12549355905363,
+          "client_peak_rss_bytes": 359063552,
+          "rss_method": "proc_self_VmRSS_sample_2ms",
+          "client_import_rss_bytes": 48025600,
+          "recall_at_10": 1.0,
+          "tie_aware_recall_at_10": 1.0,
+          "max_returned_score_error": 1.043081283569336e-07
+        },
+        {
+          "backend": "qdrant_exact",
+          "requests": 100,
+          "first_request_ms": 1621.7069355770946,
+          "p50_ms": 24.2131226696074,
+          "p95_ms": 63.23865177109837,
+          "mean_ms": 28.487084032967687,
+          "sequential_qps": 35.10362797549635,
+          "client_peak_rss_bytes": 48734208,
+          "rss_method": "proc_self_VmRSS_sample_2ms",
+          "client_import_rss_bytes": 47894528,
+          "recall_at_10": 1.0,
+          "tie_aware_recall_at_10": 1.0,
+          "max_returned_score_error": 4.877513884449236e-08
+        },
+        {
+          "backend": "qdrant_ann",
+          "requests": 100,
+          "first_request_ms": 334.05226189643145,
+          "p50_ms": 10.48024045303464,
+          "p95_ms": 17.37638814374804,
+          "mean_ms": 11.039402848109603,
+          "sequential_qps": 90.58460985244695,
+          "client_peak_rss_bytes": 48742400,
+          "rss_method": "proc_self_VmRSS_sample_2ms",
+          "client_import_rss_bytes": 47960064,
+          "recall_at_10": 0.447,
+          "tie_aware_recall_at_10": 0.447,
+          "max_returned_score_error": 4.762596131357988e-08
+        }
+      ],
+      "qdrant_server_rss_bytes_after": null,
+      "qdrant_collection_disk": {
+        "logical_bytes": 630098989,
+        "allocated_bytes": 338980864
+      },
+      "faiss_persistent_bytes": 617189063,
+      "filter_correct": true,
+      "final_index_config_wait_seconds": 6.013440816663206,
+      "qdrant_segments": 8,
+      "qdrant_config": {
+        "params": {
+          "vectors": {
+            "size": 768,
+            "distance": "Cosine",
+            "memory": "cold"
+          },
+          "shard_number": 1,
+          "replication_factor": 1,
+          "write_consistency_factor": 1,
+          "on_disk_payload": true
+        },
+        "hnsw_config": {
+          "m": 16,
+          "ef_construct": 100,
+          "full_scan_threshold": 1000,
+          "max_indexing_threads": 0,
+          "on_disk": false,
+          "memory": "cold"
+        },
+        "optimizer_config": {
+          "deleted_threshold": 0.2,
+          "vacuum_min_vector_number": 1000,
+          "default_segment_number": 0,
+          "max_segment_size": null,
+          "memmap_threshold": null,
+          "indexing_threshold": 1000,
+          "flush_interval_sec": 5,
+          "max_optimization_threads": 2,
+          "prevent_unoptimized": null
+        },
+        "wal_config": {
+          "wal_capacity_mb": 4,
+          "wal_segments_ahead": 0,
+          "wal_retain_closed": 1
+        },
+        "quantization_config": null
+      },
+      "approximate_query_mode": "hnsw_with_possible_unindexed_tail"
+    }
+  ],
+  "limitations": [
+    "No OS page cache flush; first-request is not cold-disk latency.",
+    "Sequential vector-only timings exclude feature extraction; no peak-concurrency claims.",
+    "Synthetic vectors are random normalized Gaussian vectors, not accuracy ground truth.",
+    "Qdrant collection disk includes WAL/preallocation; FAISS bytes include both legacy vector copies."
+  ],
+  "remeasured_at": "2026-11-02T08:10:38.005865+00:00",
+  "measurement_note": "All final client RSS sampled from /proc/self/status every 2ms; synthetic HNSW full_scan_threshold/indexing_threshold=1000 KB. Original upload timings predate final config."
+}

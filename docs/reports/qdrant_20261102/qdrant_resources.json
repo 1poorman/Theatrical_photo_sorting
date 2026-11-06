@@ -1,0 +1,28 @@
+{
+  "at": "2026-11-02T08:20:02.476811+00:00",
+  "process_status": {
+    "Name": "qdrant",
+    "VmSize": "9184180 kB",
+    "VmRSS": "1258112 kB",
+    "Threads": "140"
+  },
+  "cgroup_memory_current": 999641088,
+  "cgroup_stat": {
+    "anon": 190423040,
+    "file": 754147328,
+    "file_mapped": 744235008,
+    "inactive_file": 747745280,
+    "active_file": 5812224
+  },
+  "allocator_memory": {
+    "active_bytes": 173596672,
+    "allocated_bytes": 138985080,
+    "metadata_bytes": 36202752,
+    "resident_bytes": 206172160,
+    "retained_bytes": 297578496
+  },
+  "total_storage": {
+    "logical_bytes": 4419707720,
+    "allocated_bytes": 385798144
+  }
+}

@@ -1,0 +1,172 @@
+{
+  "storage_regression": {
+    "passed": 14,
+    "total": 14
+  },
+  "http": {
+    "checks": [
+      {
+        "name": "fixture",
+        "passed": true,
+        "detail": {
+          "photos": 3
+        },
+        "seconds": 0.733
+      },
+      {
+        "name": "build_old_and_new",
+        "passed": true,
+        "detail": {
+          "legacy_and_qdrant_built": true,
+          "manifest_bytes": 503
+        },
+        "seconds": 13.886
+      },
+      {
+        "name": "search_parity",
+        "passed": true,
+        "detail": {
+          "top3_identical": true,
+          "max_cosine_error": 1.5960464483377734e-07
+        },
+        "seconds": 4.282
+      },
+      {
+        "name": "incremental_update_filter_delete",
+        "passed": true,
+        "detail": {
+          "idempotent_upsert": true,
+          "changed_vector_visible": true,
+          "metadata_preserved": true,
+          "filtered_search_and_delete": true
+        },
+        "seconds": 3.232
+      },
+      {
+        "name": "legacy_migration",
+        "passed": true,
+        "detail": {
+          "source": "/app/outputs/acceptance/qdrant_20261102/http_final/faiss/siglip2_base",
+          "destination": "/app/outputs/acceptance/qdrant_20261102/http_final/migrated",
+          "migrated": 3,
+          "source_unchanged": true,
+          "legacy_model_unverified": true,
+          "collection": "theatre_images_d532d55602054004bb9e9aca86a53c7d"
+        },
+        "seconds": 1.1
+      },
+      {
+        "name": "failure_handling",
+        "passed": true,
+        "detail": {
+          "invalid_requests_rejected": true,
+          "missing_collection_503_no_stale_fallback": true
+        },
+        "seconds": 0.62
+      },
+      {
+        "name": "real_face_database",
+        "passed": true,
+        "detail": {
+          "face_backend": "qdrant",
+          "duplicate_build_single_anchor": true,
+          "recognized_faces": 1
+        },
+        "seconds": 1.813
+      },
+      {
+        "name": "restart_snapshot",
+        "passed": true,
+        "detail": {
+          "references_saved": true,
+          "face_count": 1
+        },
+        "seconds": 0.002
+      }
+    ],
+    "passed": 8,
+    "total": 8,
+    "all_passed": true
+  },
+  "restart": {
+    "checks": [
+      {
+        "name": "restart_queries",
+        "passed": true,
+        "detail": {
+          "image_and_face_queries_survive_restart": true,
+          "manifest_unchanged": true
+        },
+        "seconds": 20.12
+      },
+      {
+        "name": "cleanup",
+        "passed": true,
+        "detail": {
+          "temporary_face_records_removed": true,
+          "image_acceptance_collections_retained": true
+        },
+        "seconds": 0.006
+      }
+    ],
+    "passed": 2,
+    "total": 2,
+    "all_passed": true
+  },
+  "browser": {
+    "passed": true,
+    "realPhotos": 35,
+    "largeQueue": {
+      "records": 10000,
+      "indexRequests": 1,
+      "detailRequestSizes": [
+        36,
+        36,
+        1
+      ],
+      "fullQueueRequests": 0,
+      "decisionPosts": 1
+    },
+    "checks": [
+      "empty/error states",
+      "real photo previews",
+      "knowledge ingest",
+      "offline scene analysis",
+      "background analysis refresh reuses task without resubmission",
+      "review accept/modify/reject",
+      "draft survives selection/search/reload/failure",
+      "revision conflict refreshes record and preserves draft",
+      "successful decision clears draft",
+      "search/filter",
+      "label download",
+      "organize payload",
+      "background organize refresh/cancel/resume/partial failures",
+      "cluster refresh/cancel/resume and persistent assign/ignore/restore/error",
+      "face database refresh/cancel/resume/partial report and dry-run/build payload",
+      "refresh persistence",
+      "responsive 1440/1024/768/540/390",
+      "escaped evidence",
+      "10000 record metadata and bounded visible details/DOM",
+      "decision updates one record without queue reload",
+      "independent project contexts"
+    ],
+    "screenshots": "outputs/acceptance/qdrant_20261102/browser"
+  },
+  "es_source_migration": {
+    "source_index": "face_database_512",
+    "source_count": 0,
+    "processed": 0,
+    "destination_count": 1,
+    "collection": "theatre_faces_2cf180490236fb270f92",
+    "source_deleted": false,
+    "legacy_model_unverified": true
+  },
+  "es_nonempty_fixture": {
+    "passed": true,
+    "nonempty_migration": true,
+    "repeat_idempotent": true,
+    "source_unchanged": true,
+    "metadata_preserved": true,
+    "retrieval_correct": true
+  }
+}

@@ -202,7 +202,7 @@ system = FaceRecognitionSystem(scrfd_path, arcface_path, device='tensorrt')
 results, annotated = system.recognize_face('photo.jpg', known_threshold=0.55)
 ```
 
-人脸向量存储于 Elasticsearch 8.x（索引 `face_database_512`），连接配置见 `config/base.py`（支持环境变量覆盖）。
+Docker 默认将人脸与图像向量存入 Qdrant；本地直接运行仍兼容 Elasticsearch 人脸库（`face_database_512`）和 FAISS 图像索引。后端与连接配置见 `config/base.py`，支持环境变量覆盖；迁移与接口用法见 [在线向量库指南](docs/qdrant_guide.md)。
 
 ## 智能整理（Smart Organizer）
 
@@ -356,13 +356,9 @@ python tests/acceptance_m7.py         # 四剧目全量验收（报告 outputs/a
 
 ## Docker
 
-默认一起启动可视化工作台（包含全部 API）和新的 Elasticsearch 8.12.2 向量库。宿主机需安装 Docker Compose V2、NVIDIA 驱动及 NVIDIA Container Toolkit，并准备 `weights/` 下的模型权重。镜像使用 PyTorch CUDA 12.8 构建，与 ONNX Runtime / TensorRT 的 CUDA 12 依赖保持一致。
+默认一起启动可视化工作台（包含全部 API）和 Qdrant 1.20.0 在线向量库。宿主机需安装 Docker Compose V2、NVIDIA 驱动及 NVIDIA Container Toolkit，并准备 `weights/` 下的模型权重。镜像使用 PyTorch CUDA 12.8 构建，与 ONNX Runtime / TensorRT 的 CUDA 12 依赖保持一致。
 
 ```bash
-# Elasticsearch 要求 vm.max_map_count 至少为 262144；已满足时无需调整。
-sysctl vm.max_map_count
-sudo sysctl -w vm.max_map_count=262144
-
 # 构建并启动工作台和新向量库
 docker compose up -d --build
 docker compose ps
@@ -371,13 +367,13 @@ docker compose logs -f theatrical-photo-sorting
 
 工作台：`http://localhost:8199/organize`；API 文档：`http://localhost:8199/docs`；健康检查：`http://localhost:8199/api/health`。
 
-这里的新 ES 库用于人脸向量及人物信息。图像相似检索使用进程内 FAISS，不需要额外数据库容器：索引目录保存 `vector_index.faiss`、`image_paths.txt`、`embeddings.npy` 和 `model_info.txt`，放在 `/app/outputs/` 下即可随挂载持久化。人脸库改用本地 FAISS 则需要另行实现人物信息存储、增删更新和并发一致性。
+Qdrant 保存图像、人脸向量和检索元数据；图像索引目录只需 `vector_store.json` 连接清单。应用直接查询在线集合，默认精确余弦检索；旧 FAISS 文件继续可读，离线分组仍使用现有算法。数据库仍需要磁盘空间：入库解决应用全量加载和增量维护问题，不会消除向量、索引及原图的容量需求。见 [改造方案](docs/qdrant_upgrade_plan.md) 与 [容器对比结果](docs/reports/qdrant_20261102/README.md)。
 
-- 应用通过 Compose 内网的 `http://elasticsearch:9200` 访问新库，ES 不映射宿主机端口。数据库使用独立的 `elasticsearch_data` 命名卷；人脸模型首次成功初始化时自动创建空索引 `face_database_512`，原外部 ES 数据需另行导入。
-- 应用等待 ES 健康后启动；单节点索引存在未分配副本时的 `yellow` 状态也可正常读写。模型加载和首次 TRT 引擎构建需要几分钟，可查看应用日志确认各模型加载结果；`/api/health` 只确认 HTTP 服务运行。
-- 权重只读挂载；`data/`、`outputs/`、`logs/` 挂载宿主机目录；ES 数据、TRT 引擎和模型下载缓存通过命名卷持久化。业务表单填写容器内路径，例如 `/app/data/照片目录`、`/app/outputs/整理结果`。
-- 默认分配宿主机 GPU0，在容器内使用可见 GPU0。更改 GPU、端口、权重路径或 ES 密码，可复制 `docker.env.example` 为 `.env.docker`，编辑后运行 `docker compose --env-file .env.docker up -d --build`。ES 密码只在空数据卷首次初始化时设置，已有库需通过 ES 密码 API 更新。
-- `docker compose down` 停止服务并保留数据；后续 `up -d` 复用同一库。使用不同的 `-p` 项目名会创建另一套命名卷。`down -v` 会删除命名卷中的 ES 数据和缓存。
+- 应用等待 Qdrant 健康后，通过 Compose 内网 `http://qdrant:6333` 访问；数据库不映射宿主机端口，使用独立 `qdrant_data` 命名卷。模型加载和首次 TRT 构建需几分钟；`/api/health` 只确认 HTTP 服务运行。
+- 权重只读挂载；`data/`、`outputs/`、`logs/` 挂载宿主机目录；向量库、TRT 引擎和下载缓存通过命名卷持久化。业务表单填写容器内路径，例如 `/app/data/照片目录`、`/app/outputs/整理结果`。
+- 默认分配宿主机 GPU0，在容器内使用可见 GPU0。更改 GPU、端口或后端，可复制 `docker.env.example` 为 `.env.docker`，编辑后运行 `docker compose --env-file .env.docker up -d --build`。
+- 旧 ES 由 `--profile legacy` 启动，原 `elasticsearch_data` 卷保留。切换后端不会自动迁移旧数据，显式迁移步骤见 [指南](docs/qdrant_guide.md)。启用 ES 时仍需 `vm.max_map_count >= 262144`。
+- `docker compose down` 保留数据；后续 `up -d` 复用同一库。不同的 `-p` 项目名会创建另一套卷；`down -v` 会删除命名卷中的向量及缓存。
 - 镜像安装视觉服务和 `requirements/agent.txt` 的高级智能体依赖。现有 `.env` 不打包进镜像；如需使用大模型配置，启动时追加 `-f docker-compose.yml -f docker-compose.llm.yml`，将 `.env` 只读挂载至 `/app/.env`。连接地址应能从容器内访问。
 
 ## 注意事项

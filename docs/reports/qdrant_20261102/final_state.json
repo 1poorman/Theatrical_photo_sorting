@@ -1,0 +1,13 @@
+{
+  "at": "2026-11-02T08:24:20.628582+00:00",
+  "health": {
+    "code": 200,
+    "message": "Service is running",
+    "device": "cuda:0"
+  },
+  "listed_tasks": 39,
+  "all_task_status_counts": {
+    "completed": 39
+  },
+  "active_tasks": []
+}

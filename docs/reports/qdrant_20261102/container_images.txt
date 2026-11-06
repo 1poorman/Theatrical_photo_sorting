@@ -1,0 +1,3 @@
+/theatrical_photo_sorting-251212-theatrical-photo-sorting-1 sha256:ba9903acf4d149b0a04eed5e91d04282657dd949fda4ee6f69407b6df7fedb08 running healthy memory_limit=0 nano_cpus=0
+/theatrical_photo_sorting-251212-qdrant-1 sha256:56f07be224a5733659c1eb5246207bfc5743b3f18b646d5c18aaf80a29a76927 running healthy memory_limit=4294967296 nano_cpus=0
+/theatrical_photo_sorting-251212-elasticsearch-1 sha256:d9d852841f3391ec7ad2a94048e65f7557aa60ab0fa6028b2e690949ad57a0e0 running healthy memory_limit=2147483648 nano_cpus=0

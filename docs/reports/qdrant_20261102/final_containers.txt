@@ -1,0 +1,4 @@
+NAME                                                         IMAGE                             COMMAND                  SERVICE                    CREATED             STATUS                       PORTS
+theatrical_photo_sorting-251212-elasticsearch-1              elasticsearch:8.12.2              "/bin/tini -- /usr/l…"   elasticsearch              17 hours ago        Exited (143) 3 minutes ago
+theatrical_photo_sorting-251212-qdrant-1                     theatrical-qdrant:1.20.0          "qdrant"                 qdrant                     49 minutes ago      Up 5 minutes (healthy)       6333-6334/tcp
+theatrical_photo_sorting-251212-theatrical-photo-sorting-1   theatrical-photo-sorting:latest   "python app/server_u…"   theatrical-photo-sorting   20 minutes ago      Up 5 minutes (healthy)       8198/tcp, 0.0.0.0:8199->8199/tcp, :::8199->8199/tcp

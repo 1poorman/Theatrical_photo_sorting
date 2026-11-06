@@ -1,0 +1,3 @@
+theatrical_photo_sorting-251212-theatrical-photo-sorting-1 3.281GiB / 125.5GiB 0.29%
+theatrical_photo_sorting-251212-qdrant-1 228.8MiB / 4GiB 0.58%
+theatrical_photo_sorting-251212-elasticsearch-1 1.769GiB / 2GiB 0.24%

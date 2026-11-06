@@ -62,7 +62,7 @@ python app/server.py
 
 PyTorch 的 CUDA 安装方式以依赖文件顶部说明为准；权重布局见项目 README。服务默认 API 端口 8198，界面启动方式为 `python app/server_ui.py`（8199）。也可在 `app/` 目录执行 `uvicorn main:app --host 127.0.0.1 --port 8198`。不要假设根目录下 `uvicorn app.main:app` 与脚本入口等价：现有代码使用 `import server`。
 
-健康接口：`GET /api/health`，交互式 API：`/docs`。服务开始监听不代表模型全部加载成功；需要检查模型加载日志和实际业务接口。人脸系统初始化会访问 Elasticsearch，连接失败可能导致模型实例未赋值。
+健康接口：`GET /api/health`，交互式 API：`/docs`。服务开始监听不代表模型全部加载成功；需要检查模型加载日志和实际业务接口。人脸系统初始化会访问所选向量库（Docker 默认 Qdrant，本地默认 Elasticsearch），连接失败可能导致模型实例未赋值。
 
 ### 独立智能体
 
@@ -76,7 +76,7 @@ python -m app.photo_agent_cli --session demo --model auto --protocol json
 
 ### Docker
 
-`docker compose up -d --build` 启动可视化工作台（8199，包含全部 API）和独立 Elasticsearch 8.12.2 向量库，应用等待 ES 健康后启动。宿主机需安装支持 CUDA 12.8 的 NVIDIA 驱动及 NVIDIA Container Toolkit，并保证 `vm.max_map_count >= 262144`。权重只读挂载，数据、输出、日志和 ES/TRT/模型缓存持久化。ES 仅在 Compose 内网开放 9200，独立数据卷首次使用时为空；人脸模型成功初始化时自动创建索引。配置示例见 `docker.env.example`，具体命令见 [README 的 Docker 章节](../README.md#docker)。
+`docker compose up -d --build` 启动可视化工作台（8199，包含全部 API）和 Qdrant 1.20.0，应用等待数据库健康后启动。图像与人脸向量在线查询，默认保持精确余弦；图像本地保存小型连接清单，旧 FAISS 仍可读取。宿主机需安装支持 CUDA 12.8 的 NVIDIA 驱动及 NVIDIA Container Toolkit。权重只读挂载，数据、输出、日志和 Qdrant/TRT/模型缓存持久化。Qdrant 仅在 Compose 内网开放 6333；首次使用为空库。旧 ES 数据卷保留，可用 `--profile legacy` 启动迁移或回退（启用 ES 时需 `vm.max_map_count >= 262144`）。配置见 `docker.env.example`，迁移、增删、回退与容量管理见 [在线向量库指南](qdrant_guide.md)，测量见 [Qdrant 对比报告](reports/qdrant_20261102/README.md)。
 
 Dockerfile 安装视觉服务、ModelScope framework 和 `requirements/agent.txt` 的 LangChain 依赖。现有 `.env` 不打包进镜像；启用大模型配置时追加 `-f docker-compose.yml -f docker-compose.llm.yml`，将配置只读挂载至 `/app/.env`，并使用容器可访问的模型端点。不要将含密钥的文件写入镜像。业务表单使用容器内路径，例如 `/app/data/...` 和 `/app/outputs/...`。
 
@@ -156,6 +156,8 @@ CLI 注册 7 个工具；主 API 额外注册 `organize_photos`，依赖已加�
 | GPU/ES/全量 | `python tests/acceptance_m7.py`、`python tests/test_face_cluster_api.py` | 权重、剧目数据、GPU/ES；可能写入正式库，不能直接在生产环境运行 |
 
 历史通过结果见多模态进度记录。2026-11-02 容器验收通过 18 项真实 HTTP 检查、21 项浏览器工作流、8 项重启与恢复检查及 14 项 LangChain 回归；已验证当前大模型端点的 JSON 工具调用。小模型与真实 native 协议仍未在本轮验收，详情及证据见 [Docker 功能验收](reports/docker_functional_20261102.md)。
+
+随后完成的 Qdrant 改造通过 14 项存储回归、8 项真实 HTTP、2 项最终重启持久化与 21 项浏览器检查，另验证非空 ES 迁移及源数据保留；真实/合成数据对比见 [Qdrant 报告](reports/qdrant_20261102/README.md)。精确检索保持默认，原始数据和旧 ES 卷保留。
 
 常见问题：
 

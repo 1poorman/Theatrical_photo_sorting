@@ -1,0 +1,103 @@
+{
+  "python": "3.10.14",
+  "image_backend": "qdrant",
+  "face_backend": "qdrant",
+  "packages": {
+    "torch": "2.9.0+cu128",
+    "onnxruntime-gpu": "1.23.2",
+    "numpy": "2.2.6",
+    "faiss-cpu": "1.15.0",
+    "elasticsearch": "8.19.3",
+    "fastapi": "0.141.1"
+  },
+  "source_sha256": {
+    "app/main.py": "aea9ae90c1412ab9482dfda66c52bded54282f64469e791b53313d60ae049880",
+    "app/vector_api.py": "9173b82984ef8c30186049b906a8cf2e2a9e9c2a983fa09bf289fa697468b5d5",
+    "config/base.py": "abc6d061a54a6a899c09af949d1f0e5f18ff90d43fef3f15316860874f152266",
+    "core_modules/image_search.py": "4b81fc7efb6f71e41ed76c37d7e10b68c7bf14b5ef72a091741bb1690dc39e80",
+    "core_modules/vector_store.py": "8d0659320ff495e5434cd5a45e3419900339b2505964b1e8a06f06f055d9b90e",
+    "core_modules/qdrant_images.py": "7bf1cc1d4e7a34983b0cd438487515543dcce10bd4ec08a87559766d0745ad7b",
+    "core_modules/face_recognition/database.py": "8d5c10493460065b7a2f565b37feb8b5b8df4b3eff1cfb2dc2a8449ca9a951dc",
+    "core_modules/face_recognition/qdrant_database.py": "75fe06bd1c10fc46dca66529dbfdcff9032058aa8abda78544a167774a3ced9c",
+    "core_modules/face_recognition/face_recognition.py": "14a8f66dc158566d4d05c22e2ac4c68788b5f4df62ecbad76d1e60d6819109c7",
+    "tools/migrate_vector_store.py": "acb1f81e909d5f2dd855d845b70a70dd9be54027d214832e2fb4b48cae3a7743",
+    "tools/prune_vector_generations.py": "28571e54d420c450711d12af8560185933ae641219678ed9fd0e66fe805e061b",
+    "tools/benchmark_vector_store.py": "05722dc498eaee82896716fee08bbc49040870b1a92268c922668d240468833d",
+    "tools/check_qdrant_workflow.py": "5ead63ff86071751ccc4ea63b6a59ee7324842d3d8df6d0f04aad311c3c7c5bd"
+  },
+  "qdrant_collections": [
+    {
+      "name": "benchmark_0a994fdde14140f5a576ecbf12310f72",
+      "count": 10000
+    },
+    {
+      "name": "benchmark_53d881648fba4d9ab942fecd02dafe0a",
+      "count": 89
+    },
+    {
+      "name": "benchmark_7cf08c2df5f04ba883c1d3f243669c8b",
+      "count": 128
+    },
+    {
+      "name": "benchmark_bc5ec899c5f64daeb8151246d85e3c27",
+      "count": 100000
+    },
+    {
+      "name": "theatre_faces_2cf180490236fb270f92",
+      "count": 0
+    },
+    {
+      "name": "theatre_images_20a05282d8d24794a01f7fa4072f8f69",
+      "count": 3
+    },
+    {
+      "name": "theatre_images_791366e6c57a44baa70259f1d02ee3ff",
+      "count": 3
+    },
+    {
+      "name": "theatre_images_90f0352c827f42b7aae067620ecc3ca3",
+      "count": 3
+    },
+    {
+      "name": "theatre_images_d532d55602054004bb9e9aca86a53c7d",
+      "count": 3
+    }
+  ],
+  "es_version": "8.12.2",
+  "es_face_source_count": 0,
+  "es_nodes_memory": [
+    {
+      "jvm": {
+        "heap_used_in_bytes": 565306992,
+        "heap_used_percent": 52,
+        "heap_committed_in_bytes": 1073741824,
+        "heap_max_in_bytes": 1073741824,
+        "non_heap_used_in_bytes": 219042888,
+        "non_heap_committed_in_bytes": 226099200,
+        "pools": {
+          "young": {
+            "used_in_bytes": 465567744,
+            "max_in_bytes": 0,
+            "peak_used_in_bytes": 629145600,
+            "peak_max_in_bytes": 0
+          },
+          "old": {
+            "used_in_bytes": 61202784,
+            "max_in_bytes": 1073741824,
+            "peak_used_in_bytes": 61202784,
+            "peak_max_in_bytes": 1073741824
+          },
+          "survivor": {
+            "used_in_bytes": 38536464,
+            "max_in_bytes": 0,
+            "peak_used_in_bytes": 65671552,
+            "peak_max_in_bytes": 0
+          }
+        }
+      },
+      "process": {
+        "total_virtual_in_bytes": 20292640768
+      }
+    }
+  ]
+}

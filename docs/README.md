@@ -19,6 +19,9 @@
 | [technical_report_20261026.md](technical_report_20261026.md) | 最新技术评审报告（29页PDF、离线HTML、15幅正文图） | 功能架构、14种检索变体、Pillow修复、双线程选优与DALI评价；PNG、SVG和31份证据快照随Git保存 |
 | [technical_report_20261024.md](technical_report_20261024.md) | 历史技术报告（26页、13幅正文图） | 保留当时数字与结论；PDF、HTML及图片已迁入Git可见归档 |
 | [PROJECT_GUIDE.md](PROJECT_GUIDE.md) | 当前项目手册 | 部署、接手开发、排障与文件管理 |
+| [qdrant_guide.md](qdrant_guide.md) | 在线向量库 | Docker 默认后端、增删过滤、显式迁移、回退与容量管理 |
+| [qdrant_upgrade_plan.md](qdrant_upgrade_plan.md) | 向量库升级方案 | 范围、实施步骤、冻结对比口径与验收记录 |
+| [Qdrant 对比报告](reports/qdrant_20261102/README.md) | 容器实测 | 真实向量和 1 万/10 万合成向量对比，召回、延迟、内存、磁盘与局限 |
 | [workspace_guide.md](workspace_guide.md) | 多模态整理工作台 | 图片浏览、剧情关联、看图复核、整理导出与界面验收 |
 | [identity_registry_guide.md](identity_registry_guide.md) | 演员身份与剧目角色表 | JSON 格式、身份与角色来源、专辑筛选、API 参数和任务恢复 |
 | [sourced_scene_candidates_guide.md](sourced_scene_candidates_guide.md) | 有出处的分幕候选与U4复现 | 官方/媒体资料、精确引用、短原文块/固定向量25/28对照、来源v1与演出版边界 |
