@@ -1,0 +1,341 @@
+"""Benchmark face recognition models and SCRFD detector variants on project data.
+
+Recognition uses the labeled, aligned anchors under ``data/face_database``.
+Queries never compare against another crop from the same source photograph.
+Detection uses the existing face-review boxes as a regression reference; those
+boxes were produced by an earlier SCRFD run and are not independent ground truth.
+"""
+import argparse
+from collections import Counter, defaultdict
+from datetime import datetime, timezone
+import hashlib
+import json
+from pathlib import Path
+import platform
+import re
+import statistics
+import sys
+import time
+
+import cv2
+import numpy as np
+import onnx
+import onnxruntime
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from core_modules.face_recognition.arcface.arcface_onnx import ArcFaceFeatureExtractor
+from core_modules.face_recognition.scrfd.scrfd_det import SCRFDDetector
+from core_modules.tools.image_io import imread_reduced
+
+
+IMAGE_SUFFIXES = {'.jpg', '.jpeg', '.png'}
+
+
+def percentile(values, q):
+    return float(np.percentile(np.asarray(values, dtype=np.float64), q)) if values else None
+
+
+def sha256(path):
+    digest = hashlib.sha256()
+    with open(path, 'rb') as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b''):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def onnx_parameters(path):
+    model = onnx.load(str(path), load_external_data=False)
+    return sum(int(np.prod(value.dims)) for value in model.graph.initializer)
+
+
+def source_key(path):
+    stem = Path(path).stem
+    stem = re.sub(r'_face(?:_\d+)?$', '', stem)
+    return stem
+
+
+def actor_key(identity):
+    return re.split(r'[（(]', identity, maxsplit=1)[0].strip()
+
+
+def load_faces(root):
+    rows = []
+    for identity in sorted(path for path in Path(root).iterdir() if path.is_dir()):
+        for path in sorted(identity.rglob('*')):
+            if not path.is_file() or path.suffix.lower() not in IMAGE_SUFFIXES:
+                continue
+            image = cv2.imread(str(path))
+            if image is None:
+                continue
+            rows.append({'path': str(path.resolve()), 'identity': identity.name,
+                         'actor_identity': actor_key(identity.name),
+                         'source': source_key(path), 'content_sha256': sha256(path), 'image': image})
+    return rows
+
+
+def model_embeddings(model_path, rows, device, batch_size, timing_rounds):
+    model = ArcFaceFeatureExtractor(str(model_path), device=device)
+    providers = model.session.get_providers()
+    images = [cv2.resize(row['image'], model.input_size, interpolation=cv2.INTER_LINEAR) for row in rows]
+    started = time.perf_counter()
+    features = []
+    for offset in range(0, len(images), batch_size):
+        features.append(model.extract_features(images[offset:offset + batch_size]))
+    elapsed = time.perf_counter() - started
+    matrix = model.l2_normalize(np.concatenate(features, axis=0))
+
+    timing = {}
+    for size in (1, min(32, len(images))):
+        batch = images[:size]
+        for _ in range(5):
+            model.extract_features(batch)
+        samples = []
+        for _ in range(timing_rounds):
+            tick = time.perf_counter()
+            model.extract_features(batch)
+            samples.append((time.perf_counter() - tick) * 1000)
+        timing[f'batch_{size}'] = {
+            'batch_p50_ms': percentile(samples, 50), 'batch_p95_ms': percentile(samples, 95),
+            'per_face_p50_ms': percentile(samples, 50) / size,
+            'faces_per_second_from_p50': size * 1000 / percentile(samples, 50),
+        }
+    del model
+    return matrix, {'providers': providers, 'extraction_seconds': elapsed,
+                    'faces_per_second': len(rows) / elapsed, 'timing': timing}
+
+
+def roc_metrics(scores, labels):
+    scores = np.asarray(scores, dtype=np.float64)
+    labels = np.asarray(labels, dtype=bool)
+    order = np.argsort(scores)[::-1]
+    sorted_labels = labels[order]
+    positives = max(1, int(labels.sum()))
+    negatives = max(1, int((~labels).sum()))
+    tp = np.cumsum(sorted_labels)
+    fp = np.cumsum(~sorted_labels)
+    tpr = tp / positives
+    fpr = fp / negatives
+    thresholds = scores[order]
+    auc = float(np.trapezoid(np.r_[0, tpr], np.r_[0, fpr]))
+    fnr = 1 - tpr
+    index = int(np.argmin(np.abs(fnr - fpr)))
+    result = {'auc': auc, 'eer': float((fnr[index] + fpr[index]) / 2),
+              'eer_threshold': float(thresholds[index])}
+    for target in (0.1, 0.01, 0.001):
+        valid = np.where(fpr <= target)[0]
+        chosen = int(valid[-1]) if len(valid) else 0
+        result[f'tar_at_far_{target:g}'] = float(tpr[chosen])
+        result[f'threshold_at_far_{target:g}'] = float(thresholds[chosen])
+    return result
+
+
+def evaluate_recognition(rows, embeddings, identity_field):
+    identities = np.asarray([row[identity_field] for row in rows])
+    sources = np.asarray([row['source'] for row in rows])
+    hashes = np.asarray([row['content_sha256'] for row in rows])
+    similarities = embeddings @ embeddings.T
+    queries = []
+    top1 = top5 = 0
+    accepted = {threshold: {'correct': 0, 'wrong': 0} for threshold in (.4, .55)}
+    margins = []
+    for index in range(len(rows)):
+        allowed = (sources != sources[index]) & (hashes != hashes[index])
+        positive = allowed & (identities == identities[index])
+        if not positive.any():
+            continue
+        candidates = np.where(allowed)[0]
+        order = candidates[np.argsort(similarities[index, candidates])[::-1]]
+        predicted = identities[order]
+        top1 += int(predicted[0] == identities[index])
+        top5 += int(identities[index] in predicted[:5])
+        for threshold in accepted:
+            if similarities[index, order[0]] >= threshold:
+                accepted[threshold]['correct' if predicted[0] == identities[index] else 'wrong'] += 1
+        best_positive = float(similarities[index, np.where(positive)[0]].max())
+        negative = allowed & (identities != identities[index])
+        best_negative = float(similarities[index, np.where(negative)[0]].max())
+        margins.append(best_positive - best_negative)
+        queries.append({'path': rows[index]['path'], 'identity': identities[index],
+                        'predicted': predicted[0], 'correct': bool(predicted[0] == identities[index]),
+                        'score': float(similarities[index, order[0]]), 'margin': best_positive - best_negative})
+
+    pair_scores, pair_labels = [], []
+    for left in range(len(rows)):
+        for right in range(left + 1, len(rows)):
+            if sources[left] == sources[right] or hashes[left] == hashes[right]:
+                continue
+            pair_scores.append(float(similarities[left, right]))
+            pair_labels.append(identities[left] == identities[right])
+    failures = [row for row in queries if not row['correct']]
+    return {
+        'anchors': len(rows), 'identities': len(set(identities)), 'source_groups': len(set(sources)),
+        'eligible_queries': len(queries), 'top1_accuracy': top1 / len(queries),
+        'top5_accuracy': top5 / len(queries), 'margin_p05': percentile(margins, 5),
+        'margin_p50': percentile(margins, 50), 'positive_pairs': int(sum(pair_labels)),
+        'negative_pairs': int(len(pair_labels) - sum(pair_labels)),
+        'verification': roc_metrics(pair_scores, pair_labels),
+        'fixed_thresholds': {str(threshold): {
+            'correct_accept_rate': value['correct'] / len(queries),
+            'wrong_accept_rate': value['wrong'] / len(queries),
+            'rejection_rate': 1 - (value['correct'] + value['wrong']) / len(queries),
+        } for threshold, value in accepted.items()},
+        'top1_failure_count': len(failures),
+        'confusions': [{'actual': actual, 'predicted': predicted, 'count': count}
+                       for (actual, predicted), count in Counter(
+                           (row['identity'], row['predicted']) for row in failures).most_common()],
+    }
+
+
+def box_iou(one, many):
+    one = np.asarray(one, dtype=np.float32)
+    many = np.asarray(many, dtype=np.float32)
+    x1 = np.maximum(one[0], many[:, 0]); y1 = np.maximum(one[1], many[:, 1])
+    x2 = np.minimum(one[2], many[:, 2]); y2 = np.minimum(one[3], many[:, 3])
+    inter = np.maximum(0, x2-x1) * np.maximum(0, y2-y1)
+    area_one = max(0, one[2]-one[0]) * max(0, one[3]-one[1])
+    area_many = np.maximum(0, many[:, 2]-many[:, 0]) * np.maximum(0, many[:, 3]-many[:, 1])
+    return inter / np.maximum(area_one + area_many - inter, 1e-9)
+
+
+def match_boxes(reference, predicted, threshold=.5):
+    candidates = []
+    for left, box in enumerate(reference):
+        if len(predicted):
+            for right, value in enumerate(box_iou(box, predicted)):
+                if value >= threshold:
+                    candidates.append((float(value), left, right))
+    used_left, used_right, matches = set(), set(), []
+    for value, left, right in sorted(candidates, reverse=True):
+        if left not in used_left and right not in used_right:
+            used_left.add(left); used_right.add(right); matches.append((left, right, value))
+    return matches
+
+
+class BatchedOutputSession:
+    """Adapt official InsightFace SCRFD exports that omit output batch axes."""
+    def __init__(self, session):
+        self.session = session
+
+    def run(self, *args, **kwargs):
+        return [value[None, ...] if value.ndim == 2 else value
+                for value in self.session.run(*args, **kwargs)]
+
+
+def review_reference(path, limit=None):
+    review = json.loads(Path(path).read_text())
+    images = {row['image_id']: row for row in review['images']}
+    faces = defaultdict(list)
+    for row in review['faces']:
+        faces[row['image_id']].append(row['bbox'])
+    rows = []
+    for image_id in sorted(images):
+        if limit is not None and len(rows) >= limit:
+            break
+        rows.append({'image_id': image_id, 'path': images[image_id]['source'], 'boxes': faces[image_id]})
+    return rows
+
+
+def evaluate_detector(model_path, reference, device):
+    detector = SCRFDDetector(str(model_path), device=device, det_thresh=.3)
+    providers = detector.session.get_providers()
+    if len(detector.session.get_outputs()[0].shape) == 2:
+        detector.session = BatchedOutputSession(detector.session)
+    latencies, counts, matched, refs = [], 0, 0, 0
+    ious, by_size = [], defaultdict(lambda: [0, 0])
+    for row_index, row in enumerate(reference):
+        image = imread_reduced(row['path'], target_max=1920)
+        if image is None:
+            continue
+        if max(image.shape[:2]) > 1920:
+            scale = 1920 / max(image.shape[:2])
+            image = cv2.resize(image, (int(image.shape[1] * scale), int(image.shape[0] * scale)),
+                               interpolation=cv2.INTER_LINEAR)
+        if row_index == 0:
+            detector.detect(image, input_size=(640, 640))
+        tick = time.perf_counter()
+        detections, _ = detector.detect(image, input_size=(640, 640))
+        latencies.append((time.perf_counter() - tick) * 1000)
+        predicted = detections[:, :4] if len(detections) else np.empty((0, 4), dtype=np.float32)
+        predicted = np.asarray([box for box in predicted if (box[2]-box[0])*(box[3]-box[1]) >= 1600])
+        if predicted.size == 0:
+            predicted = np.empty((0, 4), dtype=np.float32)
+        reference_boxes = np.asarray(row['boxes'], dtype=np.float32)
+        matches = match_boxes(reference_boxes, predicted)
+        counts += len(predicted); refs += len(reference_boxes); matched += len(matches)
+        ious.extend(value for _, _, value in matches)
+        for index, box in enumerate(reference_boxes):
+            side = np.sqrt(max(0, (box[2]-box[0])*(box[3]-box[1])))
+            bucket = '40-79' if side < 80 else ('80-159' if side < 160 else '160+')
+            by_size[bucket][1] += 1
+            by_size[bucket][0] += int(any(left == index for left, _, _ in matches))
+    return {
+        'images': len(latencies), 'reference_faces': refs, 'detections': counts, 'matched_iou_0_5': matched,
+        'reference_recall': matched / refs if refs else None,
+        'prediction_precision_against_reference': matched / counts if counts else None,
+        'matched_iou_p50': percentile(ious, 50), 'latency_p50_ms': percentile(latencies, 50),
+        'latency_p95_ms': percentile(latencies, 95), 'images_per_second_from_p50': 1000 / percentile(latencies, 50),
+        'providers': providers,
+        'reference_recall_by_sqrt_area_px': {key: value[0]/value[1] for key, value in sorted(by_size.items()) if value[1]},
+    }
+
+
+def parse_models(values):
+    parsed = []
+    for value in values:
+        name, path = value.split('=', 1)
+        parsed.append((name, Path(path)))
+    return parsed
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--face-db', type=Path, default=ROOT / 'data/face_database')
+    parser.add_argument('--review', type=Path, default=ROOT / 'outputs/acceptance/core_upgrade/u1_face_identity_review_final_20261023/review_template.json')
+    parser.add_argument('--recognizer', action='append', default=[], metavar='NAME=ONNX')
+    parser.add_argument('--detector', action='append', default=[], metavar='NAME=ONNX')
+    parser.add_argument('--device', default='cuda')
+    parser.add_argument('--batch-size', type=int, default=32)
+    parser.add_argument('--timing-rounds', type=int, default=10)
+    parser.add_argument('--detection-limit', type=int)
+    parser.add_argument('--output', type=Path, required=True)
+    args = parser.parse_args()
+
+    faces = load_faces(args.face_db)
+    report = {
+        'created_at': datetime.now(timezone.utc).isoformat(), 'device': args.device,
+        'environment': {'python': platform.python_version(), 'platform': platform.platform(),
+                        'opencv': cv2.__version__, 'numpy': np.__version__,
+                        'onnxruntime': onnxruntime.__version__},
+        'protocol': {'recognition': 'leave-one-source-photograph-out nearest-anchor and verification pairs',
+                     'detection': 'IoU>=0.5 agreement with historical SCRFD development boxes; not independent ground truth'},
+        'dataset': {'face_database': str(args.face_db.resolve()), 'anchors': len(faces),
+                    'identity_counts': dict(Counter(row['identity'] for row in faces))},
+        'recognizers': {}, 'detectors': {}, 'limitations': [
+            'The labeled face anchors are a small development set from one theatrical production, not an independent final test.',
+            'Identity folder labels and crop quality were not re-annotated in this run.',
+            'Historical detection boxes originate from SCRFD and measure regression agreement, not unbiased detector accuracy.',
+            'Latency is single-process sequential inference on the reported host and is not a service SLA.',
+        ]}
+    for name, path in parse_models(args.recognizer):
+        embeddings, speed = model_embeddings(path, faces, args.device, args.batch_size, args.timing_rounds)
+        report['recognizers'][name] = {'path': str(path), 'sha256': sha256(path),
+                                       'bytes': path.stat().st_size, 'parameters': onnx_parameters(path), 'speed': speed,
+                                       'quality': {
+                                           'folder_identity': evaluate_recognition(faces, embeddings, 'identity'),
+                                           'actor_identity': evaluate_recognition(faces, embeddings, 'actor_identity'),
+                                       }}
+    reference = review_reference(args.review, args.detection_limit) if args.detector else []
+    for name, path in parse_models(args.detector):
+        report['detectors'][name] = {'path': str(path), 'sha256': sha256(path),
+                                     'bytes': path.stat().st_size, 'parameters': onnx_parameters(path),
+                                     'agreement': evaluate_detector(path, reference, args.device)}
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2))
+    print(json.dumps({'output': str(args.output), 'recognizers': list(report['recognizers']),
+                      'detectors': list(report['detectors'])}, ensure_ascii=False))
+
+
+if __name__ == '__main__':
+    main()
