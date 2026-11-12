@@ -35,6 +35,13 @@ FEATURE_HASH_WORKERS = max(1, int(os.environ.get('TRANS_FEATURE_HASH_WORKERS', '
 # ---------- 模型权重路径 ----------
 SCRFD_MODEL_PATH = os.path.join(WEIGHTS_DIR, 'scrfd', 'scrfd_10g_bnkps.onnx')
 ARCFACE_MODEL_PATH = os.path.join(WEIGHTS_DIR, 'arcface', 'Glint100.onnx')
+_SWINFACE_FP16_PATH = os.path.join(WEIGHTS_DIR, 'swinface', 'swinface_recognition_age_fp16.pt')
+SWINFACE_MODEL_PATH = os.environ.get(
+    'TRANS_SWINFACE_MODEL_PATH',
+    _SWINFACE_FP16_PATH if os.path.isfile(_SWINFACE_FP16_PATH)
+    else os.path.join(WEIGHTS_DIR, 'swinface', 'checkpoint_step_79999_gpu_0.pt'))
+SWINFACE_DEVICE = os.environ.get('TRANS_SWINFACE_DEVICE', 'auto')
+SWINFACE_BATCH_SIZE = max(1, int(os.environ.get('TRANS_SWINFACE_BATCH_SIZE', '8')))
 DETECTION_MODEL_PATH = os.path.join(WEIGHTS_DIR, 'rtdetr-x.pt')
 SEGPERSON_MODEL_PATH = os.path.join(WEIGHTS_DIR, 'yolo11x-seg.pt')
 POSE_MODEL_PATH = os.path.join(WEIGHTS_DIR, 'yolo11l-pose.pt')

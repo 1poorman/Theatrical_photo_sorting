@@ -1,0 +1,26 @@
+{
+  "repository": "https://github.com/lxq1000/SwinFace",
+  "commit": "ca36196814b54964e663e0991efd7d163c0069d3",
+  "files": {
+    "swin.py": {
+      "source": "swinface_project/backbones/swin.py",
+      "upstream_sha256": "c6bf8134681f913b0e0f2a7174e83d27b64db01caf1e5bd03c5679e65126492f",
+      "vendored_sha256": "8dd71b4f6ff53a60cc3f75799704ced8dd466f52e37c7d16c0f4ce5a0933b85b"
+    },
+    "subnets.py": {
+      "source": "swinface_project/analysis/subnets.py",
+      "upstream_sha256": "04ef4d82de6454f94341cd9d2a99ce1a789e9dac1c7e95ff5e72c5bc43c4747a",
+      "vendored_sha256": "0f7068e0d3ea7af69c903002f711b4883084bb12e1ee7f96db6f310d607dff73"
+    },
+    "cbam.py": {
+      "source": "swinface_project/analysis/cbam.py",
+      "upstream_sha256": "6a2115f71541c77ab09c666e4cf32ab9928520f9c2bba9c1ceab8edc8fdd8ac5",
+      "vendored_sha256": "6a2115f71541c77ab09c666e4cf32ab9928520f9c2bba9c1ceab8edc8fdd8ac5"
+    },
+    "LICENSE": {
+      "source": "LICENSE",
+      "upstream_sha256": "f0b638a9a9757f2dc5632e6d03bc37602c02b46e950b298a0ee0ba35aa4ac144",
+      "vendored_sha256": "f0b638a9a9757f2dc5632e6d03bc37602c02b46e950b298a0ee0ba35aa4ac144"
+    }
+  }
+}

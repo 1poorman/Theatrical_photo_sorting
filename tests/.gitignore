@@ -12,6 +12,9 @@
 !test_face_graph_cluster.py
 !test_face_identity_quality.py
 !test_face_identity_review.py
+!test_face_age.py
+!test_swinface.py
+!test_swinface_compact.py
 !test_feature_cache.py
 !test_filename_parser.py
 !test_identity_registry.py
