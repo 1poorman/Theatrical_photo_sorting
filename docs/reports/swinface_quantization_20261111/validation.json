@@ -1,0 +1,584 @@
+{
+  "passed": true,
+  "audit_check_count": 125,
+  "audit_checks": [
+    {
+      "name": "original_model_manifest_embeddings_and_109_input_hashes",
+      "passed": true
+    },
+    {
+      "name": "fp32_weight_bytes",
+      "passed": true
+    },
+    {
+      "name": "fp32_weight_sha256",
+      "passed": true
+    },
+    {
+      "name": "fp32_official_origin",
+      "passed": true
+    },
+    {
+      "name": "fp16_weight_bytes",
+      "passed": true
+    },
+    {
+      "name": "fp16_weight_sha256",
+      "passed": true
+    },
+    {
+      "name": "fp16_official_origin",
+      "passed": true
+    },
+    {
+      "name": "int8_dynamic_weight_bytes",
+      "passed": true
+    },
+    {
+      "name": "int8_dynamic_weight_sha256",
+      "passed": true
+    },
+    {
+      "name": "int8_dynamic_official_origin",
+      "passed": true
+    },
+    {
+      "name": "cpu_baseline_report_preserved",
+      "passed": true
+    },
+    {
+      "name": "cpu_snapshot_tools/benchmark_swinface_quantization.py",
+      "passed": true
+    },
+    {
+      "name": "cpu_snapshot_core_modules/face_recognition/swinface/inference.py",
+      "passed": true
+    },
+    {
+      "name": "cpu_inference_source_unchanged_core_modules/face_recognition/swinface/inference.py",
+      "passed": true
+    },
+    {
+      "name": "cpu_snapshot_core_modules/face_recognition/swinface/compact.py",
+      "passed": true
+    },
+    {
+      "name": "cpu_inference_source_unchanged_core_modules/face_recognition/swinface/compact.py",
+      "passed": true
+    },
+    {
+      "name": "cpu_snapshot_tools/benchmark_face_stack.py",
+      "passed": true
+    },
+    {
+      "name": "cpu_inference_source_unchanged_tools/benchmark_face_stack.py",
+      "passed": true
+    },
+    {
+      "name": "cpu_snapshot_core_modules/face_recognition/swinface/_vendor/__init__.py",
+      "passed": true
+    },
+    {
+      "name": "cpu_inference_source_unchanged_core_modules/face_recognition/swinface/_vendor/__init__.py",
+      "passed": true
+    },
+    {
+      "name": "cpu_snapshot_core_modules/face_recognition/swinface/_vendor/cbam.py",
+      "passed": true
+    },
+    {
+      "name": "cpu_inference_source_unchanged_core_modules/face_recognition/swinface/_vendor/cbam.py",
+      "passed": true
+    },
+    {
+      "name": "cpu_snapshot_core_modules/face_recognition/swinface/_vendor/subnets.py",
+      "passed": true
+    },
+    {
+      "name": "cpu_inference_source_unchanged_core_modules/face_recognition/swinface/_vendor/subnets.py",
+      "passed": true
+    },
+    {
+      "name": "cpu_snapshot_core_modules/face_recognition/swinface/_vendor/swin.py",
+      "passed": true
+    },
+    {
+      "name": "cpu_inference_source_unchanged_core_modules/face_recognition/swinface/_vendor/swin.py",
+      "passed": true
+    },
+    {
+      "name": "cpu_compact_fp32_predictions_sha256",
+      "passed": true
+    },
+    {
+      "name": "cpu_compact_fp32_weights_sha256",
+      "passed": true
+    },
+    {
+      "name": "cpu_compact_fp32_shapes",
+      "passed": true
+    },
+    {
+      "name": "cpu_compact_fp32_finite",
+      "passed": true
+    },
+    {
+      "name": "cpu_compact_fp32_normalization",
+      "passed": true
+    },
+    {
+      "name": "cpu_compact_fp32_recognition_metrics",
+      "passed": true
+    },
+    {
+      "name": "cpu_compact_fp32_query_order_and_scores",
+      "passed": true
+    },
+    {
+      "name": "cpu_compact_fp32_fixed_threshold",
+      "passed": true
+    },
+    {
+      "name": "cpu_compact_fp32_age_order",
+      "passed": true
+    },
+    {
+      "name": "cpu_compact_fp32_age_values",
+      "passed": true
+    },
+    {
+      "name": "cpu_compact_fp32_age_and_feature_drift",
+      "passed": true
+    },
+    {
+      "name": "cpu_fp16_predictions_sha256",
+      "passed": true
+    },
+    {
+      "name": "cpu_fp16_weights_sha256",
+      "passed": true
+    },
+    {
+      "name": "cpu_fp16_shapes",
+      "passed": true
+    },
+    {
+      "name": "cpu_fp16_finite",
+      "passed": true
+    },
+    {
+      "name": "cpu_fp16_normalization",
+      "passed": true
+    },
+    {
+      "name": "cpu_fp16_recognition_metrics",
+      "passed": true
+    },
+    {
+      "name": "cpu_fp16_query_order_and_scores",
+      "passed": true
+    },
+    {
+      "name": "cpu_fp16_fixed_threshold",
+      "passed": true
+    },
+    {
+      "name": "cpu_fp16_age_order",
+      "passed": true
+    },
+    {
+      "name": "cpu_fp16_age_values",
+      "passed": true
+    },
+    {
+      "name": "cpu_fp16_age_and_feature_drift",
+      "passed": true
+    },
+    {
+      "name": "cpu_int8_dynamic_predictions_sha256",
+      "passed": true
+    },
+    {
+      "name": "cpu_int8_dynamic_weights_sha256",
+      "passed": true
+    },
+    {
+      "name": "cpu_int8_dynamic_shapes",
+      "passed": true
+    },
+    {
+      "name": "cpu_int8_dynamic_finite",
+      "passed": true
+    },
+    {
+      "name": "cpu_int8_dynamic_normalization",
+      "passed": true
+    },
+    {
+      "name": "cpu_int8_dynamic_recognition_metrics",
+      "passed": true
+    },
+    {
+      "name": "cpu_int8_dynamic_query_order_and_scores",
+      "passed": true
+    },
+    {
+      "name": "cpu_int8_dynamic_fixed_threshold",
+      "passed": true
+    },
+    {
+      "name": "cpu_int8_dynamic_age_order",
+      "passed": true
+    },
+    {
+      "name": "cpu_int8_dynamic_age_values",
+      "passed": true
+    },
+    {
+      "name": "cpu_int8_dynamic_age_and_feature_drift",
+      "passed": true
+    },
+    {
+      "name": "cuda_baseline_report_preserved",
+      "passed": true
+    },
+    {
+      "name": "cuda_snapshot_tools/benchmark_swinface_quantization.py",
+      "passed": true
+    },
+    {
+      "name": "cuda_snapshot_core_modules/face_recognition/swinface/inference.py",
+      "passed": true
+    },
+    {
+      "name": "cuda_inference_source_unchanged_core_modules/face_recognition/swinface/inference.py",
+      "passed": true
+    },
+    {
+      "name": "cuda_snapshot_core_modules/face_recognition/swinface/compact.py",
+      "passed": true
+    },
+    {
+      "name": "cuda_inference_source_unchanged_core_modules/face_recognition/swinface/compact.py",
+      "passed": true
+    },
+    {
+      "name": "cuda_snapshot_tools/benchmark_face_stack.py",
+      "passed": true
+    },
+    {
+      "name": "cuda_inference_source_unchanged_tools/benchmark_face_stack.py",
+      "passed": true
+    },
+    {
+      "name": "cuda_snapshot_core_modules/face_recognition/swinface/_vendor/__init__.py",
+      "passed": true
+    },
+    {
+      "name": "cuda_inference_source_unchanged_core_modules/face_recognition/swinface/_vendor/__init__.py",
+      "passed": true
+    },
+    {
+      "name": "cuda_snapshot_core_modules/face_recognition/swinface/_vendor/cbam.py",
+      "passed": true
+    },
+    {
+      "name": "cuda_inference_source_unchanged_core_modules/face_recognition/swinface/_vendor/cbam.py",
+      "passed": true
+    },
+    {
+      "name": "cuda_snapshot_core_modules/face_recognition/swinface/_vendor/subnets.py",
+      "passed": true
+    },
+    {
+      "name": "cuda_inference_source_unchanged_core_modules/face_recognition/swinface/_vendor/subnets.py",
+      "passed": true
+    },
+    {
+      "name": "cuda_snapshot_core_modules/face_recognition/swinface/_vendor/swin.py",
+      "passed": true
+    },
+    {
+      "name": "cuda_inference_source_unchanged_core_modules/face_recognition/swinface/_vendor/swin.py",
+      "passed": true
+    },
+    {
+      "name": "cuda_official_predictions_sha256",
+      "passed": true
+    },
+    {
+      "name": "cuda_official_weights_sha256",
+      "passed": true
+    },
+    {
+      "name": "cuda_official_shapes",
+      "passed": true
+    },
+    {
+      "name": "cuda_official_finite",
+      "passed": true
+    },
+    {
+      "name": "cuda_official_normalization",
+      "passed": true
+    },
+    {
+      "name": "cuda_official_recognition_metrics",
+      "passed": true
+    },
+    {
+      "name": "cuda_official_query_order_and_scores",
+      "passed": true
+    },
+    {
+      "name": "cuda_official_fixed_threshold",
+      "passed": true
+    },
+    {
+      "name": "cuda_official_age_order",
+      "passed": true
+    },
+    {
+      "name": "cuda_official_age_values",
+      "passed": true
+    },
+    {
+      "name": "cuda_official_age_and_feature_drift",
+      "passed": true
+    },
+    {
+      "name": "cuda_compact_fp32_predictions_sha256",
+      "passed": true
+    },
+    {
+      "name": "cuda_compact_fp32_weights_sha256",
+      "passed": true
+    },
+    {
+      "name": "cuda_compact_fp32_shapes",
+      "passed": true
+    },
+    {
+      "name": "cuda_compact_fp32_finite",
+      "passed": true
+    },
+    {
+      "name": "cuda_compact_fp32_normalization",
+      "passed": true
+    },
+    {
+      "name": "cuda_compact_fp32_recognition_metrics",
+      "passed": true
+    },
+    {
+      "name": "cuda_compact_fp32_query_order_and_scores",
+      "passed": true
+    },
+    {
+      "name": "cuda_compact_fp32_fixed_threshold",
+      "passed": true
+    },
+    {
+      "name": "cuda_compact_fp32_age_order",
+      "passed": true
+    },
+    {
+      "name": "cuda_compact_fp32_age_values",
+      "passed": true
+    },
+    {
+      "name": "cuda_compact_fp32_age_and_feature_drift",
+      "passed": true
+    },
+    {
+      "name": "cuda_fp16_predictions_sha256",
+      "passed": true
+    },
+    {
+      "name": "cuda_fp16_weights_sha256",
+      "passed": true
+    },
+    {
+      "name": "cuda_fp16_shapes",
+      "passed": true
+    },
+    {
+      "name": "cuda_fp16_finite",
+      "passed": true
+    },
+    {
+      "name": "cuda_fp16_normalization",
+      "passed": true
+    },
+    {
+      "name": "cuda_fp16_recognition_metrics",
+      "passed": true
+    },
+    {
+      "name": "cuda_fp16_query_order_and_scores",
+      "passed": true
+    },
+    {
+      "name": "cuda_fp16_fixed_threshold",
+      "passed": true
+    },
+    {
+      "name": "cuda_fp16_age_order",
+      "passed": true
+    },
+    {
+      "name": "cuda_fp16_age_values",
+      "passed": true
+    },
+    {
+      "name": "cuda_fp16_age_and_feature_drift",
+      "passed": true
+    },
+    {
+      "name": "cpu_lossless_fp32_embeddings",
+      "passed": true
+    },
+    {
+      "name": "cuda_lossless_fp32_embeddings",
+      "passed": true
+    },
+    {
+      "name": "cpu_lossless_fp32_ages",
+      "passed": true
+    },
+    {
+      "name": "cuda_lossless_fp32_ages",
+      "passed": true
+    },
+    {
+      "name": "http_passed",
+      "passed": true
+    },
+    {
+      "name": "http_counts",
+      "passed": true
+    },
+    {
+      "name": "http_default_fp16_0",
+      "passed": true
+    },
+    {
+      "name": "http_default_fp16_1",
+      "passed": true
+    },
+    {
+      "name": "http_default_fp16_2",
+      "passed": true
+    },
+    {
+      "name": "cli_three_faces_no_failures",
+      "passed": true
+    },
+    {
+      "name": "cli_default_fp16_cpu_fp32_runtime",
+      "passed": true
+    },
+    {
+      "name": "compact_tests_cpu",
+      "passed": true
+    },
+    {
+      "name": "compact_tests_cuda",
+      "passed": true
+    },
+    {
+      "name": "official_all_heads_parity_cpu",
+      "passed": true
+    },
+    {
+      "name": "default_original_when_no_export",
+      "passed": true
+    },
+    {
+      "name": "default_prefers_exported_fp16",
+      "passed": true
+    },
+    {
+      "name": "explicit_path_takes_precedence",
+      "passed": true
+    }
+  ],
+  "test_runs": {
+    "preprocessing_and_official_cpu": {
+      "passed": 4
+    },
+    "compact_cpu": {
+      "passed": 6
+    },
+    "compact_cuda": {
+      "passed": 5,
+      "skipped_cpu_only_int8": 1
+    },
+    "age_api": {
+      "passed": 8
+    }
+  },
+  "compact_numeric_checks": {
+    "cpu": [
+      {
+        "precision": "int8_dynamic",
+        "passed": true,
+        "max_feature_absolute_difference": 0.0240216925740242,
+        "max_age_drift_years": 0.9970359802246094
+      },
+      {
+        "precision": "fp16",
+        "passed": true,
+        "max_feature_absolute_difference": 0.0002139713615179062,
+        "max_age_drift_years": 0.012357711791992188
+      },
+      {
+        "precision": "fp32",
+        "passed": true,
+        "max_feature_absolute_difference": 0.0,
+        "max_age_drift_years": 0.0
+      }
+    ],
+    "cuda": [
+      {
+        "precision": "fp16",
+        "passed": true,
+        "max_feature_absolute_difference": 0.0004046522080898285,
+        "max_age_drift_years": 0.028900146484375
+      },
+      {
+        "precision": "fp32",
+        "passed": true,
+        "max_feature_absolute_difference": 0.0,
+        "max_age_drift_years": 0.0
+      }
+    ]
+  },
+  "http": {
+    "passed": true,
+    "checks": 70,
+    "face_counts": [
+      1,
+      3,
+      6
+    ],
+    "precision": "fp16_mixed"
+  },
+  "cli": {
+    "passed": true,
+    "faces": 3,
+    "storage_precision": "fp16",
+    "inference_precision": "fp32"
+  },
+  "age_ground_truth_count": 0,
+  "age_mae": null,
+  "final_source_sha256": {
+    "config/base.py": "1365104f5cced0b825984d39b2b15f3776472fabde511200ba888a93f9b3e4ed",
+    "core_modules/face_recognition/swinface/inference.py": "172b22e96361a7a85727c44778a560f0374b9a1aa5f8912ca75e7198f94bf028",
+    "core_modules/face_recognition/swinface/compact.py": "91499f4a978303deadda9edd76f930d421ef8d03f2ee1cceaa458ac7ebfdb2c4",
+    "tools/export_swinface.py": "0041cdc021ad0363b215d4dba655494870664dd537693f8686813cbaea132629",
+    "tools/benchmark_swinface_quantization.py": "5a9a8b56cd9fa9a137dec91d8a878a8f58dda8f11613c7c4940638363ab26787",
+    "tests/test_swinface.py": "acf58fa920c0fd7383da700be1f36539c2c2aa825068c177a718ced60668c825",
+    "tests/test_swinface_compact.py": "58a38f7103a516aad9b1826ccc5b6704a3282d97557e1106b2bae0f934bf0f3f"
+  }
+}

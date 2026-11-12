@@ -6,7 +6,7 @@ Detection uses the existing face-review boxes as a regression reference; those
 boxes were produced by an earlier SCRFD run and are not independent ground truth.
 
 Supported recognition paths are ArcFace-compatible ONNX, OpenCV SFace,
-facenet-pytorch InceptionResnetV1, and weighted feature concatenation. Supported
+facenet-pytorch InceptionResnetV1, SwinFace, and weighted feature concatenation. Supported
 detectors are SCRFD, OpenCV YuNet, and raw-output RetinaFace ONNX exports.
 """
 import argparse
@@ -184,6 +184,51 @@ def facenet_embeddings(checkpoint, rows, device, batch_size, timing_rounds):
     return matrix, {'providers': [str(torch_device)], 'extraction_seconds': elapsed,
                     'faces_per_second': len(rows) / elapsed, 'timing': timing,
                     'parameters': parameters}
+
+
+def swinface_embeddings(checkpoint, rows, device, batch_size, timing_rounds):
+    from core_modules.face_recognition.swinface import SwinFaceAnalyzer
+
+    model = SwinFaceAnalyzer(checkpoint, device=device, batch_size=batch_size)
+    images = [row['image'] for row in rows]
+    started = time.perf_counter()
+    matrix = model.extract_features(images)
+    elapsed = time.perf_counter() - started
+    started = time.perf_counter()
+    ages = model.estimate_ages(images)
+    age_seconds = time.perf_counter() - started
+    timing, joint_timing = {}, {}
+    for operation, destination in ((model.extract_features, timing), (model.predict, joint_timing)):
+        for size in (1, min(32, len(images))):
+            batch = images[:size]
+            for _ in range(3):
+                operation(batch)
+            samples = []
+            for _ in range(timing_rounds):
+                tick = time.perf_counter()
+                operation(batch)
+                samples.append((time.perf_counter() - tick) * 1000)
+            destination[f'batch_{size}'] = {
+                'batch_p50_ms': percentile(samples, 50), 'batch_p95_ms': percentile(samples, 95),
+                'per_face_p50_ms': percentile(samples, 50) / size,
+                'faces_per_second_from_p50': size * 1000 / percentile(samples, 50),
+                'samples_ms': samples,
+            }
+    metadata = model.metadata()
+    age_report = {
+        'unit': 'years', 'labeled_age_count': 0, 'mae': None,
+        'validation_status': 'functional_only_no_age_ground_truth',
+        'extraction_seconds': age_seconds,
+        'predictions_count': len(ages), 'minimum': float(ages.min()),
+        'median': float(np.median(ages)), 'maximum': float(ages.max()),
+        'outside_0_120_count': int(((ages < 0) | (ages > 120)).sum()),
+        'predictions': [{'path': row['path'], 'estimated_age': float(age)} for row, age in zip(rows, ages)],
+    }
+    return matrix, {
+        'providers': [str(model.device)], 'extraction_seconds': elapsed,
+        'faces_per_second': len(rows) / elapsed, 'timed_operation': 'recognition_only',
+        'timing': timing, 'recognition_and_age_timing': joint_timing,
+    }, metadata, age_report
 
 
 def roc_metrics(scores, labels):
@@ -536,6 +581,7 @@ def main():
     parser.add_argument('--recognizer', action='append', default=[], metavar='NAME=ONNX')
     parser.add_argument('--sface-recognizer', action='append', default=[], metavar='NAME=ONNX')
     parser.add_argument('--facenet-recognizer', action='append', default=[], metavar='NAME=CHECKPOINT')
+    parser.add_argument('--swinface-recognizer', action='append', default=[], metavar='NAME=CHECKPOINT')
     parser.add_argument('--ensemble', action='append', default=[], metavar='NAME=LEFT,RIGHT,LEFT_WEIGHT')
     parser.add_argument('--detector', action='append', default=[], metavar='NAME=ONNX')
     parser.add_argument('--yunet-detector', action='append', default=[], metavar='NAME=ONNX')
@@ -543,19 +589,38 @@ def main():
     parser.add_argument('--device', default='cuda')
     parser.add_argument('--batch-size', type=int, default=32)
     parser.add_argument('--timing-rounds', type=int, default=10)
+    parser.add_argument('--torch-threads', type=int, help='PyTorch CPU threads; ONNX retains its runtime default')
+    parser.add_argument('--artifacts-dir', type=Path, help='Save input hashes and per-model embeddings for audit')
     parser.add_argument('--detection-limit', type=int)
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()
+    if args.batch_size < 1 or args.timing_rounds < 1:
+        parser.error('batch-size and timing-rounds must be positive')
+    if args.torch_threads is not None:
+        if args.torch_threads < 1:
+            parser.error('torch-threads must be positive')
+        import torch
+        torch.set_num_threads(args.torch_threads)
 
     faces = load_faces(args.face_db)
+    if len(faces) < 2:
+        parser.error('at least two labeled faces are required')
+    manifest = [{key: value for key, value in row.items() if key != 'image'} for row in faces]
+    manifest_text = json.dumps(manifest, ensure_ascii=False, sort_keys=True, indent=2) + '\n'
+    if args.artifacts_dir:
+        args.artifacts_dir.mkdir(parents=True, exist_ok=True)
+        (args.artifacts_dir / 'face_manifest.json').write_text(manifest_text)
     report = {
         'created_at': datetime.now(timezone.utc).isoformat(), 'device': args.device,
         'environment': {'python': platform.python_version(), 'platform': platform.platform(),
                         'opencv': cv2.__version__, 'numpy': np.__version__,
-                        'onnxruntime': onnxruntime.__version__},
+                        'onnxruntime': onnxruntime.__version__, 'torch_threads_requested': args.torch_threads,
+                        'onnx_threads': 'runtime default', 'batch_size': args.batch_size,
+                        'timing_rounds': args.timing_rounds},
         'protocol': {'recognition': 'leave-one-source-photograph-out nearest-anchor and verification pairs',
                      'detection': 'IoU>=0.5 agreement with historical SCRFD development boxes; not independent ground truth'},
         'dataset': {'face_database': str(args.face_db.resolve()), 'anchors': len(faces),
+                    'manifest_sha256': hashlib.sha256(manifest_text.encode()).hexdigest(),
                     'identity_counts': dict(Counter(row['identity'] for row in faces))},
         'recognizers': {}, 'detectors': {}, 'limitations': [
             'The labeled face anchors are a small development set from one theatrical production, not an independent final test.',
@@ -568,6 +633,7 @@ def main():
         ]}
     embedding_cache = {}
     for name, path in parse_models(args.recognizer):
+        print(f'Benchmark recognition: {name}', flush=True)
         embeddings, speed = model_embeddings(path, faces, args.device, args.batch_size, args.timing_rounds)
         embedding_cache[name] = embeddings
         report['recognizers'][name] = {'path': str(path), 'sha256': sha256(path),
@@ -578,6 +644,7 @@ def main():
                                            'actor_identity': evaluate_recognition(faces, embeddings, 'actor_identity'),
                                        }}
     for name, path in parse_models(args.sface_recognizer):
+        print(f'Benchmark recognition: {name}', flush=True)
         embeddings, speed = sface_embeddings(path, faces, args.timing_rounds)
         embedding_cache[name] = embeddings
         report['recognizers'][name] = {'path': str(path), 'sha256': sha256(path),
@@ -588,6 +655,7 @@ def main():
                                            'actor_identity': evaluate_recognition(faces, embeddings, 'actor_identity'),
                                        }}
     for name, path in parse_models(args.facenet_recognizer):
+        print(f'Benchmark recognition: {name}', flush=True)
         embeddings, speed = facenet_embeddings(path, faces, args.device, args.batch_size, args.timing_rounds)
         embedding_cache[name] = embeddings
         report['recognizers'][name] = {'path': str(path), 'sha256': sha256(path),
@@ -597,6 +665,20 @@ def main():
                                            'folder_identity': evaluate_recognition(faces, embeddings, 'identity'),
                                            'actor_identity': evaluate_recognition(faces, embeddings, 'actor_identity'),
                                        }}
+    for name, path in parse_models(args.swinface_recognizer):
+        print(f'Benchmark recognition and age: {name}', flush=True)
+        embeddings, speed, metadata, age_report = swinface_embeddings(
+            path, faces, args.device, args.batch_size, args.timing_rounds)
+        embedding_cache[name] = embeddings
+        report['recognizers'][name] = {
+            'path': str(path), 'sha256': sha256(path), 'bytes': path.stat().st_size,
+            'parameters': metadata['parameters'], 'family': 'SwinFace/Swin-T multi-task',
+            'model': metadata, 'speed': speed, 'age_estimation': age_report,
+            'quality': {
+                'folder_identity': evaluate_recognition(faces, embeddings, 'identity'),
+                'actor_identity': evaluate_recognition(faces, embeddings, 'actor_identity'),
+            },
+        }
     for name, left, right, left_weight in parse_ensembles(args.ensemble):
         if left not in embedding_cache or right not in embedding_cache:
             raise KeyError(f'Ensemble components must be configured recognizers: {left}, {right}')
@@ -604,6 +686,7 @@ def main():
             raise ValueError(f'Ensemble weight must be in [0, 1]: {left_weight}')
         embeddings = np.concatenate((np.sqrt(left_weight) * embedding_cache[left],
                                      np.sqrt(1 - left_weight) * embedding_cache[right]), axis=1)
+        embedding_cache[name] = embeddings
         left_meta, right_meta = report['recognizers'][left], report['recognizers'][right]
         report['recognizers'][name] = {
             'components': {left: left_weight, right: 1 - left_weight},
@@ -633,6 +716,15 @@ def main():
                                      'bytes': path.stat().st_size, 'parameters': onnx_parameters(path),
                                      'family': 'RetinaFace',
                                      'agreement': evaluate_retinaface_detector(path, reference, args.device)}
+    if args.artifacts_dir:
+        for name, embeddings in embedding_cache.items():
+            # Hash the user-provided model name so it cannot escape the directory.
+            filename = 'embeddings_' + hashlib.sha256(name.encode()).hexdigest()[:16] + '.npz'
+            artifact = args.artifacts_dir / filename
+            np.savez_compressed(artifact, embeddings=embeddings)
+            report['recognizers'][name]['embedding_artifact'] = {
+                'path': str(artifact), 'sha256': sha256(artifact), 'shape': list(embeddings.shape),
+            }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2))
     print(json.dumps({'output': str(args.output), 'recognizers': list(report['recognizers']),

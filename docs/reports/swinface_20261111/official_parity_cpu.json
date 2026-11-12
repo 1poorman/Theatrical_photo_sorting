@@ -1,0 +1,19 @@
+{
+  "passed": true,
+  "faces": 8,
+  "reference": "vendored upstream ModelBox.forward, all official heads",
+  "model": {
+    "name": "SwinFace",
+    "checkpoint_sha256": "7ba7a2dcba59500ed8a7836eea8536164ac8c30e1dbdf9211da8378cd4070d98",
+    "checkpoint_step": 79999,
+    "model_signature": "swinface:7ba7a2dcba59500ed8a7836eea8536164ac8c30e1dbdf9211da8378cd4070d98:bgr-to-rgb-resize112-linear-div255-sub0.5-div0.5-v1:l2",
+    "upstream_commit": "ca36196814b54964e663e0991efd7d163c0069d3",
+    "preprocessing": "bgr-to-rgb-resize112-linear-div255-sub0.5-div0.5-v1",
+    "device": "cpu",
+    "batch_size": 3,
+    "parameters": 67809266,
+    "recognition_parameters": 28895226
+  },
+  "maximum_feature_absolute_error": 1.2479722499847412e-07,
+  "maximum_age_absolute_error_years": 3.814697265625e-06
+}

@@ -1,0 +1,1556 @@
+{
+  "created_at": "2026-11-11T08:14:41.637243+00:00",
+  "recommended": "fp16",
+  "age_ground_truth_count": 0,
+  "age_mae": null,
+  "dataset": {
+    "faces": 109,
+    "eligible_queries": 107,
+    "actors": 14,
+    "source_photographs": 47,
+    "protocol": "same-source and same-content exclusion; development set only",
+    "manifest_sha256": "411b9035550d8e3e5779a6f76e27f9c9481ea742a0eb0717523f9109c7f0a112"
+  },
+  "exports": {
+    "fp32": {
+      "format": "swinface-recognition-age-v1",
+      "precision": "fp32",
+      "upstream_commit": "ca36196814b54964e663e0991efd7d163c0069d3",
+      "preprocessing": "bgr-to-rgb-resize112-linear-div255-sub0.5-div0.5-v1",
+      "source_sha256": "7ba7a2dcba59500ed8a7836eea8536164ac8c30e1dbdf9211da8378cd4070d98",
+      "checkpoint_step": 79999,
+      "tasks": [
+        "recognition",
+        "age"
+      ],
+      "torch_version": "2.9.0+cu130",
+      "parameters": 32035547,
+      "recognition_parameters": 28501498,
+      "source_path": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/weights/swinface/checkpoint_step_79999_gpu_0.pt",
+      "source_bytes": 882380545,
+      "source_component_tensor_bytes": {
+        "epoch": 0,
+        "global_step": 0,
+        "local_step": 0,
+        "state_dict_backbone": 116705224,
+        "state_dict_softmax_fc": 43900928,
+        "state_dict_fam": 132407000,
+        "state_dict_tss": 23113728,
+        "state_dict_om": 180576,
+        "state_optimizer": 565653392,
+        "state_lr_scheduler": 0
+      },
+      "path": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/weights/swinface/swinface_recognition_age_fp32.pt",
+      "sha256": "6e925285a4c57eabddf36eedf747e9c35775f586e278147bbecc22f2d205425c",
+      "bytes": 129352905,
+      "state_tensor_bytes": 129270612,
+      "size_reduction_percent": 85.34046271385097
+    },
+    "fp16": {
+      "format": "swinface-recognition-age-v1",
+      "precision": "fp16",
+      "upstream_commit": "ca36196814b54964e663e0991efd7d163c0069d3",
+      "preprocessing": "bgr-to-rgb-resize112-linear-div255-sub0.5-div0.5-v1",
+      "source_sha256": "7ba7a2dcba59500ed8a7836eea8536164ac8c30e1dbdf9211da8378cd4070d98",
+      "checkpoint_step": 79999,
+      "tasks": [
+        "recognition",
+        "age"
+      ],
+      "torch_version": "2.9.0+cu130",
+      "parameters": 32035547,
+      "recognition_parameters": 28501498,
+      "source_path": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/weights/swinface/checkpoint_step_79999_gpu_0.pt",
+      "source_bytes": 882380545,
+      "source_component_tensor_bytes": {
+        "epoch": 0,
+        "global_step": 0,
+        "local_step": 0,
+        "state_dict_backbone": 116705224,
+        "state_dict_softmax_fc": 43900928,
+        "state_dict_fam": 132407000,
+        "state_dict_tss": 23113728,
+        "state_dict_om": 180576,
+        "state_optimizer": 565653392,
+        "state_lr_scheduler": 0
+      },
+      "path": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/weights/swinface/swinface_recognition_age_fp16.pt",
+      "sha256": "083495b501ddf141784c5285bf6a6fb48288e48d5be456f82d06e523a8aa9e53",
+      "bytes": 64832905,
+      "state_tensor_bytes": 64750566,
+      "size_reduction_percent": 92.65250062828618
+    },
+    "int8_dynamic": {
+      "format": "swinface-recognition-age-v1",
+      "precision": "int8_dynamic",
+      "upstream_commit": "ca36196814b54964e663e0991efd7d163c0069d3",
+      "preprocessing": "bgr-to-rgb-resize112-linear-div255-sub0.5-div0.5-v1",
+      "source_sha256": "7ba7a2dcba59500ed8a7836eea8536164ac8c30e1dbdf9211da8378cd4070d98",
+      "checkpoint_step": 79999,
+      "tasks": [
+        "recognition",
+        "age"
+      ],
+      "torch_version": "2.9.0+cu130",
+      "parameters": 32035547,
+      "recognition_parameters": 28501498,
+      "quantization": {
+        "engine": "fbgemm",
+        "scheme": "per_channel_symmetric",
+        "modules": "Linear"
+      },
+      "quantized_linear_layers": 58,
+      "source_path": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/weights/swinface/checkpoint_step_79999_gpu_0.pt",
+      "source_bytes": 882380545,
+      "source_component_tensor_bytes": {
+        "epoch": 0,
+        "global_step": 0,
+        "local_step": 0,
+        "state_dict_backbone": 116705224,
+        "state_dict_softmax_fc": 43900928,
+        "state_dict_fam": 132407000,
+        "state_dict_tss": 23113728,
+        "state_dict_om": 180576,
+        "state_optimizer": 565653392,
+        "state_lr_scheduler": 0
+      },
+      "path": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/weights/swinface/swinface_recognition_age_int8_dynamic.pt",
+      "sha256": "d6cb89aefbfa1a1860ce1076378b1cc124445a14d713b32bff6aecc6c5e642bd",
+      "bytes": 43228473,
+      "state_tensor_bytes": 42369036,
+      "size_reduction_percent": 95.1009263242539
+    }
+  },
+  "reference_report_sha256": "7891a6b4b0662d00a6a7578624f0878bc32603ab473cc3bcdeade6383a5113c8",
+  "summary_calculation": "cosines normalized with float64 on both sides; raw reports retain original float32 normalization rounding",
+  "summary_script_sha256": "a9598673bed62c875edbc9a88f3e42514fb43969cf0faf128fe1539321620bee",
+  "difference_function_source_sha256": "5a9a8b56cd9fa9a137dec91d8a878a8f58dda8f11613c7c4940638363ab26787",
+  "environments": {
+    "cpu": {
+      "python": "3.10.20",
+      "torch": "2.9.0+cu130",
+      "platform": "Linux-5.4.0-190-generic-x86_64-with-glibc2.39",
+      "numpy": "2.2.6",
+      "opencv": "4.13.0",
+      "torch_threads": 4,
+      "interop_threads": 1,
+      "opencv_threads": 1,
+      "requested_device": "cpu",
+      "batch_size": 32,
+      "timing_rounds": 5,
+      "warmup_rounds": 2
+    },
+    "cuda": {
+      "python": "3.10.20",
+      "torch": "2.9.0+cu130",
+      "platform": "Linux-5.4.0-190-generic-x86_64-with-glibc2.39",
+      "numpy": "2.2.6",
+      "opencv": "4.13.0",
+      "torch_threads": 4,
+      "interop_threads": 1,
+      "opencv_threads": 1,
+      "requested_device": "cuda:1",
+      "batch_size": 32,
+      "timing_rounds": 5,
+      "warmup_rounds": 2,
+      "gpu": "NVIDIA GeForce RTX 3090"
+    }
+  },
+  "variants": {
+    "cpu": {
+      "compact_fp32": {
+        "model": {
+          "name": "SwinFace",
+          "checkpoint_sha256": "6e925285a4c57eabddf36eedf747e9c35775f586e278147bbecc22f2d205425c",
+          "checkpoint_step": 79999,
+          "model_signature": "swinface:6e925285a4c57eabddf36eedf747e9c35775f586e278147bbecc22f2d205425c:bgr-to-rgb-resize112-linear-div255-sub0.5-div0.5-v1:l2:fp32",
+          "upstream_commit": "ca36196814b54964e663e0991efd7d163c0069d3",
+          "preprocessing": "bgr-to-rgb-resize112-linear-div255-sub0.5-div0.5-v1",
+          "device": "cpu",
+          "batch_size": 32,
+          "parameters": 32035547,
+          "recognition_parameters": 28501498,
+          "checkpoint_format": "swinface-recognition-age-v1",
+          "storage_precision": "fp32",
+          "inference_precision": "fp32",
+          "checkpoint_bytes": 129352905,
+          "source_sha256": "7ba7a2dcba59500ed8a7836eea8536164ac8c30e1dbdf9211da8378cd4070d98",
+          "runtime_state_tensor_bytes": 129270612,
+          "quantized_linear_layers": 0
+        },
+        "load_seconds_including_hashes": 1.0890935091301799,
+        "prediction_seconds": 10.564936340786517,
+        "quality": {
+          "anchors": 109,
+          "identities": 14,
+          "source_groups": 47,
+          "eligible_queries": 107,
+          "top1_accuracy": 0.8504672897196262,
+          "top5_accuracy": 0.9532710280373832,
+          "margin_p05": -0.13144472241401667,
+          "margin_p50": 0.15626072883605957,
+          "positive_pairs": 873,
+          "negative_pairs": 4880,
+          "verification": {
+            "auc": 0.852764163521304,
+            "eer": 0.2233641766661033,
+            "eer_threshold": 0.1804291307926178,
+            "tar_at_far_0.1": 0.588774341351661,
+            "threshold_at_far_0.1": 0.24719665944576263,
+            "tar_at_far_0.01": 0.22107674684994272,
+            "threshold_at_far_0.01": 0.421475887298584,
+            "tar_at_far_0.001": 0.10882016036655212,
+            "threshold_at_far_0.001": 0.5207669734954834
+          },
+          "fixed_thresholds": {
+            "0.4": {
+              "correct_accept_rate": 0.7850467289719626,
+              "wrong_accept_rate": 0.09345794392523364,
+              "rejection_rate": 0.12149532710280375
+            },
+            "0.55": {
+              "correct_accept_rate": 0.48598130841121495,
+              "wrong_accept_rate": 0.018691588785046728,
+              "rejection_rate": 0.4953271028037384
+            }
+          },
+          "calibrated_closed_set_operating_points": {
+            "max_wrong_accept_rate_0": {
+              "threshold": 0.6139317750930786,
+              "correct_accept_rate": 0.38317757009345793,
+              "wrong_accept_rate": 0.0,
+              "rejection_rate": 0.6168224299065421
+            },
+            "max_wrong_accept_rate_0.01": {
+              "threshold": 0.6139317750930786,
+              "correct_accept_rate": 0.38317757009345793,
+              "wrong_accept_rate": 0.0,
+              "rejection_rate": 0.6168224299065421
+            },
+            "max_wrong_accept_rate_0.02": {
+              "threshold": 0.5593705773353577,
+              "correct_accept_rate": 0.48598130841121495,
+              "wrong_accept_rate": 0.018691588785046728,
+              "rejection_rate": 0.4953271028037384
+            }
+          },
+          "top1_failure_count": 16,
+          "confusions": [
+            {
+              "actual": "刘思妤",
+              "predicted": "王文杰",
+              "count": 2
+            },
+            {
+              "actual": "孟宇",
+              "predicted": "彭国斌",
+              "count": 2
+            },
+            {
+              "actual": "彭国斌",
+              "predicted": "孟宇",
+              "count": 2
+            },
+            {
+              "actual": "王浩伟",
+              "predicted": "彭国斌",
+              "count": 2
+            },
+            {
+              "actual": "张硕",
+              "predicted": "薛天智",
+              "count": 1
+            },
+            {
+              "actual": "彭国斌",
+              "predicted": "薛天智",
+              "count": 1
+            },
+            {
+              "actual": "杨淇",
+              "predicted": "董汶亮",
+              "count": 1
+            },
+            {
+              "actual": "王文杰",
+              "predicted": "刘思妤",
+              "count": 1
+            },
+            {
+              "actual": "王浩伟",
+              "predicted": "泰然",
+              "count": 1
+            },
+            {
+              "actual": "董汶亮",
+              "predicted": "薛天智",
+              "count": 1
+            },
+            {
+              "actual": "董汶亮",
+              "predicted": "泰然",
+              "count": 1
+            },
+            {
+              "actual": "薛天智",
+              "predicted": "泰然",
+              "count": 1
+            }
+          ]
+        },
+        "fixed_official_threshold": {
+          "threshold": 0.5593705773353577,
+          "eligible_queries": 107,
+          "correct_accept_count": 52,
+          "wrong_accept_count": 2,
+          "correct_accept_rate": 0.48598130841121495,
+          "wrong_accept_rate": 0.018691588785046728,
+          "rejection_rate": 0.4953271028037383
+        },
+        "top1_identity_changes_from_official": 0,
+        "fixed_threshold_acceptance_changes": 0,
+        "joint_timing": {
+          "batch_1": {
+            "p50_ms": 130.34872524440289,
+            "p95_ms": 133.6392678320408,
+            "per_face_p50_ms": 130.34872524440289,
+            "samples_ms": [
+              133.0469474196434,
+              130.34872524440289,
+              114.93170913308859,
+              133.78734793514013,
+              124.81947802007198
+            ]
+          },
+          "batch_32": {
+            "p50_ms": 3065.2498435229063,
+            "p95_ms": 3171.403699927032,
+            "per_face_p50_ms": 95.78905761009082,
+            "samples_ms": [
+              2941.7588990181684,
+              3119.455642066896,
+              3184.390714392066,
+              3007.1285348385572,
+              3065.2498435229063
+            ]
+          }
+        },
+        "batch_consistency": {
+          "faces": 8,
+          "manifest_indices": [
+            0,
+            15,
+            30,
+            46,
+            61,
+            77,
+            92,
+            108
+          ],
+          "batch1_vs_batch8": {
+            "embedding_cosine_mean": 1.0000000245923513,
+            "embedding_cosine_minimum": 0.9999999777044616,
+            "embedding_maximum_absolute_difference": 4.0978193283081055e-08,
+            "pairwise_cosine_maximum_absolute_difference": 3.5762786865234375e-07,
+            "age_mean_absolute_drift_years": 2.86102294921875e-06,
+            "age_p95_absolute_drift_years": 8.773803710937496e-06,
+            "age_maximum_absolute_drift_years": 1.1444091796875e-05
+          },
+          "batch3_vs_batch8": {
+            "embedding_cosine_mean": 1.0000000245921015,
+            "embedding_cosine_minimum": 0.9999999777042089,
+            "embedding_maximum_absolute_difference": 1.341104507446289e-07,
+            "pairwise_cosine_maximum_absolute_difference": 2.384185791015625e-07,
+            "age_mean_absolute_drift_years": 1.430511474609375e-06,
+            "age_p95_absolute_drift_years": 3.814697265625e-06,
+            "age_maximum_absolute_drift_years": 3.814697265625e-06
+          },
+          "separate_heads_vs_joint": {
+            "embedding_cosine_mean": 1.0000000245923664,
+            "embedding_cosine_minimum": 0.999999977704475,
+            "embedding_maximum_absolute_difference": 0.0,
+            "pairwise_cosine_maximum_absolute_difference": 0.0,
+            "age_mean_absolute_drift_years": 0.0,
+            "age_p95_absolute_drift_years": 0.0,
+            "age_maximum_absolute_drift_years": 0.0
+          }
+        },
+        "predictions_artifact": {
+          "path": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/swinface_quantization_20261111/cpu/compact_fp32_predictions.npz",
+          "sha256": "9b7a98153fbc6854e2ce7abe9496bede6d3fde6a4ccde75d1d5020df7d99537a"
+        },
+        "drift_from_official_cpu": {
+          "embedding_cosine_mean": 1.0,
+          "embedding_cosine_minimum": 0.9999999999999998,
+          "embedding_maximum_absolute_difference": 0.0,
+          "pairwise_cosine_maximum_absolute_difference": 0.0,
+          "age_mean_absolute_drift_years": 0.0,
+          "age_p95_absolute_drift_years": 0.0,
+          "age_maximum_absolute_drift_years": 0.0
+        }
+      },
+      "fp16": {
+        "model": {
+          "name": "SwinFace",
+          "checkpoint_sha256": "083495b501ddf141784c5285bf6a6fb48288e48d5be456f82d06e523a8aa9e53",
+          "checkpoint_step": 79999,
+          "model_signature": "swinface:083495b501ddf141784c5285bf6a6fb48288e48d5be456f82d06e523a8aa9e53:bgr-to-rgb-resize112-linear-div255-sub0.5-div0.5-v1:l2:fp32",
+          "upstream_commit": "ca36196814b54964e663e0991efd7d163c0069d3",
+          "preprocessing": "bgr-to-rgb-resize112-linear-div255-sub0.5-div0.5-v1",
+          "device": "cpu",
+          "batch_size": 32,
+          "parameters": 32035547,
+          "recognition_parameters": 28501498,
+          "checkpoint_format": "swinface-recognition-age-v1",
+          "storage_precision": "fp16",
+          "inference_precision": "fp32",
+          "checkpoint_bytes": 64832905,
+          "source_sha256": "7ba7a2dcba59500ed8a7836eea8536164ac8c30e1dbdf9211da8378cd4070d98",
+          "runtime_state_tensor_bytes": 129270612,
+          "quantized_linear_layers": 0
+        },
+        "load_seconds_including_hashes": 0.7325936518609524,
+        "prediction_seconds": 10.540913436561823,
+        "quality": {
+          "anchors": 109,
+          "identities": 14,
+          "source_groups": 47,
+          "eligible_queries": 107,
+          "top1_accuracy": 0.8504672897196262,
+          "top5_accuracy": 0.9532710280373832,
+          "margin_p05": -0.13145575821399685,
+          "margin_p50": 0.1563810110092163,
+          "positive_pairs": 873,
+          "negative_pairs": 4880,
+          "verification": {
+            "auc": 0.8527371697369164,
+            "eer": 0.2233641766661033,
+            "eer_threshold": 0.18053103983402252,
+            "tar_at_far_0.1": 0.588774341351661,
+            "threshold_at_far_0.1": 0.24719183146953583,
+            "tar_at_far_0.01": 0.22107674684994272,
+            "threshold_at_far_0.01": 0.42142629623413086,
+            "tar_at_far_0.001": 0.10882016036655212,
+            "threshold_at_far_0.001": 0.5206352472305298
+          },
+          "fixed_thresholds": {
+            "0.4": {
+              "correct_accept_rate": 0.7850467289719626,
+              "wrong_accept_rate": 0.09345794392523364,
+              "rejection_rate": 0.12149532710280375
+            },
+            "0.55": {
+              "correct_accept_rate": 0.48598130841121495,
+              "wrong_accept_rate": 0.018691588785046728,
+              "rejection_rate": 0.4953271028037384
+            }
+          },
+          "calibrated_closed_set_operating_points": {
+            "max_wrong_accept_rate_0": {
+              "threshold": 0.6140171885490417,
+              "correct_accept_rate": 0.38317757009345793,
+              "wrong_accept_rate": 0.0,
+              "rejection_rate": 0.6168224299065421
+            },
+            "max_wrong_accept_rate_0.01": {
+              "threshold": 0.6140171885490417,
+              "correct_accept_rate": 0.38317757009345793,
+              "wrong_accept_rate": 0.0,
+              "rejection_rate": 0.6168224299065421
+            },
+            "max_wrong_accept_rate_0.02": {
+              "threshold": 0.5594187378883362,
+              "correct_accept_rate": 0.48598130841121495,
+              "wrong_accept_rate": 0.018691588785046728,
+              "rejection_rate": 0.4953271028037384
+            }
+          },
+          "top1_failure_count": 16,
+          "confusions": [
+            {
+              "actual": "刘思妤",
+              "predicted": "王文杰",
+              "count": 2
+            },
+            {
+              "actual": "孟宇",
+              "predicted": "彭国斌",
+              "count": 2
+            },
+            {
+              "actual": "彭国斌",
+              "predicted": "孟宇",
+              "count": 2
+            },
+            {
+              "actual": "王浩伟",
+              "predicted": "彭国斌",
+              "count": 2
+            },
+            {
+              "actual": "张硕",
+              "predicted": "薛天智",
+              "count": 1
+            },
+            {
+              "actual": "彭国斌",
+              "predicted": "薛天智",
+              "count": 1
+            },
+            {
+              "actual": "杨淇",
+              "predicted": "董汶亮",
+              "count": 1
+            },
+            {
+              "actual": "王文杰",
+              "predicted": "刘思妤",
+              "count": 1
+            },
+            {
+              "actual": "王浩伟",
+              "predicted": "泰然",
+              "count": 1
+            },
+            {
+              "actual": "董汶亮",
+              "predicted": "薛天智",
+              "count": 1
+            },
+            {
+              "actual": "董汶亮",
+              "predicted": "泰然",
+              "count": 1
+            },
+            {
+              "actual": "薛天智",
+              "predicted": "泰然",
+              "count": 1
+            }
+          ]
+        },
+        "fixed_official_threshold": {
+          "threshold": 0.5593705773353577,
+          "eligible_queries": 107,
+          "correct_accept_count": 52,
+          "wrong_accept_count": 2,
+          "correct_accept_rate": 0.48598130841121495,
+          "wrong_accept_rate": 0.018691588785046728,
+          "rejection_rate": 0.4953271028037383
+        },
+        "top1_identity_changes_from_official": 0,
+        "fixed_threshold_acceptance_changes": 0,
+        "joint_timing": {
+          "batch_1": {
+            "p50_ms": 120.99419999867678,
+            "p95_ms": 149.1807820275426,
+            "per_face_p50_ms": 120.99419999867678,
+            "samples_ms": [
+              120.99419999867678,
+              155.54178971797228,
+              120.97848765552044,
+              123.73675126582384,
+              117.64075048267841
+            ]
+          },
+          "batch_32": {
+            "p50_ms": 3137.858198955655,
+            "p95_ms": 3287.5679494813085,
+            "per_face_p50_ms": 98.05806871736422,
+            "samples_ms": [
+              3137.858198955655,
+              3310.420942492783,
+              3113.8040367513895,
+              3107.53502137959,
+              3196.15597743541
+            ]
+          }
+        },
+        "batch_consistency": {
+          "faces": 8,
+          "manifest_indices": [
+            0,
+            15,
+            30,
+            46,
+            61,
+            77,
+            92,
+            108
+          ],
+          "batch1_vs_batch8": {
+            "embedding_cosine_mean": 1.0000000259744017,
+            "embedding_cosine_minimum": 0.9999999876908462,
+            "embedding_maximum_absolute_difference": 4.470348358154297e-08,
+            "pairwise_cosine_maximum_absolute_difference": 2.384185791015625e-07,
+            "age_mean_absolute_drift_years": 2.384185791015625e-06,
+            "age_p95_absolute_drift_years": 3.814697265625e-06,
+            "age_maximum_absolute_drift_years": 3.814697265625e-06
+          },
+          "batch3_vs_batch8": {
+            "embedding_cosine_mean": 1.000000025974146,
+            "embedding_cosine_minimum": 0.9999999876905988,
+            "embedding_maximum_absolute_difference": 1.341104507446289e-07,
+            "pairwise_cosine_maximum_absolute_difference": 2.384185791015625e-07,
+            "age_mean_absolute_drift_years": 3.5762786865234375e-06,
+            "age_p95_absolute_drift_years": 7.62939453125e-06,
+            "age_maximum_absolute_drift_years": 7.62939453125e-06
+          },
+          "separate_heads_vs_joint": {
+            "embedding_cosine_mean": 1.000000025974416,
+            "embedding_cosine_minimum": 0.9999999876908603,
+            "embedding_maximum_absolute_difference": 0.0,
+            "pairwise_cosine_maximum_absolute_difference": 0.0,
+            "age_mean_absolute_drift_years": 0.0,
+            "age_p95_absolute_drift_years": 0.0,
+            "age_maximum_absolute_drift_years": 0.0
+          }
+        },
+        "predictions_artifact": {
+          "path": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/swinface_quantization_20261111/cpu/fp16_predictions.npz",
+          "sha256": "d0ee663d31468efd32314564639136297de61a78cbf4c376fd21c25450354dd4"
+        },
+        "drift_from_official_cpu": {
+          "embedding_cosine_mean": 0.9999993121341125,
+          "embedding_cosine_minimum": 0.999998433528258,
+          "embedding_maximum_absolute_difference": 0.0002340208739042282,
+          "pairwise_cosine_maximum_absolute_difference": 0.000520702451467514,
+          "age_mean_absolute_drift_years": 0.0033161180828689433,
+          "age_p95_absolute_drift_years": 0.00890045166015625,
+          "age_maximum_absolute_drift_years": 0.01670074462890625
+        }
+      },
+      "int8_dynamic": {
+        "model": {
+          "name": "SwinFace",
+          "checkpoint_sha256": "d6cb89aefbfa1a1860ce1076378b1cc124445a14d713b32bff6aecc6c5e642bd",
+          "checkpoint_step": 79999,
+          "model_signature": "swinface:d6cb89aefbfa1a1860ce1076378b1cc124445a14d713b32bff6aecc6c5e642bd:bgr-to-rgb-resize112-linear-div255-sub0.5-div0.5-v1:l2:int8_dynamic_linear_fp32_other",
+          "upstream_commit": "ca36196814b54964e663e0991efd7d163c0069d3",
+          "preprocessing": "bgr-to-rgb-resize112-linear-div255-sub0.5-div0.5-v1",
+          "device": "cpu",
+          "batch_size": 32,
+          "parameters": 32035547,
+          "recognition_parameters": 28501498,
+          "checkpoint_format": "swinface-recognition-age-v1",
+          "storage_precision": "int8_dynamic",
+          "inference_precision": "int8_dynamic_linear_fp32_other",
+          "checkpoint_bytes": 43228473,
+          "source_sha256": "7ba7a2dcba59500ed8a7836eea8536164ac8c30e1dbdf9211da8378cd4070d98",
+          "runtime_state_tensor_bytes": 42369036,
+          "quantized_linear_layers": 58
+        },
+        "load_seconds_including_hashes": 1.8183149015530944,
+        "prediction_seconds": 8.566159071400762,
+        "quality": {
+          "anchors": 109,
+          "identities": 14,
+          "source_groups": 47,
+          "eligible_queries": 107,
+          "top1_accuracy": 0.8878504672897196,
+          "top5_accuracy": 0.9532710280373832,
+          "margin_p05": -0.10236637741327285,
+          "margin_p50": 0.1449892818927765,
+          "positive_pairs": 873,
+          "negative_pairs": 4880,
+          "verification": {
+            "auc": 0.8517874579835878,
+            "eer": 0.2233641766661033,
+            "eer_threshold": 0.17690935730934143,
+            "tar_at_far_0.1": 0.5750286368843069,
+            "threshold_at_far_0.1": 0.2444762885570526,
+            "tar_at_far_0.01": 0.21764032073310424,
+            "threshold_at_far_0.01": 0.4173879623413086,
+            "tar_at_far_0.001": 0.10080183276059565,
+            "threshold_at_far_0.001": 0.5294930934906006
+          },
+          "fixed_thresholds": {
+            "0.4": {
+              "correct_accept_rate": 0.8037383177570093,
+              "wrong_accept_rate": 0.06542056074766354,
+              "rejection_rate": 0.13084112149532712
+            },
+            "0.55": {
+              "correct_accept_rate": 0.4672897196261682,
+              "wrong_accept_rate": 0.018691588785046728,
+              "rejection_rate": 0.514018691588785
+            }
+          },
+          "calibrated_closed_set_operating_points": {
+            "max_wrong_accept_rate_0": {
+              "threshold": 0.5983507633209229,
+              "correct_accept_rate": 0.40186915887850466,
+              "wrong_accept_rate": 0.0,
+              "rejection_rate": 0.5981308411214954
+            },
+            "max_wrong_accept_rate_0.01": {
+              "threshold": 0.5983507633209229,
+              "correct_accept_rate": 0.40186915887850466,
+              "wrong_accept_rate": 0.0,
+              "rejection_rate": 0.5981308411214954
+            },
+            "max_wrong_accept_rate_0.02": {
+              "threshold": 0.5364747047424316,
+              "correct_accept_rate": 0.514018691588785,
+              "wrong_accept_rate": 0.018691588785046728,
+              "rejection_rate": 0.4672897196261683
+            }
+          },
+          "top1_failure_count": 12,
+          "confusions": [
+            {
+              "actual": "孟宇",
+              "predicted": "彭国斌",
+              "count": 2
+            },
+            {
+              "actual": "王浩伟",
+              "predicted": "彭国斌",
+              "count": 2
+            },
+            {
+              "actual": "彭国斌",
+              "predicted": "孟宇",
+              "count": 1
+            },
+            {
+              "actual": "彭国斌",
+              "predicted": "薛天智",
+              "count": 1
+            },
+            {
+              "actual": "杨淇",
+              "predicted": "张硕",
+              "count": 1
+            },
+            {
+              "actual": "王文杰",
+              "predicted": "刘思妤",
+              "count": 1
+            },
+            {
+              "actual": "王浩伟",
+              "predicted": "泰然",
+              "count": 1
+            },
+            {
+              "actual": "董汶亮",
+              "predicted": "薛天智",
+              "count": 1
+            },
+            {
+              "actual": "董汶亮",
+              "predicted": "泰然",
+              "count": 1
+            },
+            {
+              "actual": "薛天智",
+              "predicted": "泰然",
+              "count": 1
+            }
+          ]
+        },
+        "fixed_official_threshold": {
+          "threshold": 0.5593705773353577,
+          "eligible_queries": 107,
+          "correct_accept_count": 46,
+          "wrong_accept_count": 2,
+          "correct_accept_rate": 0.42990654205607476,
+          "wrong_accept_rate": 0.018691588785046728,
+          "rejection_rate": 0.5514018691588785
+        },
+        "top1_identity_changes_from_official": 5,
+        "fixed_threshold_acceptance_changes": 6,
+        "joint_timing": {
+          "batch_1": {
+            "p50_ms": 96.39269858598709,
+            "p95_ms": 101.29575319588184,
+            "per_face_p50_ms": 96.39269858598709,
+            "samples_ms": [
+              93.38958654552698,
+              86.50200441479683,
+              102.36490052193403,
+              96.39269858598709,
+              97.01916389167309
+            ]
+          },
+          "batch_32": {
+            "p50_ms": 2426.474762149155,
+            "p95_ms": 2516.5192376822233,
+            "per_face_p50_ms": 75.8273363171611,
+            "samples_ms": [
+              2409.5859844237566,
+              2414.5602472126484,
+              2528.1267492100596,
+              2426.474762149155,
+              2470.089191570878
+            ]
+          }
+        },
+        "batch_consistency": {
+          "faces": 8,
+          "manifest_indices": [
+            0,
+            15,
+            30,
+            46,
+            61,
+            77,
+            92,
+            108
+          ],
+          "batch1_vs_batch8": {
+            "embedding_cosine_mean": 0.9820134686610102,
+            "embedding_cosine_minimum": 0.9767584369577017,
+            "embedding_maximum_absolute_difference": 0.03145426884293556,
+            "pairwise_cosine_maximum_absolute_difference": 0.04670839011669159,
+            "age_mean_absolute_drift_years": 0.5056042671203613,
+            "age_p95_absolute_drift_years": 0.8736860275268553,
+            "age_maximum_absolute_drift_years": 0.9814682006835938
+          },
+          "batch3_vs_batch8": {
+            "embedding_cosine_mean": 0.9821687075459976,
+            "embedding_cosine_minimum": 0.9757511929132471,
+            "embedding_maximum_absolute_difference": 0.0366223007440567,
+            "pairwise_cosine_maximum_absolute_difference": 0.0452415831387043,
+            "age_mean_absolute_drift_years": 0.8732256889343262,
+            "age_p95_absolute_drift_years": 2.155840682983398,
+            "age_maximum_absolute_drift_years": 2.6024169921875
+          },
+          "separate_heads_vs_joint": {
+            "embedding_cosine_mean": 1.0000000250395185,
+            "embedding_cosine_minimum": 0.9999999814098443,
+            "embedding_maximum_absolute_difference": 0.0,
+            "pairwise_cosine_maximum_absolute_difference": 0.0,
+            "age_mean_absolute_drift_years": 0.0,
+            "age_p95_absolute_drift_years": 0.0,
+            "age_maximum_absolute_drift_years": 0.0
+          }
+        },
+        "predictions_artifact": {
+          "path": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/swinface_quantization_20261111/cpu/int8_dynamic_predictions.npz",
+          "sha256": "b059295e11c17745603fa6f586c44fcd918bd1a9ccb01b52e416f800007d2092"
+        },
+        "drift_from_official_cpu": {
+          "embedding_cosine_mean": 0.9840291235419417,
+          "embedding_cosine_minimum": 0.9652899759899164,
+          "embedding_maximum_absolute_difference": 0.04252803698182106,
+          "pairwise_cosine_maximum_absolute_difference": 0.07982348650693893,
+          "age_mean_absolute_drift_years": 0.550877571105957,
+          "age_p95_absolute_drift_years": 1.3935325622558588,
+          "age_maximum_absolute_drift_years": 4.40650749206543
+        }
+      }
+    },
+    "cuda": {
+      "official": {
+        "model": {
+          "name": "SwinFace",
+          "checkpoint_sha256": "7ba7a2dcba59500ed8a7836eea8536164ac8c30e1dbdf9211da8378cd4070d98",
+          "checkpoint_step": 79999,
+          "model_signature": "swinface:7ba7a2dcba59500ed8a7836eea8536164ac8c30e1dbdf9211da8378cd4070d98:bgr-to-rgb-resize112-linear-div255-sub0.5-div0.5-v1:l2:official_mixed",
+          "upstream_commit": "ca36196814b54964e663e0991efd7d163c0069d3",
+          "preprocessing": "bgr-to-rgb-resize112-linear-div255-sub0.5-div0.5-v1",
+          "device": "cuda:1",
+          "batch_size": 32,
+          "parameters": 67809266,
+          "recognition_parameters": 28895226,
+          "checkpoint_format": "official-training",
+          "storage_precision": "fp32",
+          "inference_precision": "official_mixed",
+          "checkpoint_bytes": 882380545,
+          "source_sha256": "7ba7a2dcba59500ed8a7836eea8536164ac8c30e1dbdf9211da8378cd4070d98",
+          "runtime_state_tensor_bytes": 272406528,
+          "quantized_linear_layers": 0
+        },
+        "load_seconds_including_hashes": 5.942592545412481,
+        "prediction_seconds": 2.784486153163016,
+        "quality": {
+          "anchors": 109,
+          "identities": 14,
+          "source_groups": 47,
+          "eligible_queries": 107,
+          "top1_accuracy": 0.8504672897196262,
+          "top5_accuracy": 0.9532710280373832,
+          "margin_p05": -0.1315084487199783,
+          "margin_p50": 0.1564069390296936,
+          "positive_pairs": 873,
+          "negative_pairs": 4880,
+          "verification": {
+            "auc": 0.8527615815071451,
+            "eer": 0.2233641766661033,
+            "eer_threshold": 0.18045374751091003,
+            "tar_at_far_0.1": 0.588774341351661,
+            "threshold_at_far_0.1": 0.2472149282693863,
+            "tar_at_far_0.01": 0.22107674684994272,
+            "threshold_at_far_0.01": 0.42155709862709045,
+            "tar_at_far_0.001": 0.10882016036655212,
+            "threshold_at_far_0.001": 0.5208009481430054
+          },
+          "fixed_thresholds": {
+            "0.4": {
+              "correct_accept_rate": 0.7850467289719626,
+              "wrong_accept_rate": 0.09345794392523364,
+              "rejection_rate": 0.12149532710280375
+            },
+            "0.55": {
+              "correct_accept_rate": 0.48598130841121495,
+              "wrong_accept_rate": 0.018691588785046728,
+              "rejection_rate": 0.4953271028037384
+            }
+          },
+          "calibrated_closed_set_operating_points": {
+            "max_wrong_accept_rate_0": {
+              "threshold": 0.6139118671417236,
+              "correct_accept_rate": 0.38317757009345793,
+              "wrong_accept_rate": 0.0,
+              "rejection_rate": 0.6168224299065421
+            },
+            "max_wrong_accept_rate_0.01": {
+              "threshold": 0.6139118671417236,
+              "correct_accept_rate": 0.38317757009345793,
+              "wrong_accept_rate": 0.0,
+              "rejection_rate": 0.6168224299065421
+            },
+            "max_wrong_accept_rate_0.02": {
+              "threshold": 0.5593634247779846,
+              "correct_accept_rate": 0.48598130841121495,
+              "wrong_accept_rate": 0.018691588785046728,
+              "rejection_rate": 0.4953271028037384
+            }
+          },
+          "top1_failure_count": 16,
+          "confusions": [
+            {
+              "actual": "刘思妤",
+              "predicted": "王文杰",
+              "count": 2
+            },
+            {
+              "actual": "孟宇",
+              "predicted": "彭国斌",
+              "count": 2
+            },
+            {
+              "actual": "彭国斌",
+              "predicted": "孟宇",
+              "count": 2
+            },
+            {
+              "actual": "王浩伟",
+              "predicted": "彭国斌",
+              "count": 2
+            },
+            {
+              "actual": "张硕",
+              "predicted": "薛天智",
+              "count": 1
+            },
+            {
+              "actual": "彭国斌",
+              "predicted": "薛天智",
+              "count": 1
+            },
+            {
+              "actual": "杨淇",
+              "predicted": "董汶亮",
+              "count": 1
+            },
+            {
+              "actual": "王文杰",
+              "predicted": "刘思妤",
+              "count": 1
+            },
+            {
+              "actual": "王浩伟",
+              "predicted": "泰然",
+              "count": 1
+            },
+            {
+              "actual": "董汶亮",
+              "predicted": "薛天智",
+              "count": 1
+            },
+            {
+              "actual": "董汶亮",
+              "predicted": "泰然",
+              "count": 1
+            },
+            {
+              "actual": "薛天智",
+              "predicted": "泰然",
+              "count": 1
+            }
+          ]
+        },
+        "fixed_official_threshold": {
+          "threshold": 0.5593705773353577,
+          "eligible_queries": 107,
+          "correct_accept_count": 51,
+          "wrong_accept_count": 2,
+          "correct_accept_rate": 0.4766355140186916,
+          "wrong_accept_rate": 0.018691588785046728,
+          "rejection_rate": 0.5046728971962616
+        },
+        "top1_identity_changes_from_official": 0,
+        "fixed_threshold_acceptance_changes": 1,
+        "joint_timing": {
+          "batch_1": {
+            "p50_ms": 14.492071233689785,
+            "p95_ms": 15.224556066095829,
+            "per_face_p50_ms": 14.492071233689785,
+            "samples_ms": [
+              14.375471509993076,
+              14.492071233689785,
+              15.343965031206608,
+              14.746920205652714,
+              14.436147175729275
+            ]
+          },
+          "batch_32": {
+            "p50_ms": 28.528282418847084,
+            "p95_ms": 30.00524342060089,
+            "per_face_p50_ms": 0.8915088255889714,
+            "samples_ms": [
+              30.097435228526592,
+              29.636476188898087,
+              28.528282418847084,
+              28.38951349258423,
+              28.409117832779884
+            ]
+          }
+        },
+        "batch_consistency": {
+          "faces": 8,
+          "manifest_indices": [
+            0,
+            15,
+            30,
+            46,
+            61,
+            77,
+            92,
+            108
+          ],
+          "batch1_vs_batch8": {
+            "embedding_cosine_mean": 0.9999997580228771,
+            "embedding_cosine_minimum": 0.9999995712965106,
+            "embedding_maximum_absolute_difference": 0.0001349039375782013,
+            "pairwise_cosine_maximum_absolute_difference": 0.000228099524974823,
+            "age_mean_absolute_drift_years": 0.0034935474395751953,
+            "age_p95_absolute_drift_years": 0.006438446044921874,
+            "age_maximum_absolute_drift_years": 0.00725555419921875
+          },
+          "batch3_vs_batch8": {
+            "embedding_cosine_mean": 0.9999997623012855,
+            "embedding_cosine_minimum": 0.9999996062408579,
+            "embedding_maximum_absolute_difference": 0.00015021860599517822,
+            "pairwise_cosine_maximum_absolute_difference": 0.00022018887102603912,
+            "age_mean_absolute_drift_years": 0.0019228458404541016,
+            "age_p95_absolute_drift_years": 0.0034231185913085934,
+            "age_maximum_absolute_drift_years": 0.0035552978515625
+          },
+          "separate_heads_vs_joint": {
+            "embedding_cosine_mean": 1.000000015392236,
+            "embedding_cosine_minimum": 0.9999999795989408,
+            "embedding_maximum_absolute_difference": 0.0,
+            "pairwise_cosine_maximum_absolute_difference": 0.0,
+            "age_mean_absolute_drift_years": 0.0,
+            "age_p95_absolute_drift_years": 0.0,
+            "age_maximum_absolute_drift_years": 0.0
+          }
+        },
+        "predictions_artifact": {
+          "path": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/swinface_quantization_20261111/cuda/official_predictions.npz",
+          "sha256": "8df6df424c18690d8b273976f5ec261fc5d5de32004de708de3a905299b76db0"
+        },
+        "drift_from_official_cpu": {
+          "embedding_cosine_mean": 0.9999991712570915,
+          "embedding_cosine_minimum": 0.9999971653897707,
+          "embedding_maximum_absolute_difference": 0.0003116931766271591,
+          "pairwise_cosine_maximum_absolute_difference": 0.0007464289665222168,
+          "age_mean_absolute_drift_years": 0.00511382041721169,
+          "age_p95_absolute_drift_years": 0.013409423828124994,
+          "age_maximum_absolute_drift_years": 0.020893096923828125
+        },
+        "cuda_peak_allocated_bytes_during_prediction": 807886336
+      },
+      "compact_fp32": {
+        "model": {
+          "name": "SwinFace",
+          "checkpoint_sha256": "6e925285a4c57eabddf36eedf747e9c35775f586e278147bbecc22f2d205425c",
+          "checkpoint_step": 79999,
+          "model_signature": "swinface:6e925285a4c57eabddf36eedf747e9c35775f586e278147bbecc22f2d205425c:bgr-to-rgb-resize112-linear-div255-sub0.5-div0.5-v1:l2:official_mixed",
+          "upstream_commit": "ca36196814b54964e663e0991efd7d163c0069d3",
+          "preprocessing": "bgr-to-rgb-resize112-linear-div255-sub0.5-div0.5-v1",
+          "device": "cuda:1",
+          "batch_size": 32,
+          "parameters": 32035547,
+          "recognition_parameters": 28501498,
+          "checkpoint_format": "swinface-recognition-age-v1",
+          "storage_precision": "fp32",
+          "inference_precision": "official_mixed",
+          "checkpoint_bytes": 129352905,
+          "source_sha256": "7ba7a2dcba59500ed8a7836eea8536164ac8c30e1dbdf9211da8378cd4070d98",
+          "runtime_state_tensor_bytes": 129270612,
+          "quantized_linear_layers": 0
+        },
+        "load_seconds_including_hashes": 1.092287067323923,
+        "prediction_seconds": 0.10764479916542768,
+        "quality": {
+          "anchors": 109,
+          "identities": 14,
+          "source_groups": 47,
+          "eligible_queries": 107,
+          "top1_accuracy": 0.8504672897196262,
+          "top5_accuracy": 0.9532710280373832,
+          "margin_p05": -0.1315084487199783,
+          "margin_p50": 0.1564069390296936,
+          "positive_pairs": 873,
+          "negative_pairs": 4880,
+          "verification": {
+            "auc": 0.8527615815071451,
+            "eer": 0.2233641766661033,
+            "eer_threshold": 0.18045374751091003,
+            "tar_at_far_0.1": 0.588774341351661,
+            "threshold_at_far_0.1": 0.2472149282693863,
+            "tar_at_far_0.01": 0.22107674684994272,
+            "threshold_at_far_0.01": 0.42155709862709045,
+            "tar_at_far_0.001": 0.10882016036655212,
+            "threshold_at_far_0.001": 0.5208009481430054
+          },
+          "fixed_thresholds": {
+            "0.4": {
+              "correct_accept_rate": 0.7850467289719626,
+              "wrong_accept_rate": 0.09345794392523364,
+              "rejection_rate": 0.12149532710280375
+            },
+            "0.55": {
+              "correct_accept_rate": 0.48598130841121495,
+              "wrong_accept_rate": 0.018691588785046728,
+              "rejection_rate": 0.4953271028037384
+            }
+          },
+          "calibrated_closed_set_operating_points": {
+            "max_wrong_accept_rate_0": {
+              "threshold": 0.6139118671417236,
+              "correct_accept_rate": 0.38317757009345793,
+              "wrong_accept_rate": 0.0,
+              "rejection_rate": 0.6168224299065421
+            },
+            "max_wrong_accept_rate_0.01": {
+              "threshold": 0.6139118671417236,
+              "correct_accept_rate": 0.38317757009345793,
+              "wrong_accept_rate": 0.0,
+              "rejection_rate": 0.6168224299065421
+            },
+            "max_wrong_accept_rate_0.02": {
+              "threshold": 0.5593634247779846,
+              "correct_accept_rate": 0.48598130841121495,
+              "wrong_accept_rate": 0.018691588785046728,
+              "rejection_rate": 0.4953271028037384
+            }
+          },
+          "top1_failure_count": 16,
+          "confusions": [
+            {
+              "actual": "刘思妤",
+              "predicted": "王文杰",
+              "count": 2
+            },
+            {
+              "actual": "孟宇",
+              "predicted": "彭国斌",
+              "count": 2
+            },
+            {
+              "actual": "彭国斌",
+              "predicted": "孟宇",
+              "count": 2
+            },
+            {
+              "actual": "王浩伟",
+              "predicted": "彭国斌",
+              "count": 2
+            },
+            {
+              "actual": "张硕",
+              "predicted": "薛天智",
+              "count": 1
+            },
+            {
+              "actual": "彭国斌",
+              "predicted": "薛天智",
+              "count": 1
+            },
+            {
+              "actual": "杨淇",
+              "predicted": "董汶亮",
+              "count": 1
+            },
+            {
+              "actual": "王文杰",
+              "predicted": "刘思妤",
+              "count": 1
+            },
+            {
+              "actual": "王浩伟",
+              "predicted": "泰然",
+              "count": 1
+            },
+            {
+              "actual": "董汶亮",
+              "predicted": "薛天智",
+              "count": 1
+            },
+            {
+              "actual": "董汶亮",
+              "predicted": "泰然",
+              "count": 1
+            },
+            {
+              "actual": "薛天智",
+              "predicted": "泰然",
+              "count": 1
+            }
+          ]
+        },
+        "fixed_official_threshold": {
+          "threshold": 0.5593705773353577,
+          "eligible_queries": 107,
+          "correct_accept_count": 51,
+          "wrong_accept_count": 2,
+          "correct_accept_rate": 0.4766355140186916,
+          "wrong_accept_rate": 0.018691588785046728,
+          "rejection_rate": 0.5046728971962616
+        },
+        "top1_identity_changes_from_official": 0,
+        "fixed_threshold_acceptance_changes": 1,
+        "joint_timing": {
+          "batch_1": {
+            "p50_ms": 14.455503784120083,
+            "p95_ms": 14.57258090376854,
+            "per_face_p50_ms": 14.455503784120083,
+            "samples_ms": [
+              14.455503784120083,
+              14.397718012332916,
+              14.540363103151321,
+              14.580635353922844,
+              14.40789271146059
+            ]
+          },
+          "batch_32": {
+            "p50_ms": 28.13987247645855,
+            "p95_ms": 28.296483494341373,
+            "per_face_p50_ms": 0.8793710148893297,
+            "samples_ms": [
+              28.31173036247492,
+              28.235496021807194,
+              28.13638374209404,
+              28.01118977367878,
+              28.13987247645855
+            ]
+          }
+        },
+        "batch_consistency": {
+          "faces": 8,
+          "manifest_indices": [
+            0,
+            15,
+            30,
+            46,
+            61,
+            77,
+            92,
+            108
+          ],
+          "batch1_vs_batch8": {
+            "embedding_cosine_mean": 0.9999997580228771,
+            "embedding_cosine_minimum": 0.9999995712965106,
+            "embedding_maximum_absolute_difference": 0.0001349039375782013,
+            "pairwise_cosine_maximum_absolute_difference": 0.000228099524974823,
+            "age_mean_absolute_drift_years": 0.0034935474395751953,
+            "age_p95_absolute_drift_years": 0.006438446044921874,
+            "age_maximum_absolute_drift_years": 0.00725555419921875
+          },
+          "batch3_vs_batch8": {
+            "embedding_cosine_mean": 0.9999997623012855,
+            "embedding_cosine_minimum": 0.9999996062408579,
+            "embedding_maximum_absolute_difference": 0.00015021860599517822,
+            "pairwise_cosine_maximum_absolute_difference": 0.00022018887102603912,
+            "age_mean_absolute_drift_years": 0.0019228458404541016,
+            "age_p95_absolute_drift_years": 0.0034231185913085934,
+            "age_maximum_absolute_drift_years": 0.0035552978515625
+          },
+          "separate_heads_vs_joint": {
+            "embedding_cosine_mean": 1.000000015392236,
+            "embedding_cosine_minimum": 0.9999999795989408,
+            "embedding_maximum_absolute_difference": 0.0,
+            "pairwise_cosine_maximum_absolute_difference": 0.0,
+            "age_mean_absolute_drift_years": 0.0,
+            "age_p95_absolute_drift_years": 0.0,
+            "age_maximum_absolute_drift_years": 0.0
+          }
+        },
+        "predictions_artifact": {
+          "path": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/swinface_quantization_20261111/cuda/compact_fp32_predictions.npz",
+          "sha256": "8df6df424c18690d8b273976f5ec261fc5d5de32004de708de3a905299b76db0"
+        },
+        "drift_from_official_cpu": {
+          "embedding_cosine_mean": 0.9999991712570915,
+          "embedding_cosine_minimum": 0.9999971653897707,
+          "embedding_maximum_absolute_difference": 0.0003116931766271591,
+          "pairwise_cosine_maximum_absolute_difference": 0.0007464289665222168,
+          "age_mean_absolute_drift_years": 0.00511382041721169,
+          "age_p95_absolute_drift_years": 0.013409423828124994,
+          "age_maximum_absolute_drift_years": 0.020893096923828125
+        },
+        "cuda_peak_allocated_bytes_during_prediction": 662775296
+      },
+      "fp16": {
+        "model": {
+          "name": "SwinFace",
+          "checkpoint_sha256": "083495b501ddf141784c5285bf6a6fb48288e48d5be456f82d06e523a8aa9e53",
+          "checkpoint_step": 79999,
+          "model_signature": "swinface:083495b501ddf141784c5285bf6a6fb48288e48d5be456f82d06e523a8aa9e53:bgr-to-rgb-resize112-linear-div255-sub0.5-div0.5-v1:l2:fp16_mixed",
+          "upstream_commit": "ca36196814b54964e663e0991efd7d163c0069d3",
+          "preprocessing": "bgr-to-rgb-resize112-linear-div255-sub0.5-div0.5-v1",
+          "device": "cuda:1",
+          "batch_size": 32,
+          "parameters": 32035547,
+          "recognition_parameters": 28501498,
+          "checkpoint_format": "swinface-recognition-age-v1",
+          "storage_precision": "fp16",
+          "inference_precision": "fp16_mixed",
+          "checkpoint_bytes": 64832905,
+          "source_sha256": "7ba7a2dcba59500ed8a7836eea8536164ac8c30e1dbdf9211da8378cd4070d98",
+          "runtime_state_tensor_bytes": 64750566,
+          "quantized_linear_layers": 0
+        },
+        "load_seconds_including_hashes": 0.7608344852924347,
+        "prediction_seconds": 0.4574084868654609,
+        "quality": {
+          "anchors": 109,
+          "identities": 14,
+          "source_groups": 47,
+          "eligible_queries": 107,
+          "top1_accuracy": 0.8504672897196262,
+          "top5_accuracy": 0.9532710280373832,
+          "margin_p05": -0.1313751116394996,
+          "margin_p50": 0.15624010562896729,
+          "positive_pairs": 873,
+          "negative_pairs": 4880,
+          "verification": {
+            "auc": 0.8527251985803617,
+            "eer": 0.2233641766661033,
+            "eer_threshold": 0.18053777515888214,
+            "tar_at_far_0.1": 0.588774341351661,
+            "threshold_at_far_0.1": 0.24743708968162537,
+            "tar_at_far_0.01": 0.21993127147766323,
+            "threshold_at_far_0.01": 0.42225319147109985,
+            "tar_at_far_0.001": 0.10882016036655212,
+            "threshold_at_far_0.001": 0.5209110975265503
+          },
+          "fixed_thresholds": {
+            "0.4": {
+              "correct_accept_rate": 0.7850467289719626,
+              "wrong_accept_rate": 0.09345794392523364,
+              "rejection_rate": 0.12149532710280375
+            },
+            "0.55": {
+              "correct_accept_rate": 0.48598130841121495,
+              "wrong_accept_rate": 0.018691588785046728,
+              "rejection_rate": 0.4953271028037384
+            }
+          },
+          "calibrated_closed_set_operating_points": {
+            "max_wrong_accept_rate_0": {
+              "threshold": 0.6140276193618774,
+              "correct_accept_rate": 0.38317757009345793,
+              "wrong_accept_rate": 0.0,
+              "rejection_rate": 0.6168224299065421
+            },
+            "max_wrong_accept_rate_0.01": {
+              "threshold": 0.6140276193618774,
+              "correct_accept_rate": 0.38317757009345793,
+              "wrong_accept_rate": 0.0,
+              "rejection_rate": 0.6168224299065421
+            },
+            "max_wrong_accept_rate_0.02": {
+              "threshold": 0.55941241979599,
+              "correct_accept_rate": 0.48598130841121495,
+              "wrong_accept_rate": 0.018691588785046728,
+              "rejection_rate": 0.4953271028037384
+            }
+          },
+          "top1_failure_count": 16,
+          "confusions": [
+            {
+              "actual": "刘思妤",
+              "predicted": "王文杰",
+              "count": 2
+            },
+            {
+              "actual": "孟宇",
+              "predicted": "彭国斌",
+              "count": 2
+            },
+            {
+              "actual": "彭国斌",
+              "predicted": "孟宇",
+              "count": 2
+            },
+            {
+              "actual": "王浩伟",
+              "predicted": "彭国斌",
+              "count": 2
+            },
+            {
+              "actual": "张硕",
+              "predicted": "薛天智",
+              "count": 1
+            },
+            {
+              "actual": "彭国斌",
+              "predicted": "薛天智",
+              "count": 1
+            },
+            {
+              "actual": "杨淇",
+              "predicted": "董汶亮",
+              "count": 1
+            },
+            {
+              "actual": "王文杰",
+              "predicted": "刘思妤",
+              "count": 1
+            },
+            {
+              "actual": "王浩伟",
+              "predicted": "泰然",
+              "count": 1
+            },
+            {
+              "actual": "董汶亮",
+              "predicted": "薛天智",
+              "count": 1
+            },
+            {
+              "actual": "董汶亮",
+              "predicted": "泰然",
+              "count": 1
+            },
+            {
+              "actual": "薛天智",
+              "predicted": "泰然",
+              "count": 1
+            }
+          ]
+        },
+        "fixed_official_threshold": {
+          "threshold": 0.5593705773353577,
+          "eligible_queries": 107,
+          "correct_accept_count": 52,
+          "wrong_accept_count": 2,
+          "correct_accept_rate": 0.48598130841121495,
+          "wrong_accept_rate": 0.018691588785046728,
+          "rejection_rate": 0.4953271028037383
+        },
+        "top1_identity_changes_from_official": 0,
+        "fixed_threshold_acceptance_changes": 0,
+        "joint_timing": {
+          "batch_1": {
+            "p50_ms": 14.74758144468069,
+            "p95_ms": 15.016474016010761,
+            "per_face_p50_ms": 14.74758144468069,
+            "samples_ms": [
+              14.646867290139198,
+              14.853389002382755,
+              14.74758144468069,
+              14.51493613421917,
+              15.057245269417763
+            ]
+          },
+          "batch_32": {
+            "p50_ms": 29.225965030491352,
+            "p95_ms": 29.545299150049686,
+            "per_face_p50_ms": 0.9133114072028548,
+            "samples_ms": [
+              29.225965030491352,
+              29.603710398077965,
+              29.311654157936573,
+              28.051474131643772,
+              27.75638271123171
+            ]
+          }
+        },
+        "batch_consistency": {
+          "faces": 8,
+          "manifest_indices": [
+            0,
+            15,
+            30,
+            46,
+            61,
+            77,
+            92,
+            108
+          ],
+          "batch1_vs_batch8": {
+            "embedding_cosine_mean": 0.9999990352859263,
+            "embedding_cosine_minimum": 0.9999986593306076,
+            "embedding_maximum_absolute_difference": 0.00023616105318069458,
+            "pairwise_cosine_maximum_absolute_difference": 0.0003611445426940918,
+            "age_mean_absolute_drift_years": 0.0,
+            "age_p95_absolute_drift_years": 0.0,
+            "age_maximum_absolute_drift_years": 0.0
+          },
+          "batch3_vs_batch8": {
+            "embedding_cosine_mean": 0.9999991055037594,
+            "embedding_cosine_minimum": 0.9999985522031857,
+            "embedding_maximum_absolute_difference": 0.00024241209030151367,
+            "pairwise_cosine_maximum_absolute_difference": 0.0002852044999599457,
+            "age_mean_absolute_drift_years": 0.00390625,
+            "age_p95_absolute_drift_years": 0.020312499999999983,
+            "age_maximum_absolute_drift_years": 0.03125
+          },
+          "separate_heads_vs_joint": {
+            "embedding_cosine_mean": 1.0000000339254176,
+            "embedding_cosine_minimum": 0.9999999989404206,
+            "embedding_maximum_absolute_difference": 0.0,
+            "pairwise_cosine_maximum_absolute_difference": 0.0,
+            "age_mean_absolute_drift_years": 0.0,
+            "age_p95_absolute_drift_years": 0.0,
+            "age_maximum_absolute_drift_years": 0.0
+          }
+        },
+        "predictions_artifact": {
+          "path": "/home/huachenghao/codes/Theatrical_photo_sorting-251212/outputs/acceptance/swinface_quantization_20261111/cuda/fp16_predictions.npz",
+          "sha256": "276ca5fe6e70d0519eb62028bc6bb1732951a62edd2db984d3dbb042d4c200de"
+        },
+        "drift_from_official_cpu": {
+          "embedding_cosine_mean": 0.9999976035647842,
+          "embedding_cosine_minimum": 0.9999929444688257,
+          "embedding_maximum_absolute_difference": 0.0005707107484340668,
+          "pairwise_cosine_maximum_absolute_difference": 0.0010165423154830933,
+          "age_mean_absolute_drift_years": 0.009610403568372814,
+          "age_p95_absolute_drift_years": 0.025571060180664063,
+          "age_maximum_absolute_drift_years": 0.05168724060058594
+        },
+        "cuda_peak_allocated_bytes_during_prediction": 591511040
+      }
+    }
+  },
+  "cpu_raw_report_sha256": "5d0315a6d61348853f9fd0964280c02e3090fc39485ab99b01f16ddaa9acee1c",
+  "cuda_raw_report_sha256": "ff7b6aea00119bb244737ceb2faeaf197f8cb0aae3123b82bec9fde0a351157f",
+  "fp16_drift_from_official_on_same_cuda_device": {
+    "embedding_cosine_mean": 0.9999973320198114,
+    "embedding_cosine_minimum": 0.9999911339431864,
+    "embedding_maximum_absolute_difference": 0.000659894198179245,
+    "pairwise_cosine_maximum_absolute_difference": 0.0010777115821838379,
+    "age_mean_absolute_drift_years": 0.009976658252401089,
+    "age_p95_absolute_drift_years": 0.027993774414062485,
+    "age_maximum_absolute_drift_years": 0.03848075866699219
+  },
+  "int8_cpu_throughput_ratio_batch32": 1.263252307972897
+}

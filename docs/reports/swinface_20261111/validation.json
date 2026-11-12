@@ -1,0 +1,61 @@
+{
+  "age_api_tests": {
+    "passed": true,
+    "tests": 8
+  },
+  "swinface_cpu_tests": {
+    "passed": true,
+    "tests": 4
+  },
+  "swinface_cuda_tests": {
+    "passed": true,
+    "tests": 4
+  },
+  "workspace_regression_tests": {
+    "passed": true,
+    "tests": 27
+  },
+  "workspace_browser": {
+    "passed": true,
+    "photos": 35,
+    "viewports": [
+      1440,
+      1024,
+      768,
+      540,
+      390
+    ],
+    "large_queue_records": 10000,
+    "legacy_check_groups": 21,
+    "additional_age_checks": [
+      "path_payload",
+      "estimated_years",
+      "unavailable_age",
+      "annotation_lightbox",
+      "no_faces"
+    ],
+    "age_responses": "intercepted; real model checked separately through HTTP"
+  },
+  "real_age_http": {
+    "passed": true,
+    "checks": 91,
+    "faces_per_photo": [
+      1,
+      3,
+      6
+    ],
+    "first_request_seconds": 6.708776782266796,
+    "max_health_request_ms": 23.125391453504562
+  },
+  "cli": {
+    "passed": true,
+    "input_count": 1,
+    "face_count": 3
+  },
+  "recognition_audit": {
+    "passed": true,
+    "checks": 148
+  },
+  "age_ground_truth_count": 0,
+  "age_mae": null
+}
