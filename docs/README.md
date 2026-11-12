@@ -1,6 +1,6 @@
 # 文档中心
 
-更新时间：2026-11-06。文档基于当前工作区与 Git 历史整理；代码和测试文件保留原路径，避免破坏导入、样本路径及历史链接。
+更新时间：2026-11-11。文档基于当前工作区与 Git 历史整理；代码和测试文件保留原路径，避免破坏导入、样本路径及历史链接。
 
 异常中断后继续或协作接手，先读 [工作状态与中断接续](../WORK_STATE.md)，其中记录当前优先级、未提交改动、验证边界与下一步命令。
 
@@ -24,6 +24,7 @@
 | [Qdrant 对比报告](reports/qdrant_20261102/README.md) | 容器实测 | 真实向量和 1 万/10 万合成向量对比，召回、延迟、内存、磁盘与局限 |
 | [人脸技术栈选型实验](reports/face_stack_20261106/README.md) | 检测、识别与向量检索选型 | SCRFD、ArcFace 同类模型和 Qdrant/FAISS/ES 的本地实验、最终推荐与许可边界 |
 | [workspace_guide.md](workspace_guide.md) | 多模态整理工作台 | 图片浏览、剧情关联、看图复核、整理导出与界面验收 |
+| [SwinFace 与年龄估计](swinface_guide.md) | 工作台、API 与 CLI | 逐脸年龄、[识别对比](reports/swinface_20261111/README.md)和 [FP16 / INT8 压缩](reports/swinface_quantization_20261111/README.md) |
 | [identity_registry_guide.md](identity_registry_guide.md) | 演员身份与剧目角色表 | JSON 格式、身份与角色来源、专辑筛选、API 参数和任务恢复 |
 | [sourced_scene_candidates_guide.md](sourced_scene_candidates_guide.md) | 有出处的分幕候选与U4复现 | 官方/媒体资料、精确引用、短原文块/固定向量25/28对照、来源v1与演出版边界 |
 | [photo_partition_review_guide.md](photo_partition_review_guide.md) | 剧照划分与图库来源复核 | 原/整理副本、EXIF相机时间、近重复/连拍线索、复核草稿与262条新版幕次标签 |

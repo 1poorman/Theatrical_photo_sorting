@@ -1,5 +1,11 @@
 # 工作状态与中断接续
 
+> **2026-11-12 SwinFace 改动分批提交完成。** 模型推理与权重压缩为 `269a200`，年龄功能与界面为 `b7ec390`，基准工具与实验报告为 `ce27c24`；使用文档和本条状态记录随第四批提交保存。提交前复核：41 项回归通过，4 项真实权重测试按默认配置跳过；Python/JavaScript 语法、JSON 解析与第三方源码摘要通过。本次未重跑真实权重和浏览器实测，未部署或推送；下方 11-11 的“未提交”均为当时状态。
+
+> **2026-11-11 SwinFace 压缩完成（未提交）。** 用户要求减小权重；新增安全导出、版本化精简格式与 CPU INT8。官方 841.5 MiB 原文件保留；识别＋年龄 FP32 / FP16 / 动态 INT8 为 123.4 / 61.8 / 41.2 MiB。默认优先 FP16，缺失时回到原文件，显式路径优先。同一 109 脸中，精简 FP32 与原版 CPU/CUDA 输出逐元素一致；FP16 Top-1 保持 85.05%，CPU 年龄平均/最大偏差 0.0033/0.0167 岁，CUDA 相对原 CPU 最大 0.052 岁。INT8 最大偏差 4.41 岁且受批次组成影响，保留为可选实验。4 原前向、6 CPU 压缩、5 CUDA 压缩（另 1 CPU 专用跳过）、8 年龄/API、70 真实 HTTP、3 脸 CLI、125 审计通过；年龄 GT 仍为 0。报告在 [压缩实测](docs/reports/swinface_quantization_20261111/README.md)，原始产物在 `outputs/acceptance/swinface_quantization_20261111/`。GPU 测试与隔离服务均退出，无活动实验；原始权重 SHA256 仍为 `7ba7a2dc...`，未部署、提交或推送。
+
+> **2026-11-11 SwinFace 对比与年龄功能完成（未提交）。** 用户指定 `lxq1000/SwinFace` 和 `weights/swinface` checkpoint；官方源码固定到 `ca361968...`，本地权重 SHA256 `7ba7a2dc...`。六个单模型＋两种既有融合在 109 脸/107 跨照片 query 重测：SwinFace Top-1 85.05%，≤2% 错误接收时正确接收 48.60%，当前 ArcFace 为 86.92%/82.24%，识别默认保留。新增工作台/旧版上传年龄、`POST /api/face/age` 和 CLI。CPU/GPU 官方前向、8 年龄/API、27 工作台、91 真实 HTTP、浏览器及 148 审计通过；109 年龄输出有限，年龄 GT 为 0、MAE 为空。见[指南](docs/swinface_guide.md)及[报告](docs/reports/swinface_20261111/README.md)，原始产物在 `outputs/acceptance/swinface_20261111/`。本轮不恢复 U2、不改正式人脸库；隔离测试服务已退出，无活动实验进程，未部署或推送。
+
 > **2026-11-02 Qdrant 改造完成。** 用户授权记录方案、实施并在容器比较 Qdrant 与现有方案；结果见 [升级方案](docs/qdrant_upgrade_plan.md)、[操作指南](docs/qdrant_guide.md) 和 [对比报告](docs/reports/qdrant_20261102/README.md)。Docker 默认图像/人脸在线存储，精确查询；旧 FAISS 可读，ES 原卷保留、服务停用。14 存储回归、8 最终 HTTP、2 最终重启与 21 浏览器检查通过，非空迁移/幂等/原记录保留通过。真实向量及 1 万/10 万合成精确 recall@10 全部 100%；10 万 HNSW 44.7%，未设默认。原始测量在 `outputs/acceptance/qdrant_20261102/`，精选 JSON 随文档保留。
 >
 > 最终应用镜像 `ba9903ac...`、本地 Qdrant 1.20.0 release 二进制镜像 `56f07be2...`；官方镜像下载受阻的替代构建及 SHA256 见报告。应用端口 8199，物理 GPU1；`.env.docker` 含本地镜像覆盖，不能打印其中密钥。应用与 Qdrant 继续运行，测试进程结束，临时人脸/ES 记录已清理；四个基准集合与图像验收集合保留供复测。Qdrant 核心改造提交为 `86abde9`，部署与验证工具提交为 `b9a928c`，文档提交见 `git log -1`；本轮未推送。U2 收尾状态不变，以下历史“当前”记录不代表本轮任务。

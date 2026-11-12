@@ -27,6 +27,7 @@
 - [U2 最新性能增量报告](docs/reports/u2_parallel_20261028/README.md)：200图×5次，特征1.527×、整理观察减少34.31%；输出一致，保留共享负载与正式验收边界。
 - [最新技术报告](docs/technical_report_20261026.md)：29页、15幅正文插图，包含最新U2性能与DALI评价；[PDF](docs/reports/technical_report_20261026/technical_report.pdf)与插图随Git保存，可在GitHub阅读。
 - [工作台使用指南](docs/workspace_guide.md)：目录导入、图文分析、看图复核与归档。
+- [SwinFace 与年龄估计](docs/swinface_guide.md)：工作台逐脸年龄、上传/API/CLI、[模型对比](docs/reports/swinface_20261111/README.md)与[权重压缩](docs/reports/swinface_quantization_20261111/README.md)（推荐 FP16，61.8 MiB）。
 - [演员身份与角色表](docs/identity_registry_guide.md)：稳定身份 ID、剧目角色、同名演员专辑、JSON 格式与 API 参数。
 - [有出处的分幕候选](docs/sourced_scene_candidates_guide.md)：国家大剧院剧目资料、来源映射、固定候选池与扩池比较及复现。
 - [视觉证据与分组实验](docs/experimental_components_guide.md)：调用预算、缓存、按需 OCR、时序分段与图聚类的 API 配置、实测和采用边界。
@@ -132,6 +133,7 @@ python app/server.py       # 纯 API，端口 8198
 | GET | `/api/progress/{task_id}` | 查询任务进度 |
 | POST | `/api/face/build_database` | 构建人脸库（子目录按人物命名） |
 | POST | `/api/face/recognize` | 人脸识别 |
+| POST | `/api/face/age` | SwinFace 逐脸年龄估计（上传图片或当前照片目录＋文件名） |
 | POST | `/api/image/process` | 组合处理：检测+分割+镜头分类+修复 |
 | POST | `/api/embedding/build_index` | 构建图像索引 |
 | POST | `/api/embedding/search` | 相似图片检索 |
