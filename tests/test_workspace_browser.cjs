@@ -78,6 +78,32 @@ fs.mkdirSync(shots, {recursive: true});
     const total = Number(await page.locator('#metric-total').textContent());
     assert.ok(total >= 9, 'real theatrical photos are loaded');
     await page.locator('.photo-card').first().click();
+    let ageRequests = 0;
+    await page.route('**/api/face/age', async route => {
+      ageRequests++;
+      const request = route.request();
+      assert.equal(request.method(), 'POST');
+      assert.ok(request.postData().includes('name="input_dir"'));
+      assert.ok(request.postData().includes('name="name"'));
+      const preview = path.join(photos, await page.locator('.detail-name').textContent());
+      await route.fulfill({status: 200, contentType: 'application/json', body: JSON.stringify({code: 200, data: {
+        age_unit: 'years', note: '年龄为模型对照片中外观的估计。', annotated_image_path: preview,
+        faces: ageRequests === 1 ? [{face_id: 1, estimated_age: 36.4, face_image_path: preview},
+          {face_id: 2, estimated_age: null, face_image_path: preview, age_status: 'out_of_range'}] : [],
+      }})});
+    });
+    await page.locator('#estimate-age').click();
+    await idle();
+    assert.ok((await page.locator('#age-results').textContent()).includes('约 36 岁'));
+    assert.ok((await page.locator('#age-results').textContent()).includes('暂无法估计'));
+    assert.equal(await page.locator('.age-face').count(), 2);
+    await page.locator('#preview-ages').click();
+    assert.equal(await page.locator('#image-dialog').isVisible(), true);
+    await page.keyboard.press('Escape');
+    await page.locator('#estimate-age').click();
+    await idle();
+    assert.ok((await page.locator('#age-results').textContent()).includes('未检测到符合条件的人脸'));
+    await page.unroute('**/api/face/age');
     await page.locator('#preview-photo').click();
     assert.equal(await page.locator('#image-dialog').isVisible(), true);
     await page.keyboard.press('Escape');

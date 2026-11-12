@@ -961,6 +961,19 @@ UI_HTML = """<!DOCTYPE html>
             <div id="recognize-result" class="result"></div>
         </div>
 
+        <div class="card">
+            <h2>👤 人脸年龄估计</h2>
+            <form id="age-form">
+                <div class="form-group">
+                    <label for="age-image">上传待估计年龄的图片</label>
+                    <input type="file" id="age-image" name="image" accept="image/*" required>
+                </div>
+                <p>年龄为照片中外观的模型估计，妆造、姿态与画质会影响结果。</p>
+                <button type="submit" class="btn">估计人脸年龄</button>
+            </form>
+            <div id="age-result" class="result" aria-live="polite"></div>
+        </div>
+
         <!-- 构建人脸库 -->
         <div class="card">
             <h2>📂 构建人脸库</h2>
@@ -1110,6 +1123,17 @@ UI_HTML = """<!DOCTYPE html>
         }
         function renderData(el, data) {
             let html = '<strong>✅ 成功</strong>';
+            if (data.age_unit === 'years' && Array.isArray(data.faces)) {
+                html += `<p>${data.faces.length ? `检测到 ${data.faces.length} 张人脸` : '未检测到符合条件的人脸'}</p><div class="face-grid">`;
+                data.faces.forEach(face => {
+                    const age = Number.isFinite(face.estimated_age) ? `约 ${Math.round(face.estimated_age)} 岁` : '暂无法估计';
+                    html += `<div class="face-item"><img src="/api/file?path=${encodeURIComponent(face.face_image_path)}" alt="人脸"><div class="name">人脸 ${Number(face.face_id)} · ${age}</div></div>`;
+                });
+                html += '</div><p>年龄为外观估计，妆造、姿态与画质会影响结果。</p>';
+                if (data.annotated_image_path) html += `<div class="image-grid"><div class="image-item"><img src="/api/file?path=${encodeURIComponent(data.annotated_image_path)}" alt="年龄标注图"></div></div>`;
+                el.innerHTML = html;
+                return;
+            }
             // 人脸识别
             if (data.recognized_faces) {
                 html += `<p>识别到 ${data.recognized_faces.length} 张人脸</p><div class="face-grid">`;
@@ -1229,6 +1253,7 @@ UI_HTML = """<!DOCTYPE html>
 
         // ---------- 表单绑定 ----------
         submitForm('recognize-form', '/api/face/recognize', 'recognize-result', '正在识别人脸...');
+        submitForm('age-form', '/api/face/age', 'age-result', '正在估计年龄，首次使用需要加载模型...');
         submitForm('build-db-form', '/api/face/build_database', 'build-db-result', '正在构建人脸库...');
         submitForm('process-form', '/api/image/process', 'process-result', '正在组合处理...');
         submitForm('index-form', '/api/embedding/build_index', 'index-result', '正在构建索引...');

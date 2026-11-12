@@ -47,6 +47,8 @@ app = FastAPI(
 
 from app.workspace_api import router as workspace_router
 app.include_router(workspace_router)
+from app.face_age_api import router as face_age_router
+app.include_router(face_age_router)
 from app.vector_api import router as vector_router
 from core_modules.vector_store import VectorStoreError
 app.include_router(vector_router)

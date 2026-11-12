@@ -70,7 +70,7 @@
   }
   const state = {project: null, photos: [], records: new Map(), knowledge: null, summary: null,
     selected: null, view: 'photos', filter: 'all', query: '', page: 0, busy: false, taskId: null, generation: 0,
-    reviewPending: new Map()};
+    reviewPending: new Map(), ageResults: new Map()};
   const pageSize = 36;
   const titles = {photos: '影像资料', knowledge: '剧目与剧情', actors: '演员与角色', review: '场景复核', export: '整理与导出'};
   const statuses = {pending: '待复核', approved: '已确认', rejected: '已拒绝', unprocessed: '待分析'};
@@ -238,6 +238,15 @@
       $('lightbox-image').alt = photo.name;
       $('image-dialog').showModal();
     };
+    const ages = state.ageResults.get(photo.path);
+    body.insertAdjacentHTML('beforeend', `<section class="detail-section" aria-label="人脸年龄估计"><h4>人脸年龄估计</h4><button type="button" class="button secondary" id="estimate-age" ${state.busy ? 'disabled' : ''}>${ages ? '重新估计年龄' : '估计人脸年龄'}</button><div id="age-results" aria-live="polite">${ages ? `<p>${esc(ages.note)}</p>${ages.faces.length ? `<button class="detail-preview" id="preview-ages" aria-label="查看年龄标注图"><img src="${esc(fileURL(ages.annotated_image_path))}" alt="人脸编号与估计年龄标注图"></button><div class="age-grid">${ages.faces.map(face => `<div class="age-face"><img src="${esc(fileURL(face.face_image_path))}" alt="人脸 ${esc(face.face_id)}"><strong>人脸 ${esc(face.face_id)} · ${Number.isFinite(face.estimated_age) ? `约 ${Math.round(face.estimated_age)} 岁` : '暂无法估计'}</strong>${face.small_face ? '<small>人脸较小，结果供参考</small>' : ''}</div>`).join('')}</div>` : '<p>未检测到符合条件的人脸。</p>'}` : '<p>按照片中的人脸分别估计外观年龄。</p>'}</div></section>`);
+    $('estimate-age').onclick = () => estimateAge(photo);
+    if ($('preview-ages')) $('preview-ages').onclick = () => {
+      $('lightbox-name').textContent = `${photo.name} · 年龄估计`;
+      $('lightbox-image').src = `/api/file?${new URLSearchParams({path: ages.annotated_image_path})}`;
+      $('lightbox-image').alt = '人脸编号与估计年龄标注图';
+      $('image-dialog').showModal();
+    };
     if (record && !record._metadata_only) {
       const knownLabel = record.label && record.label !== 'unknown';
       const options = state.knowledge?.scene_options || [];
@@ -267,6 +276,13 @@
     body.insertAdjacentHTML('beforeend', `<div class="detail-pagination"><button class="button subtle" id="detail-prev" ${index <= 0 ? 'disabled' : ''}>← 上一张</button><button class="button subtle" id="detail-next" ${index < 0 || index >= filtered.length - 1 ? 'disabled' : ''}>下一张 →</button></div>`);
     $('detail-prev').onclick = () => moveSelection(-1);
     $('detail-next').onclick = () => moveSelection(1);
+  }
+  async function estimateAge(photo) {
+    const generation = state.generation, input = state.project.input;
+    await task('正在估计照片中人脸的年龄，首次使用需要加载模型…', async () => {
+      const result = await api('/api/face/age', {input_dir: input, name: photo.name});
+      if (generation === state.generation) state.ageResults.set(photo.path, result);
+    });
   }
   function moveSelection(delta) {
     const filtered = filteredPhotos(), index = filtered.findIndex(photo => photo.path === state.selected);
@@ -363,7 +379,7 @@
     state.generation++;
     state.project = {...project, input: result.input_dir};
     state.photos = result.photos; state.records = new Map(); state.knowledge = null; state.summary = null;
-    state.reviewPending = new Map();
+    state.reviewPending = new Map(); state.ageResults = new Map();
     state.selected = result.photos.some(photo => photo.path === project.selected) ? project.selected : null;
     state.query = ''; state.page = 0; state.taskId = project.clusterTask || null; state.queueMismatch = false;
     $('photo-search').value = ''; $('actor-result').hidden = true; $('organize-result').hidden = true;
