@@ -1,16 +1,18 @@
 # 工作状态与中断接续
 
+> **2026-11-12 tools/docs 分类整理完成（未提交）。** 47 个工具迁入 8 个主题子目录，22 份顶层专题文档归入指南、设计、进度、报告和历史资料；入口见[工具清单](tools/README.md)与[文档中心](docs/README.md)。Python 导入、根目录定位、OCR 子进程、Docker 基准入口、文档链接和技术报告重建路径已同步调整。47 个入口/模块检查、200 项回归通过；工作台并行初测超时，单独重跑 27 项通过。报告 937 项只读校验及两份 Markdown 重建一致性通过。历史测量 JSON、PDF、HTML、图片等字节不变；报告包清单仅更新受导航/脚本调整影响的摘要。映射与验证记录在 `outputs/maintenance/directory_layout_20261112/`，未部署或推送。
+
 > **2026-11-12 SwinFace 改动分批提交完成。** 模型推理与权重压缩为 `269a200`，年龄功能与界面为 `b7ec390`，基准工具与实验报告为 `ce27c24`；使用文档和本条状态记录随第四批提交保存。提交前复核：41 项回归通过，4 项真实权重测试按默认配置跳过；Python/JavaScript 语法、JSON 解析与第三方源码摘要通过。本次未重跑真实权重和浏览器实测，未部署或推送；下方 11-11 的“未提交”均为当时状态。
 
 > **2026-11-11 SwinFace 压缩完成（未提交）。** 用户要求减小权重；新增安全导出、版本化精简格式与 CPU INT8。官方 841.5 MiB 原文件保留；识别＋年龄 FP32 / FP16 / 动态 INT8 为 123.4 / 61.8 / 41.2 MiB。默认优先 FP16，缺失时回到原文件，显式路径优先。同一 109 脸中，精简 FP32 与原版 CPU/CUDA 输出逐元素一致；FP16 Top-1 保持 85.05%，CPU 年龄平均/最大偏差 0.0033/0.0167 岁，CUDA 相对原 CPU 最大 0.052 岁。INT8 最大偏差 4.41 岁且受批次组成影响，保留为可选实验。4 原前向、6 CPU 压缩、5 CUDA 压缩（另 1 CPU 专用跳过）、8 年龄/API、70 真实 HTTP、3 脸 CLI、125 审计通过；年龄 GT 仍为 0。报告在 [压缩实测](docs/reports/swinface_quantization_20261111/README.md)，原始产物在 `outputs/acceptance/swinface_quantization_20261111/`。GPU 测试与隔离服务均退出，无活动实验；原始权重 SHA256 仍为 `7ba7a2dc...`，未部署、提交或推送。
 
-> **2026-11-11 SwinFace 对比与年龄功能完成（未提交）。** 用户指定 `lxq1000/SwinFace` 和 `weights/swinface` checkpoint；官方源码固定到 `ca361968...`，本地权重 SHA256 `7ba7a2dc...`。六个单模型＋两种既有融合在 109 脸/107 跨照片 query 重测：SwinFace Top-1 85.05%，≤2% 错误接收时正确接收 48.60%，当前 ArcFace 为 86.92%/82.24%，识别默认保留。新增工作台/旧版上传年龄、`POST /api/face/age` 和 CLI。CPU/GPU 官方前向、8 年龄/API、27 工作台、91 真实 HTTP、浏览器及 148 审计通过；109 年龄输出有限，年龄 GT 为 0、MAE 为空。见[指南](docs/swinface_guide.md)及[报告](docs/reports/swinface_20261111/README.md)，原始产物在 `outputs/acceptance/swinface_20261111/`。本轮不恢复 U2、不改正式人脸库；隔离测试服务已退出，无活动实验进程，未部署或推送。
+> **2026-11-11 SwinFace 对比与年龄功能完成（未提交）。** 用户指定 `lxq1000/SwinFace` 和 `weights/swinface` checkpoint；官方源码固定到 `ca361968...`，本地权重 SHA256 `7ba7a2dc...`。六个单模型＋两种既有融合在 109 脸/107 跨照片 query 重测：SwinFace Top-1 85.05%，≤2% 错误接收时正确接收 48.60%，当前 ArcFace 为 86.92%/82.24%，识别默认保留。新增工作台/旧版上传年龄、`POST /api/face/age` 和 CLI。CPU/GPU 官方前向、8 年龄/API、27 工作台、91 真实 HTTP、浏览器及 148 审计通过；109 年龄输出有限，年龄 GT 为 0、MAE 为空。见[指南](docs/guides/swinface_guide.md)及[报告](docs/reports/swinface_20261111/README.md)，原始产物在 `outputs/acceptance/swinface_20261111/`。本轮不恢复 U2、不改正式人脸库；隔离测试服务已退出，无活动实验进程，未部署或推送。
 
-> **2026-11-02 Qdrant 改造完成。** 用户授权记录方案、实施并在容器比较 Qdrant 与现有方案；结果见 [升级方案](docs/qdrant_upgrade_plan.md)、[操作指南](docs/qdrant_guide.md) 和 [对比报告](docs/reports/qdrant_20261102/README.md)。Docker 默认图像/人脸在线存储，精确查询；旧 FAISS 可读，ES 原卷保留、服务停用。14 存储回归、8 最终 HTTP、2 最终重启与 21 浏览器检查通过，非空迁移/幂等/原记录保留通过。真实向量及 1 万/10 万合成精确 recall@10 全部 100%；10 万 HNSW 44.7%，未设默认。原始测量在 `outputs/acceptance/qdrant_20261102/`，精选 JSON 随文档保留。
+> **2026-11-02 Qdrant 改造完成。** 用户授权记录方案、实施并在容器比较 Qdrant 与现有方案；结果见 [升级方案](docs/design/qdrant_upgrade_plan.md)、[操作指南](docs/guides/qdrant_guide.md) 和 [对比报告](docs/reports/qdrant_20261102/README.md)。Docker 默认图像/人脸在线存储，精确查询；旧 FAISS 可读，ES 原卷保留、服务停用。14 存储回归、8 最终 HTTP、2 最终重启与 21 浏览器检查通过，非空迁移/幂等/原记录保留通过。真实向量及 1 万/10 万合成精确 recall@10 全部 100%；10 万 HNSW 44.7%，未设默认。原始测量在 `outputs/acceptance/qdrant_20261102/`，精选 JSON 随文档保留。
 >
 > 最终应用镜像 `ba9903ac...`、本地 Qdrant 1.20.0 release 二进制镜像 `56f07be2...`；官方镜像下载受阻的替代构建及 SHA256 见报告。应用端口 8199，物理 GPU1；`.env.docker` 含本地镜像覆盖，不能打印其中密钥。应用与 Qdrant 继续运行，测试进程结束，临时人脸/ES 记录已清理；四个基准集合与图像验收集合保留供复测。Qdrant 核心改造提交为 `86abde9`，部署与验证工具提交为 `b9a928c`，文档提交见 `git log -1`；本轮未推送。U2 收尾状态不变，以下历史“当前”记录不代表本轮任务。
 
-> **2026-10-29 U2 按用户指示收尾：`closed_by_user`，不继续推进。** 采用现有最佳 Pillow＋哈希/解码/同步选优各4线程、批量8，已设为默认；依据200图×5轮增量协议：特征1.527×、同步整理观察减少34.31%、输出/评分一致、RSS增加13.81%/18.83%、12检查全部通过。DALI不采用，停止U2新增实验和持久分析批量预取；普通“继续”不恢复U2，只有用户明确重新开启才接续。正式验收仍`not_passed`，历史整树与HTTP结果保留原版本/配置边界。收尾决定见[U2收尾记录](docs/u2_closeout_20261029.md)。按用户指示将收尾配置/文档和前轮成本测量工具、协议测试、精选汇总纳入本次本地提交；实际提交以`git log -1`为准，未推送。以下10月28日及更早摘要均为历史。
+> **2026-10-29 U2 按用户指示收尾：`closed_by_user`，不继续推进。** 采用现有最佳 Pillow＋哈希/解码/同步选优各4线程、批量8，已设为默认；依据200图×5轮增量协议：特征1.527×、同步整理观察减少34.31%、输出/评分一致、RSS增加13.81%/18.83%、12检查全部通过。DALI不采用，停止U2新增实验和持久分析批量预取；普通“继续”不恢复U2，只有用户明确重新开启才接续。正式验收仍`not_passed`，历史整树与HTTP结果保留原版本/配置边界。收尾决定见[U2收尾记录](docs/progress/u2_closeout_20261029.md)。按用户指示将收尾配置/文档和前轮成本测量工具、协议测试、精选汇总纳入本次本地提交；实际提交以`git log -1`为准，未推送。以下10月28日及更早摘要均为历史。
 
 > 收尾验证：新默认下缓存33/核心28/并行选优4/任务10共75项回归与47图M2选优脚本通过；默认及环境覆盖的独立子进程检查、文档链接和diff检查通过。没有新性能实验，无活动测试会话。
 
@@ -24,17 +26,17 @@
 
 以下引文为较早现场快照，其中活动进程、进行中和待审计均仅指当时；当前状态以上方及第1节为准。
 
-> **活动进程补记：** 主GPU对照会话13924（父PID2658783）；顺序HTTP调度会话22182已获宿主许可，`outputs/maintenance/performance_costs_20261028/run_http_after_baseline.py`等主对照`summary.json`后运行12图smoke及200图×5次。不要并发新增GPU负载，不要在运行中修改`tools/benchmark_feature_pipeline.py`及被测业务源码，否则版本检查会停止测量。待两项全部退出后运行同目录`audit_completed_costs.py`，包含每轮向量与首轮的真正跨进程余弦、全部5轮热缓存、整树导入、权重/原图/图库、HTTP输出字节核查；历史演员/命名差异另存，不能当作质量通过。首对历史/当前特征86.374/58.353秒、整理813.293/151.314秒，均154保留、0错误，仍为单轮。200张均原始路径（0整理完成目录标记），4剧目/8目录。新Git报告方法及导出成本已写`docs/reports/u2_u3_costs_20261028/README.md`，最终需补完整指标、回归/审计、刷新本记录和进度清单；尚未提交/推送新改动。
+> **活动进程补记：** 主GPU对照会话13924（父PID2658783）；顺序HTTP调度会话22182已获宿主许可，`outputs/maintenance/performance_costs_20261028/run_http_after_baseline.py`等主对照`summary.json`后运行12图smoke及200图×5次。不要并发新增GPU负载，不要在运行中修改`tools/performance/benchmark_feature_pipeline.py`及被测业务源码，否则版本检查会停止测量。待两项全部退出后运行同目录`audit_completed_costs.py`，包含每轮向量与首轮的真正跨进程余弦、全部5轮热缓存、整树导入、权重/原图/图库、HTTP输出字节核查；历史演员/命名差异另存，不能当作质量通过。首对历史/当前特征86.374/58.353秒、整理813.293/151.314秒，均154保留、0错误，仍为单轮。200张均原始路径（0整理完成目录标记），4剧目/8目录。新Git报告方法及导出成本已写`docs/reports/u2_u3_costs_20261028/README.md`，最终需补完整指标、回归/审计、刷新本记录和进度清单；尚未提交/推送新改动。
 
 > **2026-10-28 后续性能成本测量进行中。** 用户“好的，继续”授权接续U2/U3成本统计。已补`--baseline-scope tree`冻结`fdc1fda`全部`core_modules/config`、校验基线实际导入路径，并添加`--schedule interleaved`，每对各独立进程、轮次交替顺序、空特征缓存与持续GPU/CPU负载记录。12图宿主smoke已完成；完整200图×5次在`outputs/acceptance/core_upgrade/u2_corrected_tree_200x5_20261028/`进行，会话13924；默认processor/2解码/1质量/1哈希、Torch及BLAS4线程，GPU1。旧三入口基线报告保留，不把它当整树。smoke质量分数一致、向量最低余弦0.99999994，3张演员/命名显示不同，完整等价检查保留为失败；没有独立质量GT。
 >
-> 10000条合成复核记录×5次显式导出成本在`u3_export_10000x5_20261028/`完成，11检查通过；延后模式决定约1.8ms、全量导出281ms，决定+导出306ms。新增`tools/benchmark_workflow_costs.py`准备测量真实持久HTTP的reason→脚本复核→全量导出→organize成本，使用旧U8原始输入清单的原图新副本、真实SigLIP2/SCRFD/ArcFace，独立空缓存；景别/行当及远端LLM关闭，脚本决定不作为新增GT。GPU测量顺序执行，不能与主对照并行。4项性能协议完整性回归通过。沙箱CUDA失败原样保留在`u2_cost_smoke_sandbox_20261028/`；宿主smoke在`u2_cost_smoke_host_20261028/`。共享GPU存在其他进程，不宣称受控提升；正式U2/U3/U8不变。新源码/测试/精选摘要随Git，所有数据、权重、源码快照、任务数据库与原始运行产物留在忽略的`outputs/`。
+> 10000条合成复核记录×5次显式导出成本在`u3_export_10000x5_20261028/`完成，11检查通过；延后模式决定约1.8ms、全量导出281ms，决定+导出306ms。新增`tools/performance/benchmark_workflow_costs.py`准备测量真实持久HTTP的reason→脚本复核→全量导出→organize成本，使用旧U8原始输入清单的原图新副本、真实SigLIP2/SCRFD/ArcFace，独立空缓存；景别/行当及远端LLM关闭，脚本决定不作为新增GT。GPU测量顺序执行，不能与主对照并行。4项性能协议完整性回归通过。沙箱CUDA失败原样保留在`u2_cost_smoke_sandbox_20261028/`；宿主smoke在`u2_cost_smoke_host_20261028/`。共享GPU存在其他进程，不宣称受控提升；正式U2/U3/U8不变。新源码/测试/精选摘要随Git，所有数据、权重、源码快照、任务数据库与原始运行产物留在忽略的`outputs/`。
 
-> **2026-10-28 接续完成：目录整理及 U2 新完整对照结束，无活动实验。** `56baf19` 已于10月27日提交；下方10月26日“未提交”均为历史。依赖文件归入 `requirements/`，10份临时脚本归入 `tests/local/`；116份数据与9份运行产物仅移除Git跟踪，本地125份字节核查一致。历史验收目录、正式源码/测试、原图和图库保持路径，精选报告包及文档插图继续随Git保存。`tests/.gitignore`明确列出正式测试，`tools/audit_repository_scope.py`检查Git索引。
+> **2026-10-28 接续完成：目录整理及 U2 新完整对照结束，无活动实验。** `56baf19` 已于10月27日提交；下方10月26日“未提交”均为历史。依赖文件归入 `requirements/`，10份临时脚本归入 `tests/local/`；116份数据与9份运行产物仅移除Git跟踪，本地125份字节核查一致。历史验收目录、正式源码/测试、原图和图库保持路径，精选报告包及文档插图继续随Git保存。`tests/.gitignore`明确列出正式测试，`tools/maintenance/audit_repository_scope.py`检查Git索引。
 >
 > 新增可选`TRANS_FEATURE_HASH_WORKERS`（默认1），仅并行查询阶段的完整内容哈希；发布前仍逐图重读完整内容，不使用统计信息替代哈希。四线程查询/解码/同步选优对照已提交Pillow/双线程版本：12图的图文向量、评分、命名与缓存一致，特征3.257→2.496秒、整理16.441→13.347秒，仅为smoke。33缓存、28核心、18整理、4选优及10任务回归共93项通过，33缓存在1/4线程各通过一次，另6项多模态检查；初版并行发布竞争失败保留，最终发布采用顺序完整校验。200图×5次在`u2_parallel_200x5_20261028/`完成，11060退出0：特征43.270→28.341秒（1.527×），整理169.927→111.627秒（观察减少34.31%），RSS增加13.81%/18.83%，12项检查全部通过，本增量协议`passed`。十轮154保留、评分/命名一致、图文向量逐字节相同，0错误和热缓存0前向；670完整性核查通过。共享GPU负载变化明确保留，原corrected/后台受控成本/独立质量仍缺，正式U2仍`not_passed`。Git可见汇总在`docs/reports/u2_parallel_20261028/`。目录审计与回归日志在`outputs/maintenance/layout_20261028/`。本轮按用户指示作本地提交；实际提交哈希与结果以 `git log -1` 及本地 `outputs/maintenance/layout_20261028/commit_receipt.json` 为准，未推送。
 
-> **2026-10-26 技术报告更新交付：** [最新技术报告](docs/technical_report_20261026.md)为29页、15幅正文图；[PDF](docs/reports/technical_report_20261026/technical_report.pdf)、离线HTML、PNG/JPEG、可编辑SVG、31份证据快照与重建/验证脚本集中在[Git可见报告包](docs/reports/technical_report_20261026/README.md)。新版补充Pillow修复、双线程选优及DALI评价，保留五轮慢样本、P95未改善和正式U2 `not_passed`结论；测量版本仍绑定`4194277`与当时工作区摘要。历史26页报告的资源已迁入`docs/reports/technical_report_20261024/`，实验数字不变。此次提交范围为报告与文档导航，已有U2源码及其测试改动继续留在工作区；发布结果以Git提交和远端分支为准。
+> **2026-10-26 技术报告更新交付：** [最新技术报告](docs/reports/technical_report_20261026.md)为29页、15幅正文图；[PDF](docs/reports/technical_report_20261026/technical_report.pdf)、离线HTML、PNG/JPEG、可编辑SVG、31份证据快照与重建/验证脚本集中在[Git可见报告包](docs/reports/technical_report_20261026/README.md)。新版补充Pillow修复、双线程选优及DALI评价，保留五轮慢样本、P95未改善和正式U2 `not_passed`结论；测量版本仍绑定`4194277`与当时工作区摘要。历史26页报告的资源已迁入`docs/reports/technical_report_20261024/`，实验数字不变。此次提交范围为报告与文档导航，已有U2源码及其测试改动继续留在工作区；发布结果以Git提交和远端分支为准。
 
 > **2026-10-26 本次继续已完成：双线程全尺寸质量评分、批量失败复用张量及200图×5次完整对照结束，无活动GPU任务。** 新配置`TRANS_QUALITY_DECODE_WORKERS`默认1；双线程只用于同步选优且无景别分类器的路径，持久任务仍顺序执行。4项并行契约、29缓存、2评分统计及28核心/18整理共81项回归通过；旧回退重复解码已由新断言复现，旧核心固定模拟逐路径重解码的失败与更新后的实际输出/对齐检查均保留。
 >
@@ -42,7 +44,7 @@
 >
 > 32图×3次CPU评分诊断9.183→4.891秒；12图smoke略慢7.71%和沙箱CUDA失败保留。会话`87103`退出0，538项最终只读核查通过，14份测量源码/快照及200原图、图库/权重、47项旧产物摘要匹配。新完整报告在`u2_pillow_quality_200x5_20261026/`，本轮诊断/失败复现/审计/报告在`u2_cpu_quality_20261026/`。默认processor/质量1线程、DALI不采用；无其他智能体、未提交/推送。下方为此前Pillow/DALI完成记录。
 
-> **2026-10-26 最新交接：本轮U2预处理修复与独立DALI评价已完成，无活动GPU任务或服务，源码尚未提交/推送。** 用户2026-10-25恢复U2的授权有效，旧暂停记录仅为历史。使用说明见[图像预处理指南](docs/feature_preprocessing_guide.md)，完整结果和最终审计见`outputs/acceptance/core_upgrade/u2_resume_20261026/`。
+> **2026-10-26 最新交接：本轮U2预处理修复与独立DALI评价已完成，无活动GPU任务或服务，源码尚未提交/推送。** 用户2026-10-25恢复U2的授权有效，旧暂停记录仅为历史。使用说明见[图像预处理指南](docs/guides/feature_preprocessing_guide.md)，完整结果和最终审计见`outputs/acceptance/core_upgrade/u2_resume_20261026/`。
 >
 > 修复了已加载处理器`SizeDict`迭代键值对导致Pillow分支失效的问题；Pillow缓存升至`resize-v2`，原processor缓存保持。对照`4194277`已有批量实现，200图×5次特征64.078→42.277秒（1.516×）、整理158.099→142.883秒（减少9.624%），RSS下降18.94%/7.58%。200图最低余弦0.99999893，归档决定与质量分数完全一致，热缓存零前向、0错误；本次对照仅整理20%门槛未通过。该结果不能替代原`fdc1fda`顺序corrected基线或独立质量验收。
 >
@@ -53,7 +55,7 @@
 以下引文为 **2026-10-24 历史交付摘要**，其中“暂停/当前/无活动任务”仅指当时；本次接续以上方记录和第1节为准。
 
 > 最后更新：2026-10-24（UTC，按用户指示提交已完成的命名兼容、延后快照和质量复核续作）。这是异常中断、上下文切换和协作交接的首读文件。
-> 当时文档交付：面向技术评审与研发的[历史技术报告](docs/technical_report_20261024.md)，26页PDF、离线HTML及13幅正文图；可阅读资源现已迁入`docs/reports/technical_report_20261024/`。当时仅汇编已有实验，未重新推理；模型/分组默认和U2暂停保持。原始生成脚本与排版检查仍保留在本地历史输出。
+> 当时文档交付：面向技术评审与研发的[历史技术报告](docs/reports/technical_report_20261024.md)，26页PDF、离线HTML及13幅正文图；可阅读资源现已迁入`docs/reports/technical_report_20261024/`。当时仅汇编已有实验，未重新推理；模型/分组默认和U2暂停保持。原始生成脚本与排版检查仍保留在本地历史输出。
 > 当前交接点：本次提交收录`581f8fa`之后的命名兼容、延后快照、逐脸/事实复核与评测代码，提交哈希以`git log -1`及本地`completion_audit_20261024/commit_receipt.json`为准。100图按需观察已完成100请求/10检查，当前v2包包含1352事实和5图OCR，17项浏览器检查通过；1095脸评测入口完成。双人评测新补完整来源对齐和同图字节去重，先复现7失败子例、修复后15测试通过，旧页面与模型结果保留。13存储/27API、18整理/28核心、6身份评测已有通过日志。最终只读核查5647项通过，3365唯一文件摘要匹配（含582源文件/109图库文件），32语法/文档检查及112本地链接通过，见`completion_audit_20261024/`；无活动任务。用户明确没有新增GT/独立照片/两位复核人，全部人工标注仍0，正式质量缺项保留。
 > 当前未完成：375项原照片复核和1095脸人工标注、gallery/query隔离、独立final test、U4剩8正文/新增马可正例、U5双人事实与OCR转录、U6可信边界、U7偏好与模型对照；远端权重及受控整链路性能未验收。U2继续暂停，不以功能/合成规模通过代替质量验收。已有材料和评测入口可直接使用，不重复同一输入的推理或准备。
 > 当前模型结果仍沿用262开发集：均值25/28池R@3为SigLIP2 69.85%/53.44%、Gemma76.34%/71.76%，默认SigLIP2/legacy。历史报告保留绑定版本，不原地重跑；本次只作本地提交，未推送，领先数量以`git status --short --branch`为准。
@@ -72,7 +74,7 @@
 | 活动进程 | 无；U2历史整树会话13924、HTTP顺序调度22182均结束，隔离服务退出；其他编号为历史 |
 | 当前执行者 | 主会话；未分派其他智能体；本会话无活动goal对象 |
 
-先执行 `git status --short --branch`、`git diff --stat`，再阅读本文件与 [核心升级进度](docs/core_upgrade_progress.md)。验收定义以 [核心升级蓝图](docs/core_upgrade_blueprint.md) 为准。本文件是现场快照；后续用户指令、实际代码及带版本的原始报告优先于过时记录。
+先执行 `git status --short --branch`、`git diff --stat`，再阅读本文件与 [核心升级进度](docs/progress/core_upgrade_progress.md)。验收定义以 [核心升级蓝图](docs/design/core_upgrade_blueprint.md) 为准。本文件是现场快照；后续用户指令、实际代码及带版本的原始报告优先于过时记录。
 
 ## 2. 已确定的约束与标注范围
 
@@ -118,13 +120,13 @@
 | 识别与专辑 | 修改 `smart_organizer.py`、`actor_view.py`（均在 `core_modules/organize/`） | 输出 `identities` / `face_decisions`；专辑筛选保留其他身份参与竞争；角色表改写触发拒绝 |
 | 任务 / API / 工具 | 修改 `app/organize_tasks.py`、`app/main.py`、`core_modules/organize/organize_task.py`、`photo_agent_tools.py` | 传递 `identity_registry_file`、`face_threshold`、`face_margin`；绑定角色表哈希与执行版本；旧同步入口兼容 |
 | 工作台 | 修改 `app/static/workspace.js`、`app/templates/workspace.html` | 演员与角色表路径输入、项目状态保存、整理及专辑请求参数 |
-| 标注与检索工具 | 新增 `tools/import_verified_photo_labels.py`、`tools/evaluate_verified_scene_retrieval.py`、`tools/sourced_scene_candidates.py` | 导入已确认图级标签；中性PNG、剧目分池对照；来源快照/跨度/候选ID绑定与准备清单重建校验 |
-| 照片复核与导入修正 | 新增 `tools/prepare_photo_partition_review.py`、`tests/test_photo_partition_review.py`、`tests/test_verified_photo_label_import.py`；扩展独立import工具和.gitignore例外 | 原图/图库/输入只读、逐图检查点与同版resume、原始时间/相机流、375复核页面/草稿JSON；修复2条场次漏读，9/6测试与完整产物核查通过 |
-| 短块与固定向量 | 新增 `tools/scene_text_blocks.py`、`tools/prepare_scene_text_block_study.py`、`tools/evaluate_scene_text_block_study.py`、`tests/test_scene_text_blocks.py` | 精确引文块、64-token预算、均值/最大值预声明；一次编码/去重文档、同分数25/28排名；10测试、真实模型/数组审计通过，仅离线研究 |
+| 标注与检索工具 | 新增 `tools/review/import_verified_photo_labels.py`、`tools/scene/evaluate_verified_scene_retrieval.py`、`tools/scene/sourced_scene_candidates.py` | 导入已确认图级标签；中性PNG、剧目分池对照；来源快照/跨度/候选ID绑定与准备清单重建校验 |
+| 照片复核与导入修正 | 新增 `tools/review/prepare_photo_partition_review.py`、`tests/test_photo_partition_review.py`、`tests/test_verified_photo_label_import.py`；扩展独立import工具和.gitignore例外 | 原图/图库/输入只读、逐图检查点与同版resume、原始时间/相机流、375复核页面/草稿JSON；修复2条场次漏读，9/6测试与完整产物核查通过 |
+| 短块与固定向量 | 新增 `tools/scene/scene_text_blocks.py`、`tools/scene/prepare_scene_text_block_study.py`、`tools/scene/evaluate_scene_text_block_study.py`、`tests/test_scene_text_blocks.py` | 精确引文块、64-token预算、均值/最大值预声明；一次编码/去重文档、同分数25/28排名；10测试、真实模型/数组审计通过，仅离线研究 |
 | 回归 | 新增 `tests/test_identity_registry.py`、`tests/test_sourced_scene_candidates.py`；修改工作台测试与`.gitignore`例外 | U1共84项/浏览器通过；来源契约10项通过，包含引用注入/错误场次/输入改写/扩池 |
-| U3 恢复测量 | 修改 `tools/benchmark_face_task_completion.py` | `--cancel-after-crop`、裁剪检查点与发布核对；已有本地报告 |
-| 文档 | `docs/core_upgrade_progress.md`、`docs/multimodal_progress.md`、`docs/workspace_guide.md`、`docs/CHANGELOG.md` | 前轮恢复记录、U2 暂停、U1 验证、U4 配对结果与边界 |
-| 指南与交接 | 新增 `docs/identity_registry_guide.md`、`docs/sourced_scene_candidates_guide.md`、`docs/photo_partition_review_guide.md`、`WORK_STATE.md`；更新文档入口 | 身份/来源/照片复核契约、冻结输入与新262标签版本、结果边界、恢复与复现命令 |
+| U3 恢复测量 | 修改 `tools/face/benchmark_face_task_completion.py` | `--cancel-after-crop`、裁剪检查点与发布核对；已有本地报告 |
+| 文档 | `docs/progress/core_upgrade_progress.md`、`docs/progress/multimodal_progress.md`、`docs/guides/workspace_guide.md`、`docs/CHANGELOG.md` | 前轮恢复记录、U2 暂停、U1 验证、U4 配对结果与边界 |
+| 指南与交接 | 新增 `docs/guides/identity_registry_guide.md`、`docs/guides/sourced_scene_candidates_guide.md`、`docs/guides/photo_partition_review_guide.md`、`WORK_STATE.md`；更新文档入口 | 身份/来源/照片复核契约、冻结输入与新262标签版本、结果边界、恢复与复现命令 |
 
 `git diff` 不显示未跟踪文件内容，代码审查和提交时要同时检查 `git status --short` 中的 `??`。`outputs/` 被忽略，提交源码不会自动携带本地标注、图片或评测报告。
 
@@ -138,7 +140,7 @@
 | 评测工具 | `scene_retrieval_study.py`及prepare/evaluate入口；`evaluate_visual_budget.py`、`evaluate_ocr_evidence.py`、`benchmark_experimental_grouping.py`、`evaluate_temporal_research.py`、`evaluate_face_graph_checkpoint.py`、`check_real_workflow.py` | 新空目录/版本绑定/隔离数据；真实与合成报告各自记录边界 |
 | 测试与文档 | 新增各模块测试，扩展工作台/API/聚类测试及.gitignore例外；实验指南、进度、CHANGELOG、入口与本文件 | 失败复现保留；当时最终任务91项通过；已随`581f8fa`提交，未推送 |
 
-当前续作未提交范围：`filename_parser.py`、`burst_dedup.py`、`scene_reasoner.py`、`workspace_api.py`、`app/organize_tasks.py`、`check_real_workflow.py`与解析/整理/API回归；新增`tools/prepare_face_identity_review.py`、10项契约、指南、文档入口和状态。已整理序号不会被当作连拍依据；当前项目未经批准的旧幕次仍输出占位。
+当前续作未提交范围：`filename_parser.py`、`burst_dedup.py`、`scene_reasoner.py`、`workspace_api.py`、`app/organize_tasks.py`、`check_real_workflow.py`与解析/整理/API回归；新增`tools/review/prepare_face_identity_review.py`、10项契约、指南、文档入口和状态。已整理序号不会被当作连拍依据；当前项目未经批准的旧幕次仍输出占位。
 
 2026-10-24新增未提交范围：`review_store.py`、`review_queue.py`、`app/main.py`、`workspace.js`及相应回归支持延后快照；新增`benchmark_review_snapshots.py`、`audit_remote_model.py`、`collect_visual_observations.py`、`prepare_visual_fact_review.py`、`evaluate_face_identity_review.py`、`review_quality_metrics.py`、事实/身份评测与浏览器测试及指南。双人评测拒绝跨协议、来源、事实、OCR预测混用和同任务重复图字节；报告记录评测源码摘要。未变更默认模型、自动请求预算或U2暂停状态。
 
@@ -255,7 +257,7 @@ Gemma R@3 净增 8 张，但 R@1 净减 4 张；《天下归心》R@3 70.59%→5
 | --- | --- | --- |
 | 身份 / 核心 / 整理 / 工作台 | 15/15、28/28、17/17、24/24，共 84 项通过，退出码均为 0 | `u1_regression_final_20261022/summary.json` 及逐组日志；含测试与业务源码摘要 |
 | 浏览器 | 35 张真实剧照、五种屏宽、身份表参数/刷新、复核/恢复/错误分支等 21 个列出检查通过 | 同目录 `browser.log`、4 张截图；GPU 操作用替代响应，只验 UI/API 交互 |
-| 文档示例 | 角色表经真实 `IdentityRegistry` 验证，JSON 请求示例可解析 | `docs/identity_registry_guide.md`；本轮只读检查 |
+| 文档示例 | 角色表经真实 `IdentityRegistry` 验证，JSON 请求示例可解析 | `docs/guides/identity_registry_guide.md`；本轮只读检查 |
 | 两模型运行（原25历史） | 各自5项检查通过，退出0，评测入口随后增加来源校验 | 两个`followup`目录`summary.json`与上级`.stdout.log` |
 | 配对可比性（原25历史） | 12项检查通过；8份源码相同并匹配当时版本；清单字节、标签/角色表、260 query/GT和候选池一致 | `u4_verified_comparison_20261022/summary.json` |
 | 来源契约 | 10项通过；原文跨度、场次、query隔离、改写拒绝与扩池保留 | `u4_sourced_comparison_20261022/source_tests.log`；测试已加入Git忽略例外 |
@@ -279,14 +281,14 @@ U3 历史200图 HTTP/恢复报告保留；2026-10-23 已按当前源码另建292
 
 **2026-10-26覆盖说明：** U2预处理/Pillow/DALI及本次同步双线程选优/复用张量回退的完整对照均已结束，先读顶部与预处理指南。最新200图×5次特征1.385×、整理减少26.539%，仅特征门槛未过；Pillow与双线程均可选，DALI仅实验。原corrected基线、后台任务受控成本和独立质量尚待验收。下方2026-10-24的暂停与提交状态仅指历史，不重复已完成相同源码/输入的测量。
 
-**2026-10-24接续覆盖说明：** 上轮列为“正在准备”的100图观察、双人事实/OCR页面和身份评测入口现已完成，先看`completion_audit_20261024/summary.json`及[双人指南](docs/visual_fact_review_guide.md)、[逐脸指南](docs/face_identity_review_guide.md)。原始模板仍pending。用户已明确无新增GT、独立照片和两位复核人，不能自动补人工决定；后续收到真实复核/独立资料后再生成新评测报告。无新代码或数据不重跑已完成模型、浏览器和规模实验。下列历史待办中的兼容快照问题已由延后写入解决，显式导出成本和受控性能仍待验收。
+**2026-10-24接续覆盖说明：** 上轮列为“正在准备”的100图观察、双人事实/OCR页面和身份评测入口现已完成，先看`completion_audit_20261024/summary.json`及[双人指南](docs/guides/visual_fact_review_guide.md)、[逐脸指南](docs/guides/face_identity_review_guide.md)。原始模板仍pending。用户已明确无新增GT、独立照片和两位复核人，不能自动补人工决定；后续收到真实复核/独立资料后再生成新评测报告。无新代码或数据不重跑已完成模型、浏览器和规模实验。下列历史待办中的兼容快照问题已由延后写入解决，显式导出成本和受控性能仍待验收。
 
 1. **先读当前验收状态，保留已完成结果。** `resume_validation_20261023/stage_status.json`分别记录实现/功能/规模/质量与默认选择；最终独立核查为`completed_acceptance_audit.json`，真实原始流程为`u8_raw_workflow_200_20261023/summary.json`。本轮服务均结束，无需恢复旧会话或重跑相同输入。首轮已整理副本范围问题保留；新200图重处理已通过70项，正式U8仍不通过。
-2. **补U0/U1独立数据与人工标注。** 使用[照片复核指南](docs/photo_partition_review_guide.md)处理375项、14相机流/机身时钟、近重复/真实连拍和图库来源/框；王浩伟角色冲突仍需人工核对。图库108裁剪/46图与旧query名称对应，gallery/query隔离未完成。每剧仅1日期线索，现有数据仍development；补框级已知/unknown、独立场次/final test后再校准，不能把图级未列名当unknown。
+2. **补U0/U1独立数据与人工标注。** 使用[照片复核指南](docs/guides/photo_partition_review_guide.md)处理375项、14相机流/机身时钟、近重复/真实连拍和图库来源/框；王浩伟角色冲突仍需人工核对。图库108裁剪/46图与旧query名称对应，gallery/query隔离未完成。每剧仅1日期线索，现有数据仍development；补框级已知/unknown、独立场次/final test后再校准，不能把图级未列名当unknown。
 3. **补U4–U7质量证据。** 8项正文、马可第3/4幕/尾声正例与精确演出版未补齐；U5至少100图双人事实/文字转录、U6边界与可信时序、U7身份/镜像例外/连拍偏好仍缺。262图探索只有1个两图组，不够选优验收；未运行DINOv3/AdaFace/TOPIQ/MUSIQ明确留空。
 4. **保持已完成节点和默认选择。** 263/262新版标注及262图模型研究已完成，不再准备或重跑同一协议；旧260报告/短块协议/原图/正式图库保留。U3当前292图/1095脸可靠性复验和U5–U7功能/规模检查已有结果，无新改动不重复运行；远端权重核验仍缺。`581f8fa`已完成前轮44文件提交，本轮命名/复核续作未提交、未推送。默认SigLIP2/legacy，U2提速与DALI继续暂停。
 
-5. **使用新增逐脸复核材料完成人工依赖。** [1095脸复核页面](outputs/acceptance/core_upgrade/u1_face_identity_review_final_20261023/index.html)及[指南](docs/face_identity_review_guide.md)已准备，984对齐裁剪/111框上下文、35身份、12原图分页。选择已知/未知/不可评价及镜像例外，填写复核人和依据；草稿导出后校验，不自动应用标注或锁定test。当前人工核对仍0。U3全量兼容JSONL成本/远端权重、U0真实基线等剩余待办保留；不重复已通过GPU输入。
+5. **使用新增逐脸复核材料完成人工依赖。** [1095脸复核页面](outputs/acceptance/core_upgrade/u1_face_identity_review_final_20261023/index.html)及[指南](docs/guides/face_identity_review_guide.md)已准备，984对齐裁剪/111框上下文、35身份、12原图分页。选择已知/未知/不可评价及镜像例外，填写复核人和依据；草稿导出后校验，不自动应用标注或锁定test。当前人工核对仍0。U3全量兼容JSONL成本/远端权重、U0真实基线等剩余待办保留；不重复已通过GPU输入。
 
 短块与演出版只读复现（已通过，无需GPU；绑定源码不变时使用）：
 
@@ -306,14 +308,14 @@ MPLCONFIGDIR=/tmp/theatre-core-mpl /home/huachenghao/.conda/envs/face_scrfd_arcf
 MPLCONFIGDIR=/tmp/theatre-core-mpl /home/huachenghao/.conda/envs/face_scrfd_arcface/bin/python tests/test_workspace.py -v
 ```
 
-浏览器服务启动方式见 [核心升级进度的运行方式](docs/core_upgrade_progress.md)；确认测试服务与端口后运行 `WORKSPACE_URL=http://127.0.0.1:18301 node tests/test_workspace_browser.cjs`。GPU 业务请求在浏览器回归中有替代，结果仅证明 UI/API 交互。
+浏览器服务启动方式见 [核心升级进度的运行方式](docs/progress/core_upgrade_progress.md)；确认测试服务与端口后运行 `WORKSPACE_URL=http://127.0.0.1:18301 node tests/test_workspace_browser.cjs`。GPU 业务请求在浏览器回归中有替代，结果仅证明 UI/API 交互。
 
 Gemma 本轮执行命令（已经完成；需要新实验时更换非空输出目录，不能原地覆盖）：
 
 ```bash
 CUDA_VISIBLE_DEVICES=1 PYTHONPATH=outputs/core_upgrade_deps MPLCONFIGDIR=/tmp/theatre-core-mpl \
   /home/huachenghao/.conda/envs/face_scrfd_arcface/bin/python \
-  tools/evaluate_verified_scene_retrieval.py \
+  tools/scene/evaluate_verified_scene_retrieval.py \
   --labels outputs/acceptance/core_upgrade/verified_labels_roles_20261022/verified_photo_labels.json \
   --registry outputs/acceptance/core_upgrade/verified_labels_roles_20261022/identity_registry.json \
   --source-root data/ncpa_test \
@@ -338,18 +340,18 @@ Gemma 的本地权重配置与独立依赖说明见核心升级进度。GPU 编�
 | 2026-10-22 | 主会话 / 状态与文档 | 盘点 `49b9ce0` 上未提交 U1/U0 改动，恢复 U4 完成报告索引 | 第 5–6 节；无活动长任务交接 | U1 回归、使用说明、Gemma 同输入对照 |
 | 2026-10-22 02:48 | 主会话 / U1 回归 | 顺序运行身份、核心正确性、整理任务、工作台四组测试 | `outputs/acceptance/core_upgrade/u1_regression_initial_20261022/summary.json`；工具会话 `98529` | 等待结果并审查身份契约；再补使用说明 |
 | 2026-10-22 | 主会话 / 身份与专辑 | 初次身份 12/12、核心 28/28、整理 17/17；工作台在沙箱首个请求超时，宿主重跑 23/23 | `u1_regression_initial_20261022/workspace_host_retry.json`；原始失败记录保留 | 新增同名专辑及筛选回归 |
-| 2026-10-22 | 主会话 / U1 修复与说明 | 3 个新测试复现 4 处断言失败后修复跨照片同名合并和姓名/ID 筛选；补演员专辑 API 测试与角色表指南 | 初次目录 `same_name_reproduction.log`；新身份测试 15/15；`docs/identity_registry_guide.md` | 修复后完整回归与浏览器检查，再做 U4 同输入对照 |
+| 2026-10-22 | 主会话 / U1 修复与说明 | 3 个新测试复现 4 处断言失败后修复跨照片同名合并和姓名/ID 筛选；补演员专辑 API 测试与角色表指南 | 初次目录 `same_name_reproduction.log`；新身份测试 15/15；`docs/guides/identity_registry_guide.md` | 修复后完整回归与浏览器检查，再做 U4 同输入对照 |
 | 2026-10-22 | 主会话 / 当前版本验收 | 身份 15/15、核心 28/28、整理 17/17、工作台 24/24；指南 JSON 示例验证通过 | `u1_regression_final_20261022/summary.json`；浏览器会话 `97863`，隔离服务 `56203` | 保存浏览器结果并关闭测试服务 |
 | 2026-10-22 | 主会话 / U4 同输入对照 | 使用原 260 图中性清单和 25 个候选，先复跑当前源码的 SigLIP2 | `u4_verified_comparison_20261022/run_state.json`；会话 `44831`；输出 `u4_verified_siglip2_followup_20261022/` | 同一源码运行 Gemma，再核对输入/版本并生成比较报告 |
 | 2026-10-22 | 主会话 / 浏览器与 Gemma | 浏览器通过并将截图复制到本轮验收目录；SigLIP2 已完成，Gemma 已启动 | `u1_regression_final_20261022/browser.log`、`browser_screenshots/`；Gemma 会话 `73799` | 等待 Gemma、核对两个报告并更新最终接续点 |
 | 2026-10-22 | 主会话 / 本轮完成 | Gemma 正常结束，配对 12 项检查通过；R@3 +3.08 pp、R@1 −1.54 pp，保持 SigLIP2 默认；确认三剧目缺分幕正文 | `u4_verified_comparison_20261022/report.md`、`summary.json`、分析脚本；测试服务正常退出 | 补有出处的候选文本与 U0/身份正式标注；U2 暂停 |
 | 2026-10-22 03:36 | 主会话 / U4 官方资料采集 | 核对本地三条 NCPA 专题网址、抓取策略和 25 个候选标签；用户明确授权网上搜集剧目资料 | 新目录 `u4_ncpa_sources_20261022/`；尚未采集、未启动 GPU；保留全部旧输入 | 保存官网快照、哈希和原文引用；确认场次映射后冻结候选文本版本 |
 | 2026-10-22 | 主会话 / U4 官方来源恢复 | 沙箱 Python DNS 失败后获准宿主重试，三条专题 HTTP 200，快照和 SHA256 已保存；robots.txt 404。找到《假面舞会》2024 演出页六个明确分幕/分景段落 | `source_manifest.json`、`sandbox_fetch_attempt.json`、`raw/ncpa_ball_2024_event.html`；《样式雷》新专题与两部旧票务页也已保存 | 查询官网站内搜索和关联资料；场次仍缺的记录为缺项，不按整剧梗概猜序号 |
-| 2026-10-22 04:39 | 主会话 / U4 来源契约 | 官网明确《样式雷》第1、6、8场；中国侨网转北京日报逐幕报道《马可·波罗》，央视节目页核对编号；发现巡演压缩版限制和3个未观测后续幕次 | `tools/sourced_scene_candidates.py`、评测入口；`tests/test_sourced_scene_candidates.py` 10/10，暂未 GPU；样式雷第2场顺序暗示暂不采用 | 保存精确原文跨度、版本限制和缺项；固定25候选对照，再独立28候选完整池实验 |
+| 2026-10-22 04:39 | 主会话 / U4 来源契约 | 官网明确《样式雷》第1、6、8场；中国侨网转北京日报逐幕报道《马可·波罗》，央视节目页核对编号；发现巡演压缩版限制和3个未观测后续幕次 | `tools/scene/sourced_scene_candidates.py`、评测入口；`tests/test_sourced_scene_candidates.py` 10/10，暂未 GPU；样式雷第2场顺序暗示暂不采用 | 保存精确原文跨度、版本限制和缺项；固定25候选对照，再独立28候选完整池实验 |
 | 2026-10-22 04:44 | 主会话 / U4 候选版本冻结 | 六个引用来源、原文跨度和12个已映射候选已生成；马可第三、四幕与尾声作为3个额外候选；query、GT、原候选次序全部保留 | `candidate_texts_v1.json`、`candidate_texts_expanded_v1.json`、`prepared_samepool_v1/`、`prepared_expanded_v1/`、`source_audit.json`、重建脚本；10/10日志存入比较目录 | 宿主GPU顺序运行五份新报告；记录64-token文本截断及巡演版本限制 |
 | 2026-10-22 05:08 | 主会话 / U4 模型对照启动 | 新入口SigLIP2基线R@1 18.85%、R@3 55.00%，旧260图排名完全复现，7检查通过；四次后续运行获准宿主执行 | 比较目录 `run_remaining_models.py`、`run_state.json`；会话 `38976`，初始SigLIP2 PID `615109`；全部日志在父目录 | 等待四份报告，核对来源/输入/模型签名，分别分析文本与扩池效果 |
 | 2026-10-22 05:20 | 主会话 / U4 中断接续 | 核对run_state与会话38976，五份评测均退出0，GPU实验结束；固定25/扩展28候选输入保持冻结 | `u4_sourced_comparison_20261022/run_state.json`；Gemma分别77/188与60/177命中，分母260 | 核对五份报告完整性、旧Gemma可比性；生成可重现分析、来源映射指南并更新进度 |
-| 2026-10-22 | 主会话 / U4分析与文档 | 比较45项审计通过，保存逐剧目/幕次配对与扩池诊断、6来源原文/跨度/缺项、CPU64-token证据；更新指南与状态 | `u4_sourced_comparison_20261022/{summary.json,report.md,comparison_analysis.py,text_window_audit.json}`、`u4_ncpa_sources_20261022/source_report.md`、`docs/sourced_scene_candidates_guide.md` | 检查文档链接/哈希与diff，再登记完成；后续核对8项正文、演出版、新文本块及U0独立标注 |
+| 2026-10-22 | 主会话 / U4分析与文档 | 比较45项审计通过，保存逐剧目/幕次配对与扩池诊断、6来源原文/跨度/缺项、CPU64-token证据；更新指南与状态 | `u4_sourced_comparison_20261022/{summary.json,report.md,comparison_analysis.py,text_window_audit.json}`、`u4_ncpa_sources_20261022/source_report.md`、`docs/guides/sourced_scene_candidates_guide.md` | 检查文档链接/哈希与diff，再登记完成；后续核对8项正文、演出版、新文本块及U0独立标注 |
 | 2026-10-22 05:51 | 主会话 / U4来源v1完成交接 | 分析、来源报告、指南与状态同步完成；本地文档链接/摘要、五次退出码和diff检查通过；保留所有冻结输入与旧报告 | 比较目录`documentation_checks.json`及`run_state.json`登记完成；来源测试仍10项、比较审计45项；无提交/推送 | 下一次按第7节推进版本核对、新文本块及U0独立标注；U2保持暂停 |
 | 2026-10-22 06:25 | 主会话 / U4短原文块接续 | 复核v1所有实验已结束；官网2014升级版与2015巡演压缩差异保留。准备独立短块协议及同分数扩池比较 | 新目录`u4_text_blocks_20261022/run_state.json`；尚未新GPU评测，不改v1来源/评测源码 | 固定token预算、引用跨度及聚合规则；实现/测试后顺序运行两个后端 |
 | 2026-10-22 07:02 | 主会话 / U4短块协议冻结 | 260图、28候选、82原文块覆盖全部v1已选证据，最长64 tokens；去重102文档，候选内部无重复索引；实际块数更正为82 | `prepared/protocol.json`及SHA256、11源码绑定、`preflight.json`、10/10测试；`run_models.py`语法通过，计划与日志路径已登记；沙箱CUDA不可用 | 按沙箱规则请求新执行器宿主运行，两后端共12变体；完成后分析数组及演出版来源 |
@@ -359,7 +361,7 @@ Gemma 的本地权重配置与独立依赖说明见核心升级进度。GPU 编�
 
 | 2026-10-22 07:37 | 主会话 / U4短块完成交接 | 两后端12变体、102数组审计、10来源审计与只读复现完成；20文档/哈希检查通过，70本地链接有效；默认SigLIP2、分块仅离线、U2暂停 | `u4_text_blocks_20261022/run_state.json`状态为`development_study_completed_with_open_validation_gaps`；`documentation_checks.json`、完整报告/CSV；无活动GPU、无提交/推送 | 独立演出/近重复/连拍划分、8正文/新候选正例、精确版本；U1冲突/框级标注与正式校准 |
 | 2026-10-22 07:55 | 主会话 / U0划分只读盘点 | 582文件/319图、263已标注；29张未导入舞台照均为样式雷；图库109裁剪名称唯一对应47源图；每剧1日期，原图拍摄时间多数存在 | 原清单/标注/图库只读；新目录`u0_partition_review_20261022/`计划中；未修改冻结源码、未启动GPU | 新离线核查工具、输入摘要/EXIF/图库来源与可浏览近重复/时间序列；不自动确认为独立场次或final test |
-| 2026-10-22 08:12 | 主会话 / U0复核准备工具 | 新独立工具、逐图校验和检查点/同版resume、原始EXIF/相机分流、使用记录、近重复/同名/时间及图库来源页面；9契约测试及语法通过 | `tools/prepare_photo_partition_review.py`、`tests/test_photo_partition_review.py`；新目录`run_review.py`/`run_state.json`；旧绑定源码未改 | CPU准备真实319图/109裁剪；保存命令/PID/日志，完成后核查摘要、页面、输入及冻结协议 |
+| 2026-10-22 08:12 | 主会话 / U0复核准备工具 | 新独立工具、逐图校验和检查点/同版resume、原始EXIF/相机分流、使用记录、近重复/同名/时间及图库来源页面；9契约测试及语法通过 | `tools/review/prepare_photo_partition_review.py`、`tests/test_photo_partition_review.py`；新目录`run_review.py`/`run_state.json`；旧绑定源码未改 | CPU准备真实319图/109裁剪；保存命令/PID/日志，完成后核查摘要、页面、输入及冻结协议 |
 | 2026-10-22 08:36 | 主会话 / U0复核完成与导入缺口 | CPU退出0：286原始拍摄时间、14流/14逆序、4近重复对、49同名组/17跨幕次、375复核项；20完整性/759产物只读核查、宿主浏览器12项通过 | 会话59907/33879均退出0；`u0_partition_review_20261022/artifacts/summary.json`、复核HTML/模板、`verification.log`/`browser_summary.json`/3截图；未作人工决定 | 连字符分隔的已确认幕次2处被旧导入器漏读；修独立import工具并另生成新263图/262幕次标注版本，旧标注和U4冻结产物不改 |
 | 2026-10-22 08:55 | 主会话 / U0新版标注与文档 | 连字符幕次先复现4失败，修正后6测试通过；新263图/262幕次12差异审计通过、旧260标签/人物/注册表字节保留；补照片复核指南、阶段/版本/状态入口 | 导入会话53360退出0；新`verified_labels_scene_segments_v2_20261022/`与`import_gap_audit.json`；短块协议及11源码摘要不变；未新GPU | 最终文档链接/源码/产物摘要核查，保存完成状态；后续人工核查/独立数据、新262协议、8正文/新增马可正例 |
 | 2026-10-22 09:07 | 主会话 / U0本轮完成交接 | 28摘要/文档检查通过、90本地链接有效；语法/diff通过，全部旧评测/原图/图库/注册表字节保留；新263/262标注与375复核项完成，无活动长任务 | `u0_partition_review_20261022/documentation_checks.json`、运行/交接JSON、指南；61551退出0；无提交/推送 | 从第7节核查/独立数据/8项正文/马可新候选正例接续；262图新比较另建协议，U2暂停 |

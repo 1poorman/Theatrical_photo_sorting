@@ -10,31 +10,32 @@
 | 镜头分类 | 景别分类（特写/近景/中景/全景） | YOLO11l-pose |
 | 背景修复 | 人物去除后背景修复 | LAMA (ModelScope) |
 | 图像检索 | embedding 索引、相似检索、聚类分组 | ResNet50/101、DINOv2、SigLIP2 (faiss) |
-| 智能整理 | 连拍去重选优、半自动人脸库、人脸聚类建库（无标注自举）、按演员视图、场景划分、行当分类、规范命名流水线 | SCRFD+ArcFace、YOLO11l-pose、SigLIP2 zero-shot（详见 `docs/smart_organize_blueprint.md`） |
-| 多模态整理 | 官方剧目信息/剧情知识库、图文向量候选召回、本地大模型闭集幕次判定、人工复核队列（详见 `docs/multimodal_context_blueprint.md`） | 离线词法 + SigLIP2 图文向量、OpenAI 兼容本地模型级联 |
+| 智能整理 | 连拍去重选优、半自动人脸库、人脸聚类建库（无标注自举）、按演员视图、场景划分、行当分类、规范命名流水线 | SCRFD+ArcFace、YOLO11l-pose、SigLIP2 zero-shot（详见 `docs/design/smart_organize_blueprint.md`） |
+| 多模态整理 | 官方剧目信息/剧情知识库、图文向量候选召回、本地大模型闭集幕次判定、人工复核队列（详见 `docs/design/multimodal_context_blueprint.md`） | 离线词法 + SigLIP2 图文向量、OpenAI 兼容本地模型级联 |
 
 可视化入口已整合为「幕间」工作台，按 **影像资料 → 剧目与剧情 → 演员与角色 → 场景复核 → 整理与导出** 组织功能。剧照、剧情和人工标签共享一个项目上下文；支持看图复核并自动将最新标签传给整理流水线。
 
 ![幕间整理工作台](./assets/workspace-desktop.png)
 
-操作与验证说明见 [工作台使用指南](docs/workspace_guide.md)。之前的可视化界面完整保留，可通过工作台右上角「旧版界面」或 `/legacy` 进入。
+操作与验证说明见 [工作台使用指南](docs/guides/workspace_guide.md)。之前的可视化界面完整保留，可通过工作台右上角「旧版界面」或 `/legacy` 进入。
 
 
 ## 文档导航
 
 - [工作状态与中断接续](WORK_STATE.md)：当前交接点、关键节点、提交范围、实验产物和协作接续步骤。
 - [文档中心](docs/README.md)：阅读顺序、现行说明与历史设计分类。
+- [工具目录](tools/README.md)：按 8 个主题查找命令行工具；[目录结构与旧路径](docs/guides/repository_layout.md)。
 - [U2 最新性能增量报告](docs/reports/u2_parallel_20261028/README.md)：200图×5次，特征1.527×、整理观察减少34.31%；输出一致，保留共享负载与正式验收边界。
-- [最新技术报告](docs/technical_report_20261026.md)：29页、15幅正文插图，包含最新U2性能与DALI评价；[PDF](docs/reports/technical_report_20261026/technical_report.pdf)与插图随Git保存，可在GitHub阅读。
-- [工作台使用指南](docs/workspace_guide.md)：目录导入、图文分析、看图复核与归档。
-- [SwinFace 与年龄估计](docs/swinface_guide.md)：工作台逐脸年龄、上传/API/CLI、[模型对比](docs/reports/swinface_20261111/README.md)与[权重压缩](docs/reports/swinface_quantization_20261111/README.md)（推荐 FP16，61.8 MiB）。
-- [演员身份与角色表](docs/identity_registry_guide.md)：稳定身份 ID、剧目角色、同名演员专辑、JSON 格式与 API 参数。
-- [有出处的分幕候选](docs/sourced_scene_candidates_guide.md)：国家大剧院剧目资料、来源映射、固定候选池与扩池比较及复现。
-- [视觉证据与分组实验](docs/experimental_components_guide.md)：调用预算、缓存、按需 OCR、时序分段与图聚类的 API 配置、实测和采用边界。
-- [核心升级蓝图](docs/core_upgrade_blueprint.md)：正确性修复、批量性能与开源算法升级，U0–U8 分阶段验收；[执行进度](docs/core_upgrade_progress.md) 记录实际完成状态。
+- [最新技术报告](docs/reports/technical_report_20261026.md)：29页、15幅正文插图，包含最新U2性能与DALI评价；[PDF](docs/reports/technical_report_20261026/technical_report.pdf)与插图随Git保存，可在GitHub阅读。
+- [工作台使用指南](docs/guides/workspace_guide.md)：目录导入、图文分析、看图复核与归档。
+- [SwinFace 与年龄估计](docs/guides/swinface_guide.md)：工作台逐脸年龄、上传/API/CLI、[模型对比](docs/reports/swinface_20261111/README.md)与[权重压缩](docs/reports/swinface_quantization_20261111/README.md)（推荐 FP16，61.8 MiB）。
+- [演员身份与角色表](docs/guides/identity_registry_guide.md)：稳定身份 ID、剧目角色、同名演员专辑、JSON 格式与 API 参数。
+- [有出处的分幕候选](docs/guides/sourced_scene_candidates_guide.md)：国家大剧院剧目资料、来源映射、固定候选池与扩池比较及复现。
+- [视觉证据与分组实验](docs/guides/experimental_components_guide.md)：调用预算、缓存、按需 OCR、时序分段与图聚类的 API 配置、实测和采用边界。
+- [核心升级蓝图](docs/design/core_upgrade_blueprint.md)：正确性修复、批量性能与开源算法升级，U0–U8 分阶段验收；[执行进度](docs/progress/core_upgrade_progress.md) 记录实际完成状态。
 - [项目说明](docs/PROJECT_GUIDE.md)：文件职责、部署配置、业务流程、数据产物、维护与排障。
 - [版本迭代记录](docs/CHANGELOG.md)：按日期和 Git 提交追溯；未发布改动单独记录，不虚构版本号。
-- [高级智能体](docs/agentic_tools_blueprint.md)：LangChain CLI/API、工具边界及模型配置。
+- [高级智能体](docs/design/agentic_tools_blueprint.md)：LangChain CLI/API、工具边界及模型配置。
 
 ## 目录结构
 
@@ -187,7 +188,7 @@ python -m app.photo_agent_cli --model auto --protocol json --session demo
 
 `auto` 使用 `small_diag_*` 小模型配置优先、`.env` 大模型兜底；可用 `--model big` 单独选择大模型。
 CLI 支持目录检查、知识库、场景候选与复核准备；完整整理需在主服务环境安装智能体依赖后，调用高级智能体 API。
-原 `/api/organize/agent/chat` 保留不变。详细示例与限制见 [高级智能体蓝图](docs/agentic_tools_blueprint.md)。
+原 `/api/organize/agent/chat` 保留不变。详细示例与限制见 [高级智能体蓝图](docs/design/agentic_tools_blueprint.md)。
 
 ## 人脸识别
 
@@ -195,7 +196,7 @@ CLI 支持目录检查、知识库、场景候选与复核准备；完整整理�
 
 - **推理后端**：`device='tensorrt'`（默认，FP16 加速）/ `'tensorrt:N'` / `'cuda'` / `'cpu'`，TRT 不可用时自动回退
 - **依赖版本**：`tensorrt-cu12==10.16.1.11` 必须搭配 onnxruntime 1.23.x（链接 `libnvinfer.so.10`）
-- **性能**（RTX 3090）：单图端到端 184ms（含降采样解码、批量特征提取），详见 `docs/optimization_report.md`
+- **性能**（RTX 3090）：单图端到端 184ms（含降采样解码、批量特征提取），详见 `docs/archive/optimization_report.md`
 - **阈值**：`known_threshold=0.55`（ArcFace 余弦相似度，同人 0.5~0.8、异人 <0.3，无需分数校准）
 
 ```python
@@ -204,16 +205,16 @@ system = FaceRecognitionSystem(scrfd_path, arcface_path, device='tensorrt')
 results, annotated = system.recognize_face('photo.jpg', known_threshold=0.55)
 ```
 
-Docker 默认将人脸与图像向量存入 Qdrant；本地直接运行仍兼容 Elasticsearch 人脸库（`face_database_512`）和 FAISS 图像索引。后端与连接配置见 `config/base.py`，支持环境变量覆盖；迁移与接口用法见 [在线向量库指南](docs/qdrant_guide.md)。
+Docker 默认将人脸与图像向量存入 Qdrant；本地直接运行仍兼容 Elasticsearch 人脸库（`face_database_512`）和 FAISS 图像索引。后端与连接配置见 `config/base.py`，支持环境变量覆盖；迁移与接口用法见 [在线向量库指南](docs/guides/qdrant_guide.md)。
 
 ## 智能整理（Smart Organizer）
 
 将原始摄影目录自动整理为规范命名目录（推荐在 `http://localhost:8199/organize` 页面操作，
-按工作台导航使用；[使用指南](docs/workspace_guide.md) 说明完整操作链。下文卡片编号对应
-`/organize/advanced` 中保留的高级表单；设计细节见 `docs/smart_organize_blueprint.md`）。
+按工作台导航使用；[使用指南](docs/guides/workspace_guide.md) 说明完整操作链。下文卡片编号对应
+`/organize/advanced` 中保留的高级表单；设计细节见 `docs/design/smart_organize_blueprint.md`）。
 
 图文结合、官方剧目信息知识库、本地大模型级联和高级智能体扩展见
-[`docs/multimodal_context_blueprint.md`](docs/multimodal_context_blueprint.md)。
+[`docs/design/multimodal_context_blueprint.md`](docs/design/multimodal_context_blueprint.md)。
 
 ### 使用流程
 
@@ -289,8 +290,8 @@ Docker 默认将人脸与图像向量存入 Qdrant；本地直接运行仍兼容
 在智能整理基础上，把"看图猜场景"升级为可追溯的证据融合：官方剧目信息/剧情构成
 知识库，剧照经图文向量召回候选幕次，再由本地大模型在**闭集**内判定，最后经人工
 复核写入规范文件名。设计、里程碑与验收标准见
-[`docs/multimodal_context_blueprint.md`](docs/multimodal_context_blueprint.md)，
-实施进度见 [`docs/multimodal_progress.md`](docs/multimodal_progress.md)。
+[`docs/design/multimodal_context_blueprint.md`](docs/design/multimodal_context_blueprint.md)，
+实施进度见 [`docs/progress/multimodal_progress.md`](docs/progress/multimodal_progress.md)。
 
 ```
 剧目信息.txt / 官方 URL
@@ -344,7 +345,7 @@ python tests/test_seg_clothes_v2.py # 人像分割
 python tests/test_siglip2.py        # SigLIP2 embedding
 python tests/test_server_load.py    # 服务端模型加载链
 
-# 智能整理（Smart Organizer，见 docs/smart_organize_blueprint.md）
+# 智能整理（Smart Organizer，见 docs/design/smart_organize_blueprint.md）
 python tests/test_filename_parser.py  # 文件名解析全量回归（无模型依赖）
 python tests/test_burst_dedup.py      # 连拍去重选优（含景别分类）
 python tests/test_face_db_build.py    # 人脸库两轮构建（需 GPU，产出 outputs/tmp_face_db）
@@ -369,12 +370,12 @@ docker compose logs -f theatrical-photo-sorting
 
 工作台：`http://localhost:8199/organize`；API 文档：`http://localhost:8199/docs`；健康检查：`http://localhost:8199/api/health`。
 
-Qdrant 保存图像、人脸向量和检索元数据；图像索引目录只需 `vector_store.json` 连接清单。应用直接查询在线集合，默认精确余弦检索；旧 FAISS 文件继续可读，离线分组仍使用现有算法。数据库仍需要磁盘空间：入库解决应用全量加载和增量维护问题，不会消除向量、索引及原图的容量需求。见 [改造方案](docs/qdrant_upgrade_plan.md) 与 [容器对比结果](docs/reports/qdrant_20261102/README.md)。
+Qdrant 保存图像、人脸向量和检索元数据；图像索引目录只需 `vector_store.json` 连接清单。应用直接查询在线集合，默认精确余弦检索；旧 FAISS 文件继续可读，离线分组仍使用现有算法。数据库仍需要磁盘空间：入库解决应用全量加载和增量维护问题，不会消除向量、索引及原图的容量需求。见 [改造方案](docs/design/qdrant_upgrade_plan.md) 与 [容器对比结果](docs/reports/qdrant_20261102/README.md)。
 
 - 应用等待 Qdrant 健康后，通过 Compose 内网 `http://qdrant:6333` 访问；数据库不映射宿主机端口，使用独立 `qdrant_data` 命名卷。模型加载和首次 TRT 构建需几分钟；`/api/health` 只确认 HTTP 服务运行。
 - 权重只读挂载；`data/`、`outputs/`、`logs/` 挂载宿主机目录；向量库、TRT 引擎和下载缓存通过命名卷持久化。业务表单填写容器内路径，例如 `/app/data/照片目录`、`/app/outputs/整理结果`。
 - 默认分配宿主机 GPU0，在容器内使用可见 GPU0。更改 GPU、端口或后端，可复制 `docker.env.example` 为 `.env.docker`，编辑后运行 `docker compose --env-file .env.docker up -d --build`。
-- 旧 ES 由 `--profile legacy` 启动，原 `elasticsearch_data` 卷保留。切换后端不会自动迁移旧数据，显式迁移步骤见 [指南](docs/qdrant_guide.md)。启用 ES 时仍需 `vm.max_map_count >= 262144`。
+- 旧 ES 由 `--profile legacy` 启动，原 `elasticsearch_data` 卷保留。切换后端不会自动迁移旧数据，显式迁移步骤见 [指南](docs/guides/qdrant_guide.md)。启用 ES 时仍需 `vm.max_map_count >= 262144`。
 - `docker compose down` 保留数据；后续 `up -d` 复用同一库。不同的 `-p` 项目名会创建另一套卷；`down -v` 会删除命名卷中的向量及缓存。
 - 镜像安装视觉服务和 `requirements/agent.txt` 的高级智能体依赖。现有 `.env` 不打包进镜像；如需使用大模型配置，启动时追加 `-f docker-compose.yml -f docker-compose.llm.yml`，将 `.env` 只读挂载至 `/app/.env`。连接地址应能从容器内访问。
 

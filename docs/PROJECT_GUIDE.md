@@ -1,12 +1,12 @@
 # 项目说明与维护指南
 
-更新日期：2026-09-17。本文说明当前工作区，包括尚未发布的 LangChain 高级智能体；历史状态以 [CHANGELOG](CHANGELOG.md) 为准。
+更新日期：2026-11-12。本文说明当前工作区，包括尚未发布的 LangChain 高级智能体；历史状态以 [CHANGELOG](CHANGELOG.md) 为准。
 
 ## 1. 项目定位与架构
 
 系统面向戏剧照片处理、检索和整理，包含通用图像工具、人脸识别、智能整理、多模态场景复核和对话智能体。
 
-2026-10-19 制定的 [核心升级蓝图](core_upgrade_blueprint.md) 覆盖正确性、批量处理、任务恢复和开源算法比较；已开展首轮修复、数据清单及本地多模态模型验证，当前状态、配置与验收命令见 [升级进度](core_upgrade_progress.md)。
+2026-10-19 制定的 [核心升级蓝图](design/core_upgrade_blueprint.md) 覆盖正确性、批量处理、任务恢复和开源算法比较；已开展首轮修复、数据清单及本地多模态模型验证，当前状态、配置与验收命令见 [升级进度](progress/core_upgrade_progress.md)。
 
 ```text
 FastAPI / Web UI / 独立智能体 CLI
@@ -33,6 +33,8 @@ FastAPI / Web UI / 独立智能体 CLI
 | `core_modules/*.py` | 人像检测/分割、景别、修复、图像向量检索 |
 | `core_modules/organize/` | 文件名解析、去重、建库、演员视图、知识、复核、智能体 |
 | `core_modules/tools/` | 图像 I/O、日志、可视化、质量工具，优先复用 |
+| `tools/` | 按 8 个主题分类的命令行工具，入口见 [工具清单](../tools/README.md) |
+| `docs/` | 指南、设计、进度、报告与历史资料，入口见 [文档中心](README.md) |
 | `assets/` | 随 Git 保存的文档截图；样例原图位于本地 `data/sample_images/` |
 | `data/ncpa_test/` | 本地剧目测试数据，不随普通克隆提供 |
 | `data/face_database/` | 人脸锚定库，含敏感数据，不公开提交 |
@@ -45,7 +47,9 @@ FastAPI / Web UI / 独立智能体 CLI
 | `requirements/agent.txt` | LangChain 扩展依赖，不包含视觉服务完整依赖 |
 | `Dockerfile`、`docker-compose.yml` | 主服务镜像与 GPU/存储挂载 |
 
-2026-10-28：环境文件集中于 `requirements/`；临时脚本归档至 `tests/local/`。正式代码与测试、原图/图库和历史验收目录保持路径。`tests/.gitignore` 明确列出随 Git 保存的测试；`python tools/audit_repository_scope.py` 检查暂存索引，排除本地数据、权重、缓存、日志和实验输出。文档截图与精选技术报告包继续随 Git 保存。
+2026-10-28：环境文件集中于 `requirements/`；临时脚本归档至 `tests/local/`。正式代码与测试、原图/图库和历史验收目录保持路径。`tests/.gitignore` 明确列出随 Git 保存的测试；`python tools/maintenance/audit_repository_scope.py` 检查暂存索引，排除本地数据、权重、缓存、日志和实验输出。文档截图与精选技术报告包继续随 Git 保存。
+
+2026-11-12：工具与专题文档迁入分类子目录，目录规则与旧路径查找见 [目录结构与迁移](guides/repository_layout.md)。脚本导入、OCR 子进程、Docker 基准入口和报告重建路径已同步调整。
 
 ## 3. 安装与启动
 
@@ -76,7 +80,7 @@ python -m app.photo_agent_cli --session demo --model auto --protocol json
 
 ### Docker
 
-`docker compose up -d --build` 启动可视化工作台（8199，包含全部 API）和 Qdrant 1.20.0，应用等待数据库健康后启动。图像与人脸向量在线查询，默认保持精确余弦；图像本地保存小型连接清单，旧 FAISS 仍可读取。宿主机需安装支持 CUDA 12.8 的 NVIDIA 驱动及 NVIDIA Container Toolkit。权重只读挂载，数据、输出、日志和 Qdrant/TRT/模型缓存持久化。Qdrant 仅在 Compose 内网开放 6333；首次使用为空库。旧 ES 数据卷保留，可用 `--profile legacy` 启动迁移或回退（启用 ES 时需 `vm.max_map_count >= 262144`）。配置见 `docker.env.example`，迁移、增删、回退与容量管理见 [在线向量库指南](qdrant_guide.md)，测量见 [Qdrant 对比报告](reports/qdrant_20261102/README.md)。
+`docker compose up -d --build` 启动可视化工作台（8199，包含全部 API）和 Qdrant 1.20.0，应用等待数据库健康后启动。图像与人脸向量在线查询，默认保持精确余弦；图像本地保存小型连接清单，旧 FAISS 仍可读取。宿主机需安装支持 CUDA 12.8 的 NVIDIA 驱动及 NVIDIA Container Toolkit。权重只读挂载，数据、输出、日志和 Qdrant/TRT/模型缓存持久化。Qdrant 仅在 Compose 内网开放 6333；首次使用为空库。旧 ES 数据卷保留，可用 `--profile legacy` 启动迁移或回退（启用 ES 时需 `vm.max_map_count >= 262144`）。配置见 `docker.env.example`，迁移、增删、回退与容量管理见 [在线向量库指南](guides/qdrant_guide.md)，测量见 [Qdrant 对比报告](reports/qdrant_20261102/README.md)。
 
 Dockerfile 安装视觉服务、ModelScope framework 和 `requirements/agent.txt` 的 LangChain 依赖。现有 `.env` 不打包进镜像；启用大模型配置时追加 `-f docker-compose.yml -f docker-compose.llm.yml`，将配置只读挂载至 `/app/.env`，并使用容器可访问的模型端点。不要将含密钥的文件写入镜像。业务表单使用容器内路径，例如 `/app/data/...` 和 `/app/outputs/...`。
 
@@ -103,7 +107,7 @@ Dockerfile 安装视觉服务、ModelScope framework 和 `requirements/agent.txt
 
 ## 5. 业务操作与数据产物
 
-浏览器推荐使用 `/organize` 多模态工作台，操作顺序见 [工作台使用指南](workspace_guide.md)。`/ui` 为同入口；右上角「旧版界面」通往 `/legacy`，保留 `/legacy/ui` 照片处理与 `/legacy/organize` 智能整理，两页可互相切换并返回新版。`/tools` 和 `/organize/advanced` 分别作为旧版两页的兼容入口。项目设置在浏览器保存，照片、知识库和人工复核结果仍保存在服务器目录。
+浏览器推荐使用 `/organize` 多模态工作台，操作顺序见 [工作台使用指南](guides/workspace_guide.md)。`/ui` 为同入口；右上角「旧版界面」通往 `/legacy`，保留 `/legacy/ui` 照片处理与 `/legacy/organize` 智能整理，两页可互相切换并返回新版。`/tools` 和 `/organize/advanced` 分别作为旧版两页的兼容入口。项目设置在浏览器保存，照片、知识库和人工复核结果仍保存在服务器目录。
 
 ### 标准整理
 

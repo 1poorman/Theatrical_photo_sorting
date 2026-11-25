@@ -345,7 +345,7 @@ LEGACY_ORGANIZE_HTML = r"""<!DOCTYPE html>
                 · 人工决定写入不可变修订日志，重跑不会被覆盖；<br>
                 · 导出 scene_labels.json 后可在卡片③「场景证据文件」中引用；<br>
                 · 未审核 / unknown 保持 scene-XX 占位，不写入最终文件名。<br>
-                设计见 docs/multimodal_context_blueprint.md。
+                设计见 docs/design/multimodal_context_blueprint.md。
             </div>
             <form id="review-load-form">
                 <div class="row">

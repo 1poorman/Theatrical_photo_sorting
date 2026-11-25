@@ -1,57 +1,29 @@
 # 文档中心
 
-更新时间：2026-11-11。文档基于当前工作区与 Git 历史整理；代码和测试文件保留原路径，避免破坏导入、样本路径及历史链接。
+更新时间：2026-11-12。按阅读目的分类；当前交接点见 [WORK_STATE](../WORK_STATE.md)，项目入口见 [README](../README.md)。
 
-异常中断后继续或协作接手，先读 [工作状态与中断接续](../WORK_STATE.md)，其中记录当前优先级、未提交改动、验证边界与下一步命令。
+## 按需求查找
 
-## 推荐阅读顺序
-
-1. [项目 README](../README.md)：能力概览、快速开始、API 清单。
-2. [项目说明](PROJECT_GUIDE.md)：文件职责、运行配置、业务操作、数据与维护。
-3. [版本迭代记录](CHANGELOG.md)：已提交历史与未发布改动。
-4. 按需求阅读以下设计与验收资料。
-
-## 文档分层
-
-| 文档 | 定位 | 使用方式 |
+| 需求 | 入口 | 内容 |
 | --- | --- | --- |
-| [WORK_STATE.md](../WORK_STATE.md) | 当前开发交接快照 | 异常恢复、关键节点、未提交改动与多智能体协作 |
-| [technical_report_20261026.md](technical_report_20261026.md) | 最新技术评审报告（29页PDF、离线HTML、15幅正文图） | 功能架构、14种检索变体、Pillow修复、双线程选优与DALI评价；PNG、SVG和31份证据快照随Git保存 |
-| [technical_report_20261024.md](technical_report_20261024.md) | 历史技术报告（26页、13幅正文图） | 保留当时数字与结论；PDF、HTML及图片已迁入Git可见归档 |
-| [PROJECT_GUIDE.md](PROJECT_GUIDE.md) | 当前项目手册 | 部署、接手开发、排障与文件管理 |
-| [qdrant_guide.md](qdrant_guide.md) | 在线向量库 | Docker 默认后端、增删过滤、显式迁移、回退与容量管理 |
-| [qdrant_upgrade_plan.md](qdrant_upgrade_plan.md) | 向量库升级方案 | 范围、实施步骤、冻结对比口径与验收记录 |
-| [Qdrant 对比报告](reports/qdrant_20261102/README.md) | 容器实测 | 真实向量和 1 万/10 万合成向量对比，召回、延迟、内存、磁盘与局限 |
-| [人脸技术栈选型实验](reports/face_stack_20261106/README.md) | 检测、识别与向量检索选型 | SCRFD、ArcFace 同类模型和 Qdrant/FAISS/ES 的本地实验、最终推荐与许可边界 |
-| [workspace_guide.md](workspace_guide.md) | 多模态整理工作台 | 图片浏览、剧情关联、看图复核、整理导出与界面验收 |
-| [SwinFace 与年龄估计](swinface_guide.md) | 工作台、API 与 CLI | 逐脸年龄、[识别对比](reports/swinface_20261111/README.md)和 [FP16 / INT8 压缩](reports/swinface_quantization_20261111/README.md) |
-| [identity_registry_guide.md](identity_registry_guide.md) | 演员身份与剧目角色表 | JSON 格式、身份与角色来源、专辑筛选、API 参数和任务恢复 |
-| [sourced_scene_candidates_guide.md](sourced_scene_candidates_guide.md) | 有出处的分幕候选与U4复现 | 官方/媒体资料、精确引用、短原文块/固定向量25/28对照、来源v1与演出版边界 |
-| [photo_partition_review_guide.md](photo_partition_review_guide.md) | 剧照划分与图库来源复核 | 原/整理副本、EXIF相机时间、近重复/连拍线索、复核草稿与262条新版幕次标签 |
-| [face_identity_review_guide.md](face_identity_review_guide.md) | 逐脸身份标注 | 1095张脸的原图位置、已知/未知/不可评价与镜像例外、分页草稿和校验 |
-| [visual_fact_review_guide.md](visual_fact_review_guide.md) | 画面事实与OCR双人复核 | 100图/1352条描述、5图独立转录、分歧与错误分母、草稿和开发集评测 |
-| [experimental_components_guide.md](experimental_components_guide.md) | 视觉证据、时序与图聚类实验 | 请求/token 预算、OCR、窗口分段、图聚类、连拍研究及实际验收边界 |
-| [core_upgrade_blueprint.md](core_upgrade_blueprint.md) | 核心算法与性能后续蓝图 | U0–U8 实施依赖、开源选型、数据划分、验收门槛与默认采用规则 |
-| [core_upgrade_progress.md](core_upgrade_progress.md) | 核心升级执行状态 | 全目录清单、正确性修复、真实模型探索、配置与后续待验收项 |
-| [CHANGELOG.md](CHANGELOG.md) | 可追溯迭代记录 | 日期、提交、变更与验证边界 |
-| [agentic_tools_blueprint.md](agentic_tools_blueprint.md) | 当前 LangChain 智能体实现说明 | 独立 CLI、主 API、模型配置、工具契约 |
-| [smart_organize_blueprint.md](smart_organize_blueprint.md) | 智能整理设计 | 去重、建库、演员视图与流水线背景 |
-| [multimodal_context_blueprint.md](multimodal_context_blueprint.md) | M11–M16 设计与验收目标 | 证据融合、知识库与人工审核边界 |
-| [multimodal_progress.md](multimodal_progress.md) | 多模态实施与历史验收记录 | 查找报告、已知问题与后续工作 |
-| [optimization_report.md](optimization_report.md) | 历史性能实验 | 理解 TRT、批量检索和性能取舍；不视为当前机器基准 |
-| [实施计划.md](实施计划.md) | 早期实施背景 | 保留历史方案；未完成规划不代表现有功能 |
+| 安装、部署、接手维护 | [项目说明](PROJECT_GUIDE.md) | 目录职责、环境、配置与操作 |
+| 使用功能或复现实验 | [使用指南](guides/README.md) | 工作台、人脸与年龄、复核、场景检索、向量库、预处理 |
+| 理解设计和实施范围 | [设计方案](design/README.md) | 整理流水线、多模态、智能体、核心升级、Qdrant |
+| 查执行状态和未完成项 | [进度记录](progress/README.md) | 核心升级、多模态历史、U2 收尾 |
+| 查实测数据和技术报告 | [报告索引](reports/README.md) | 模型对比、权重压缩、性能、容器与完整技术报告 |
+| 查早期背景 | [历史资料](archive/README.md) | 早期实施计划和优化实验 |
+| 查版本变化 | [迭代记录](CHANGELOG.md) | 日期、变更、提交与验证边界 |
+| 找命令行脚本 | [工具目录](../tools/README.md) | 47 个脚本，按 8 个主题列出用途和入口 |
 
-最新U2增量性能、全部五轮与来源摘要见[2026-10-28性能报告](reports/u2_parallel_20261028/README.md)。
+## 常用入口
 
-## 文件整理原则
+- [工作台操作](guides/workspace_guide.md)、[SwinFace 年龄估计](guides/swinface_guide.md)、[Qdrant 使用与迁移](guides/qdrant_guide.md)。
+- [最新完整技术报告](reports/technical_report_20261026.md)：29 页，[PDF](reports/technical_report_20261026/technical_report.pdf) 与离线资源。
+- [SwinFace 对比](reports/swinface_20261111/README.md)、[权重精简与量化](reports/swinface_quantization_20261111/README.md)、[人脸技术栈选型](reports/face_stack_20261106/README.md)。
+- [目录结构与旧路径迁移](guides/repository_layout.md)：新增文件归类规则、历史命令更新方法。
 
-- 入口和总览集中在 README 与本目录；不再在不同蓝图中重复维护完整 API 清单。
-- 源码保留在 `app/`、`core_modules/`、`config/`；文档不代替代码契约。
-- 原图、人脸库、模型权重和运行输出不迁移、不删除；管理规则见项目说明。
-- `tests/local/tmp_*.py` 属于本地实验/历史补丁，不作为安装步骤，也不自动执行或批量清理。
-- 运行报告放在 `outputs/`；文档记录测试条件、报告位置、结果和局限，不复制密钥或原始人脸数据。
-- 可公开阅读的技术报告放在 `docs/reports/`：Markdown使用相对PNG链接，PDF、离线HTML、可编辑SVG和被引用的JSON快照一并提交；本地原图、模型及实验数据库仍留在原目录。
+## 维护约定
 
-## 后续维护
+顶层保留本索引、项目说明和 CHANGELOG；新增材料放入对应分类并登记到分类索引。指南说明操作，设计说明目标，进度记录状态，报告保存测量条件、结果和局限。
 
-新增功能时同时更新 API/CLI 使用说明、对应蓝图和 CHANGELOG 的“未发布”部分。发布时记录真实 Git tag/commit、环境、测试命令、兼容性和迁移步骤；没有 tag 时使用日期与 commit，不补造语义版本。
+报告包中的 PDF、HTML、插图、来源快照继续一起保存；原始实验输出在 `outputs/`，原图、人脸库和权重分别留在 `data/`、`weights/`。历史实验结论按当时版本阅读；变更目录不构成重新测量或验收通过。
