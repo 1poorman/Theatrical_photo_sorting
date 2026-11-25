@@ -78,15 +78,15 @@ GPU/CPU/存储共享，本轮未提供受控生产性能对照；景别、行当
 
 ```bash
 env CUDA_VISIBLE_DEVICES=1 OMP_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 MKL_NUM_THREADS=4 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
-  /home/huachenghao/.conda/envs/face_scrfd_arcface/bin/python tools/benchmark_feature_pipeline.py \
+  /home/huachenghao/.conda/envs/face_scrfd_arcface/bin/python tools/performance/benchmark_feature_pipeline.py \
   --output outputs/acceptance/core_upgrade/NEW_EMPTY_DIRECTORY \
   --baseline fdc1fda --baseline-scope tree --schedule interleaved \
   --limit 200 --repeats 5 --torch-threads 4 --decode-workers 2 --quality-workers 1 --hash-workers 1
 
-python tools/benchmark_review_snapshots.py --output outputs/acceptance/core_upgrade/NEW_EXPORT_DIRECTORY
+python tools/performance/benchmark_review_snapshots.py --output outputs/acceptance/core_upgrade/NEW_EXPORT_DIRECTORY
 
 env CUDA_VISIBLE_DEVICES=1 OMP_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 MKL_NUM_THREADS=4 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
-  /home/huachenghao/.conda/envs/face_scrfd_arcface/bin/python tools/benchmark_workflow_costs.py \
+  /home/huachenghao/.conda/envs/face_scrfd_arcface/bin/python tools/performance/benchmark_workflow_costs.py \
   --input-manifest outputs/acceptance/core_upgrade/u8_raw_workflow_200_20261023/input_manifest.json \
   --output outputs/acceptance/core_upgrade/NEW_HTTP_DIRECTORY --limit 200 --repeats 5
 ```

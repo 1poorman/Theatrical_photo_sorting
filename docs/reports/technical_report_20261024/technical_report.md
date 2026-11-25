@@ -527,7 +527,7 @@ analyze_saved_results.py --verify-existing
 | 观察、预算、闭集判定 | `visual_evidence.py`、`scene_reasoner.py`、`llm_client.py` |
 | 图与时序算法 | `face_graph_cluster.py`、`scene_change_points.py`、`temporal_burst.py` |
 | 复核与恢复 | `review_store.py`、`review_queue.py`、`task_queue.py`及各任务实现 |
-| 评测 | `tools/evaluate_face_identity_review.py`、`prepare_visual_fact_review.py` |
+| 评测 | `tools/review/evaluate_face_identity_review.py`、`prepare_visual_fact_review.py` |
 
 上表中未写前缀的算法文件均位于`core_modules/organize/`。本报告不将本地模型声明当成远端权重证明，也不引入尚未运行模型的公开benchmark数字。模型原理参考：ArcFace（CVPR 2019）；SigLIP/SigLIP2官方论文与big_vision实现；SCRFD/InsightFace官方实现；FAISS官方文档；Gemma本地模型卡、配置与SentenceTransformers接口；PaddleOCR官方实现。
 

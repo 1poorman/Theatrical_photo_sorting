@@ -39,18 +39,18 @@ readable = re.sub(r'<div class="kpi-grid">.*?</div></div>',
 readable = re.sub(r'<div class="(?:note|callout|equation)">', '\n\n> ', readable)
 readable = re.sub(r'</?div[^>]*>', '', readable)
 readable = re.sub(r'<span[^>]*>|</span>', '', readable)
-readable = re.sub(r'\[(S\d{2})\]', r'[\1](reports/technical_report_20261026/data/evidence/\1.json)', readable)
-readable = re.sub(r'(?<=\| )(S\d{2})(?= \|)', r'[\1](reports/technical_report_20261026/data/evidence/\1.json)', readable)
+readable = re.sub(r'\[(S\d{2})\]', r'[\1](technical_report_20261026/data/evidence/\1.json)', readable)
+readable = re.sub(r'(?<=\| )(S\d{2})(?= \|)', r'[\1](technical_report_20261026/data/evidence/\1.json)', readable)
 readable = re.sub(r'!\[([^\]]+)\]\(figures/([^)]+)\)',
-    lambda m: f'![{m[1]}](reports/technical_report_20261026/figures/{m[2]})\n\n*{m[1]}*', readable)
-links = ('[PDF](reports/technical_report_20261026/technical_report.pdf) · '
-         '[离线HTML](reports/technical_report_20261026/technical_report.html) · '
-         '[插图与来源数据](reports/technical_report_20261026/README.md) · '
+    lambda m: f'![{m[1]}](technical_report_20261026/figures/{m[2]})\n\n*{m[1]}*', readable)
+links = ('[PDF](technical_report_20261026/technical_report.pdf) · '
+         '[离线HTML](technical_report_20261026/technical_report.html) · '
+         '[插图与来源数据](technical_report_20261026/README.md) · '
          '[历史版本](technical_report_20261024.md)\n\n')
-(OUT.parents[2] / 'docs/technical_report_20261026.md').write_text(header + links + readable)
-bundle_readable = readable.replace('reports/technical_report_20261026/', '')
+(OUT.parents[2] / 'docs/reports/technical_report_20261026.md').write_text(header + links + readable)
+bundle_readable = readable.replace('](technical_report_20261026/', '](')
 bundle_links = ('[PDF](technical_report.pdf) · [离线HTML](technical_report.html) · '
-                '[插图与来源数据](README.md) · [历史版本](../../technical_report_20261024.md)\n\n')
+                '[插图与来源数据](README.md) · [历史版本](../technical_report_20261024.md)\n\n')
 (OUT / 'technical_report.md').write_text(header + bundle_links + bundle_readable)
 
 def embed(path):

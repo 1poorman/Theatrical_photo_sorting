@@ -1,6 +1,6 @@
 # 2026-10-26 技术报告
 
-[GitHub阅读版](../../technical_report_20261026.md) · [包内Markdown](technical_report.md) · [下载PDF](technical_report.pdf) · [下载离线HTML](technical_report.html)
+[GitHub阅读版](../technical_report_20261026.md) · [包内Markdown](technical_report.md) · [下载PDF](technical_report.pdf) · [下载离线HTML](technical_report.html)
 
 29页、15幅正文插图。新版补充Pillow尺寸修复、同步双线程选优及独立DALI评价；历史基线保持单列。最新200图×5次对照特征加速1.385倍、整理中位耗时减少26.539%，仍未通过特征1.5倍门槛；共享GPU下P95未改善，独立质量未验收。DALI因输出变化及有限整链路收益未采用。
 

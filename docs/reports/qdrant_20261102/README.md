@@ -14,7 +14,7 @@
 - 旧 FAISS 仍可读取，ES 仍可启动迁移/回退；源照片、旧向量、图库与复核记录保留。Qdrant 查询直接由数据库执行，离线 FAISS 分组不受该切换影响。
 - 选择 Qdrant 基于单容器部署、向量检索和元数据操作需求；没有进行 Milvus/pgvector 对比，不宣称跨产品全面领先。
 
-实施前的 [方案](../../qdrant_upgrade_plan.md) 与 [操作/迁移/容量指南](../../qdrant_guide.md) 已记录接口和复现命令。
+实施前的 [方案](../../design/qdrant_upgrade_plan.md) 与 [操作/迁移/容量指南](../../guides/qdrant_guide.md) 已记录接口和复现命令。
 
 ## 数据和测量口径
 

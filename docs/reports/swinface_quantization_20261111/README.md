@@ -7,7 +7,7 @@
 
 代码优先选择 `weights/swinface/swinface_recognition_age_fp16.pt`，缺失时兼容原始文件；
 `TRANS_SWINFACE_MODEL_PATH` 显式设置优先。原始权重保留，未部署到现有服务。
-使用与切换方法见[指南](../../swinface_guide.md)。
+使用与切换方法见[指南](../../guides/swinface_guide.md)。
 
 ## 文件大小与计算方式
 
@@ -96,17 +96,17 @@ GPU 速度基本相当。FP16 模型状态张量约 61.75 MiB，但激活和工�
 - 年龄服务 / API 8 项通过；真实默认 FP16 HTTP 70 项检查通过，三张剧照脸数 1 / 3 / 6；CPU CLI 默认 FP16 检出 3 张脸。
 - 125 项只读审计通过：原文件及输入摘要、导出摘要、源码快照、预测文件、重算识别指标、年龄顺序与数值、默认配置回退。隔离服务已停止。
 
-导出命令见[指南](../../swinface_guide.md#权重精简与量化)。重新测量需选新的输出目录，工具
+导出命令见[指南](../../guides/swinface_guide.md#权重精简与量化)。重新测量需选新的输出目录，工具
 核对原报告、脸清单、原图、向量和官方权重摘要：
 
 ```bash
-python tools/benchmark_swinface_quantization.py \
+python tools/face/benchmark_swinface_quantization.py \
   --checkpoint compact_fp32=weights/swinface/swinface_recognition_age_fp32.pt \
   --checkpoint fp16=weights/swinface/swinface_recognition_age_fp16.pt \
   --checkpoint int8_dynamic=weights/swinface/swinface_recognition_age_int8_dynamic.pt \
   --device cpu --output outputs/swinface_quantization_repeat_cpu
 
-python tools/benchmark_swinface_quantization.py \
+python tools/face/benchmark_swinface_quantization.py \
   --checkpoint official=weights/swinface/checkpoint_step_79999_gpu_0.pt \
   --checkpoint compact_fp32=weights/swinface/swinface_recognition_age_fp32.pt \
   --checkpoint fp16=weights/swinface/swinface_recognition_age_fp16.pt \

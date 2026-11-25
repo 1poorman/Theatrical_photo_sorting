@@ -86,7 +86,7 @@ g = concat(sqrt(w) × a, sqrt(1-w) × f)
 
 ## 3. 实验协议
 
-原始聚合数据见 [benchmark.json](benchmark.json)，复现脚本见 [benchmark_face_stack.py](../../../tools/benchmark_face_stack.py)。
+原始聚合数据见 [benchmark.json](benchmark.json)，复现脚本见 [benchmark_face_stack.py](../../../tools/face/benchmark_face_stack.py)。
 
 ### 3.1 识别
 
@@ -236,7 +236,7 @@ SCRFD-500M + MobileFaceNet 可用于 CPU 预览或候选预筛。YuNet 与 500M 
 ```bash
 PYTHONPATH=/tmp/facenet_deps \
 /home/huachenghao/.conda/envs/face_scrfd_arcface/bin/python \
-  tools/benchmark_face_stack.py \
+  tools/face/benchmark_face_stack.py \
   --device cpu --timing-rounds 10 \
   --recognizer current_glint100=weights/arcface/Glint100.onnx \
   --recognizer buffalo_l_r50=/tmp/face_stack_buffalo_l/w600k_r50.onnx \

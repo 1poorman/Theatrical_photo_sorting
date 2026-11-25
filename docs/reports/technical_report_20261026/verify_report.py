@@ -155,8 +155,12 @@ def main():
             check('image_valid:' + path.name, True)
         elif path.suffix == '.svg':
             check('svg_has_display_png:' + path.stem, path.with_suffix('.png').exists())
-    markdown_files = [ROOT / 'docs/technical_report_20261026.md', ROOT / 'docs/technical_report_20261024.md',
-                      *sorted((ROOT / 'docs/reports').rglob('*.md'))]
+    # Validate this report and its historical bundle, independently of other
+    # experiment reports, which may link to local outputs rather than assets.
+    markdown_files = [OUT.parent / 'technical_report_20261026.md',
+                      OUT.parent / 'technical_report_20261024.md',
+                      *sorted(OUT.rglob('*.md')),
+                      *sorted((OUT.parent / 'technical_report_20261024').rglob('*.md'))]
     targets = set()
     image_count = 0
     for file in markdown_files:
@@ -237,8 +241,8 @@ def main():
                 selector = ':' + rel if args.git_ref == 'staged' else args.git_ref + ':' + rel
                 check('git_bytes:' + rel, git('show', selector) == path.read_bytes())
     check('report_diff_has_no_whitespace_errors', subprocess.run(
-        ['git', 'diff', '--check', '--', 'README.md', 'docs/README.md', 'docs/technical_report_20261024.md',
-         'docs/technical_report_20261026.md', 'docs/reports'], cwd=ROOT, capture_output=True).returncode == 0)
+        ['git', 'diff', '--check', '--', 'README.md', 'docs/README.md', 'docs/reports/technical_report_20261024.md',
+         'docs/reports/technical_report_20261026.md', 'docs/reports'], cwd=ROOT, capture_output=True).returncode == 0)
     manifest_path = OUT / 'artifact_manifest.json'
     if args.check_only:
         check('manifest_covers_all_bundle_files', set(read(manifest_path)) ==

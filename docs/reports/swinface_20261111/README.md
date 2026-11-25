@@ -76,7 +76,7 @@ SwinFace Top-1 正确 91/107，ArcFace 为 93/107，FaceNet 为 97/107。在错�
 - CLI 对 `data/sample_images/4.jpg` 实测返回 3 张脸，生成 JSON、对齐裁剪和标注图。
 - 从保存的向量重算全部识别指标并核对 109 张原脸、六份权重及所有向量，148 项审计通过。
 
-操作方法见 [使用指南](../../swinface_guide.md)。
+操作方法见 [使用指南](../../guides/swinface_guide.md)。
 
 ## 证据与复现
 
@@ -86,7 +86,7 @@ SwinFace Top-1 正确 91/107，ArcFace 为 93/107，FaceNet 为 97/107。在错�
 含真实接口返回，`recognition_audit.json` 含重算及摘要校验。
 
 ```bash
-PYTHONPATH=/tmp/facenet_deps python tools/benchmark_face_stack.py \
+PYTHONPATH=/tmp/facenet_deps python tools/face/benchmark_face_stack.py \
   --device cpu --torch-threads 4 --timing-rounds 10 \
   --recognizer current_glint100=weights/arcface/Glint100.onnx \
   --recognizer buffalo_l_r50=/tmp/face_stack_buffalo_l/w600k_r50.onnx \

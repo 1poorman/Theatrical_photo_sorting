@@ -2,7 +2,7 @@
 
 技术评审与研发版 · 2026-10-26 · HEAD `4194277` 与测量工作区摘要
 
-[PDF](technical_report.pdf) · [离线HTML](technical_report.html) · [插图与来源数据](README.md) · [历史版本](../../technical_report_20261024.md)
+[PDF](technical_report.pdf) · [离线HTML](technical_report.html) · [插图与来源数据](README.md) · [历史版本](../technical_report_20261024.md)
 
 <!-- PAGE: executive | 技术摘要 -->
 # 从舞台影像到可追溯档案
@@ -610,10 +610,10 @@ U8功能闭环已经有实测支持；正式U8仍缺U0—U3完整门槛、独立
 以下命令在仓库根目录执行，从随Git保存的证据重建报告；需安装报告包README列出的Python、Playwright和中文字体依赖。它们不会重新调用模型，也不会覆写历史研究协议。
 
 ```bash
-python docs/build_figures.py
-python docs/build_report.py
-node docs/render_report.cjs
-python docs/verify_report.py
+python docs/reports/technical_report_20261026/build_figures.py
+python docs/reports/technical_report_20261026/build_report.py
+node docs/reports/technical_report_20261026/render_report.cjs
+python docs/reports/technical_report_20261026/verify_report.py
 ```
 
 前两条从已提交JSON快照重建科学图表、正文和离线HTML；第三条生成PDF并检查桌面/手机布局，第四条核对来源、数值、所有图片及分页。阅读和图表重建不需要原图/权重；浏览器截图与示意图作为静态资源随Git提交。科学图表保留SVG和PNG两种版本，可独立用于后续汇报。正文可在`report_source.md`编辑；`technical_report.md`是展开数据表后的阅读版本。
@@ -628,7 +628,7 @@ python docs/verify_report.py
 | 观察、预算、闭集判定 | `visual_evidence.py`、`scene_reasoner.py`、`llm_client.py` |
 | 图与时序算法 | `face_graph_cluster.py`、`scene_change_points.py`、`temporal_burst.py` |
 | 复核与恢复 | `review_store.py`、`review_queue.py`、`task_queue.py`及各任务实现 |
-| 评测 | `tools/evaluate_face_identity_review.py`、`prepare_visual_fact_review.py` |
+| 评测 | `tools/review/evaluate_face_identity_review.py`、`prepare_visual_fact_review.py` |
 
 上表中未写前缀的算法文件均位于`core_modules/organize/`。本报告不将本地模型声明当成远端权重证明，也不引入尚未运行模型的公开benchmark数字。模型原理参考：ArcFace（CVPR 2019）；SigLIP/SigLIP2官方论文与big_vision实现；SCRFD/InsightFace官方实现；FAISS官方文档；Gemma本地模型卡、配置与SentenceTransformers接口；PaddleOCR官方实现。
 
