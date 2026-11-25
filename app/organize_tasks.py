@@ -427,7 +427,7 @@ def scene_handler(params):
         'app/organize_tasks.py', 'core_modules/organize/scene_reasoner.py',
         'core_modules/organize/filename_parser.py',
         'core_modules/organize/visual_evidence.py',
-        'core_modules/organize/ocr_evidence.py', 'tools/paddle_ocr_worker.py',
+        'core_modules/organize/ocr_evidence.py', 'tools/vision/paddle_ocr_worker.py',
         'core_modules/organize/multimodal_evidence.py', 'core_modules/organize/llm_client.py',
         'core_modules/image_search.py', 'core_modules/organize/embedding_gemma.py',
         'core_modules/organize/feature_cache.py', 'core_modules/organize/task_artifacts.py'])

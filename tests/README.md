@@ -15,5 +15,5 @@ SwinFace format/preprocessing checks run with `python tests/test_swinface.py` an
 aligned faces installed, set `RUN_SWINFACE_REAL=1` or `RUN_SWINFACE_COMPACT_REAL=1`
 respectively for numerical and export/reload checks. `SWINFACE_TEST_DEVICE=cuda:1`
 selects a CUDA device; dynamic INT8 is checked only on CPU. The full 109-face
-compression comparison is reproduced by `tools/benchmark_swinface_quantization.py`;
+compression comparison is reproduced by `tools/face/benchmark_swinface_quantization.py`;
 see the [report](../docs/reports/swinface_quantization_20261111/README.md) for commands.

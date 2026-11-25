@@ -13,7 +13,7 @@ from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from core_modules.organize.task_artifacts import fingerprint
-from tools.prepare_photo_partition_review import (
+from tools.review.prepare_photo_partition_review import (
     POLICY, bind_labels, build_images, checked_checkpoint, exposure_from_manifest,
     features, original_capture, partition_review, prepare_image, safe_source,
     temporal_reviews)
@@ -126,7 +126,7 @@ class PhotoPartitionReviewTests(unittest.TestCase):
             output.mkdir()
             value, reused = prepare_image(row, source, output, 'protocol', False)
             self.assertFalse(reused)
-            with patch('tools.prepare_photo_partition_review.Image.open', side_effect=AssertionError('decode repeated')):
+            with patch('tools.review.prepare_photo_partition_review.Image.open', side_effect=AssertionError('decode repeated')):
                 actual, reused = prepare_image(row, source, output, 'protocol', True)
                 self.assertTrue(reused)
                 self.assertEqual(actual, value)

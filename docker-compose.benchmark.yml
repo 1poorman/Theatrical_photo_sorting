@@ -4,7 +4,7 @@ services:
     profiles: [benchmark]
     image: theatrical-photo-sorting:latest
     working_dir: /app
-    entrypoint: [python, tools/benchmark_vector_store.py]
+    entrypoint: [python, tools/vector/benchmark_vector_store.py]
     cpus: 4
     mem_limit: 6g
     environment:
@@ -16,6 +16,6 @@ services:
       TRANS_ELASTIC_USER: elastic
       TRANS_ELASTIC_PASSWORD: ${DOCKER_ELASTIC_PASSWORD:-theatrical-local-password}
     volumes:
-      - ./tools/benchmark_vector_store.py:/app/tools/benchmark_vector_store.py:ro
+      - ./tools/vector/benchmark_vector_store.py:/app/tools/vector/benchmark_vector_store.py:ro
       - ./outputs:/app/outputs
       - qdrant_data:/benchmark/qdrant_storage:ro

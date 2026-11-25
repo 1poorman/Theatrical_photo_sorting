@@ -11,8 +11,8 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from core_modules.organize.task_artifacts import atomic_json, fingerprint
-from tools.prepare_visual_fact_review import make_row, prepare, validate_draft, evaluate_pair, verify_existing
-from tools.review_quality_metrics import b_cubed, character_errors
+from tools.review.prepare_visual_fact_review import make_row, prepare, validate_draft, evaluate_pair, verify_existing
+from tools.review.review_quality_metrics import b_cubed, character_errors
 
 
 def templates(rows):

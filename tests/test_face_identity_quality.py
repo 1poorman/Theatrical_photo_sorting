@@ -6,7 +6,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from tools.evaluate_face_identity_review import evaluate_labels
+from tools.review.evaluate_face_identity_review import evaluate_labels
 
 
 class FaceIdentityQualityTests(unittest.TestCase):

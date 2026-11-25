@@ -11,7 +11,7 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from tools.evaluate_dali_preprocessing import DaliImageEmbedder, ImageEmbedder
+from tools.performance.evaluate_dali_preprocessing import DaliImageEmbedder, ImageEmbedder
 
 
 class DaliFallbackTests(unittest.TestCase):

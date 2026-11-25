@@ -14,7 +14,7 @@ import sqlite3
 from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from tools.prepare_face_identity_review import digest, prepare, validate_decisions, verify_existing
+from tools.review.prepare_face_identity_review import digest, prepare, validate_decisions, verify_existing
 from core_modules.organize.task_artifacts import fingerprint
 
 

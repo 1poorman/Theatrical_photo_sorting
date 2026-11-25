@@ -200,7 +200,7 @@ class QdrantTests(unittest.TestCase):
         self.assertEqual(self.store.count(old['collection']), 3)
 
     def test_prune_keeps_published_and_previous_generations(self):
-        from tools.prune_vector_generations import prune
+        from tools.vector.prune_vector_generations import prune
         from datetime import datetime, timezone, timedelta
         path, first = self.build()
         self.build()
@@ -234,7 +234,7 @@ class QdrantTests(unittest.TestCase):
 
     def test_faiss_migration_preserves_scores_and_source(self):
         import faiss
-        from tools.migrate_vector_store import migrate_faiss
+        from tools.vector.migrate_vector_store import migrate_faiss
         source = self.root / 'legacy'
         source.mkdir()
         paths = images.image_paths(self.photos)

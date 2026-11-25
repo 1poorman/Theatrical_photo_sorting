@@ -7,7 +7,7 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from core_modules.organize.task_artifacts import fingerprint
-from tools.import_verified_photo_labels import import_labels
+from tools.review.import_verified_photo_labels import import_labels
 
 
 class VerifiedPhotoImportTests(unittest.TestCase):

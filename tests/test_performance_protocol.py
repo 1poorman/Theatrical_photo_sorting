@@ -9,8 +9,8 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from tools.benchmark_feature_pipeline import execution_plan, freeze_baseline, hardware_observation
-from tools.benchmark_review_snapshots import measure_exports
+from tools.performance.benchmark_feature_pipeline import execution_plan, freeze_baseline, hardware_observation
+from tools.performance.benchmark_review_snapshots import measure_exports
 
 
 class PerformanceProtocolTests(unittest.TestCase):

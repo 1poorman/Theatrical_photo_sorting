@@ -7,9 +7,9 @@ import tempfile
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path[:0] = [str(ROOT), str(ROOT / 'tools')]
+sys.path.insert(0, str(ROOT))
 from core_modules.organize.identity_registry import IdentityRegistry, stable_id
-from sourced_scene_candidates import (apply_candidate_bundle, candidate_files_unchanged,
+from tools.scene.sourced_scene_candidates import (apply_candidate_bundle, candidate_files_unchanged,
                                      digest, extract_html_text, validate_sourced_manifest)
 
 

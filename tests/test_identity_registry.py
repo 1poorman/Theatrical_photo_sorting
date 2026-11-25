@@ -237,8 +237,8 @@ class IdentityTests(unittest.TestCase):
         self.assertFalse((self.root/'out').exists())
 
     def test_importer_retains_missing_labels_conflicts_and_confirmed_aliases(self):
-        from tools.build_core_upgrade_manifest import inventory
-        from tools.import_verified_photo_labels import import_labels
+        from tools.validation.build_core_upgrade_manifest import inventory
+        from tools.review.import_verified_photo_labels import import_labels
         source=self.root/'dataset'; directory=source/'舞剧《马可·波罗》'/'【整理完成】彩排'
         directory.mkdir(parents=True)
         for name,color in [('01-20141012-歌剧院-舞剧《马可·波罗》B组 第1幕：元都之恋-苏鹏饰马可波罗-凌风.jpg','red'),
@@ -261,7 +261,7 @@ class IdentityTests(unittest.TestCase):
         self.assertEqual(rows[0]['actor_roles'][0]['original_role_name'],'马可波罗')
         self.assertEqual(rows[0]['actor_roles'][0]['alias_source'],'user-alias')
         self.assertEqual(IdentityRegistry(registry).resolve('苏鹏（饰马可·波罗）','舞剧《马可·波罗》')['role_name'],'马可·波罗')
-        from tools.evaluate_verified_scene_retrieval import prepare_inputs
+        from tools.scene.evaluate_verified_scene_retrieval import prepare_inputs
         labels_file=self.root/'labels.json'; labels_file.write_text(json.dumps(rows))
         registry_file=self.root/'cast.json'; registry_file.write_text(json.dumps(registry))
         evaluation=self.root/'evaluation'; evaluation.mkdir()

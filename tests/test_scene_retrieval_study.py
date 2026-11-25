@@ -8,8 +8,8 @@ import numpy as np
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
-from tools.scene_retrieval_study import classification_metrics, subset_metrics, validate_inputs
-from tools.evaluate_scene_retrieval_study import document_plan, check_vectors
+from tools.scene.scene_retrieval_study import classification_metrics, subset_metrics, validate_inputs
+from tools.scene.evaluate_scene_retrieval_study import document_plan, check_vectors
 
 
 class RetrievalStudyTests(unittest.TestCase):
@@ -42,7 +42,7 @@ class RetrievalStudyTests(unittest.TestCase):
     def test_document_reuse_keeps_existing_indices(self):
         inputs={'expanded':{'scenes':[{'text':'old'}]},'baseline':{'scenes':[{'text':'label'}]}}
         blocks={'blocks':[{'block_id':'b','text':'old'}],'candidates':[{'block_ids':['b']}]}
-        from tools.scene_text_blocks import text_hash
+        from tools.scene.scene_text_blocks import text_hash
         inherited=[{'text':'old','text_sha256':text_hash('old')}]
         documents,index=document_plan(inputs,blocks,inherited)
         self.assertEqual(documents[0],inherited[0])

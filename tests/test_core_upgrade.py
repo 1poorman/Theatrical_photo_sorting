@@ -359,7 +359,7 @@ class CoreUpgradeTests(unittest.TestCase):
             self.assertFalse(preview.getexif())
 
     def test_evaluation_loads_scene_entities_and_rejects_empty_knowledge(self):
-        from tools.evaluate_core_upgrade import load_scenes
+        from tools.validation.evaluate_core_upgrade import load_scenes
         scenes = self.knowledge()['scenes']
         (self.root / 'entities.json').write_text(json.dumps({'scenes': scenes}))
         (self.root / 'scene_candidates.jsonl').write_text(json.dumps({'image': 'a.jpg', 'candidates': []}))
@@ -369,7 +369,7 @@ class CoreUpgradeTests(unittest.TestCase):
             load_scenes(self.root)
 
     def test_inventory_keeps_duplicate_copies_in_one_split(self):
-        from tools.build_core_upgrade_manifest import inventory
+        from tools.validation.build_core_upgrade_manifest import inventory
         for play in ('play-a', 'play-b', 'play-c'):
             folder = self.root / play
             folder.mkdir()

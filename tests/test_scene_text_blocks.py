@@ -7,7 +7,7 @@ import unittest
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from tools.scene_text_blocks import (build_scene_blocks, normalize_vectors, ranked_rows,
+from tools.scene.scene_text_blocks import (build_scene_blocks, normalize_vectors, ranked_rows,
                                     retrieval_metrics, score_candidates, split_exact_quote)
 
 

@@ -51,7 +51,7 @@ class PaddleOCRProvider:
                 type(timeout) not in (int, float) or not math.isfinite(timeout) or timeout <= 0):
             raise ValueError('invalid_ocr_preprocessing')
         files = self._model_files()
-        worker = Path(__file__).resolve().parents[2] / 'tools/paddle_ocr_worker.py'
+        worker = Path(__file__).resolve().parents[2] / 'tools/vision/paddle_ocr_worker.py'
         try:
             packages = subprocess.run([self.python, '-c',
                 'import json\nfrom importlib.metadata import version, PackageNotFoundError\n'
@@ -107,7 +107,7 @@ class PaddleOCRProvider:
                 image.thumbnail((self.max_side, self.max_side))
                 image.save(preview)
             output = temporary / 'result.json'
-            command = [self.python, str(Path(__file__).resolve().parents[2] / 'tools/paddle_ocr_worker.py'),
+            command = [self.python, str(Path(__file__).resolve().parents[2] / 'tools/vision/paddle_ocr_worker.py'),
                        '--image', str(preview), '--detector', str(self.detector), '--recognizer', str(self.recognizer),
                        '--output', str(output), '--device', self.device]
             environment = os.environ.copy()
