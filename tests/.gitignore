@@ -19,6 +19,9 @@
 !test_filename_parser.py
 !test_identity_registry.py
 !test_langchain_agent.py
+!test_agent_runtime.py
+!test_conversational_agent.py
+!test_agent_optimization.py
 !test_multimodal_evidence.py
 !test_ocr_evidence.py
 !test_organize_tasks.py

@@ -1,6 +1,6 @@
 # 工具目录
 
-47 个脚本按主题归类。命令从项目根目录运行；使用安装了对应依赖的 Python 环境。
+48 个脚本按主题归类。命令从项目根目录运行；使用安装了对应依赖的 Python 环境。
 
 [文档中心](../docs/README.md) · [目录迁移说明](../docs/guides/repository_layout.md)
 
@@ -14,7 +14,7 @@
 | [人工复核与标签](review/) | 6 | 准备复核材料、校验决定并计算质量 |
 | [视觉证据与分组实验](vision/) | 7 | 观察、OCR、时序与图聚类研究 |
 | [性能与流程成本](performance/) | 5 | 跨功能吞吐、预处理、响应和导出成本 |
-| [清单与整链路验收](validation/) | 5 | 数据清点、核心正确性和流程检查 |
+| [清单与整链路验收](validation/) | 6 | 数据清点、核心正确性和流程检查 |
 | [仓库与环境维护](maintenance/) | 2 | 仓库范围和远端模型元数据审计 |
 
 ## 运行方式
@@ -24,6 +24,7 @@ python tools/face/estimate_face_age.py --help
 python tools/vector/migrate_vector_store.py --help
 python -m tools.performance.benchmark_feature_pipeline --help
 python tools/maintenance/audit_repository_scope.py
+python tools/validation/evaluate_photo_agent.py --output /path/new-run --model big --image /path/photo.jpg
 ```
 
 Python 导入使用 `tools.<分类>.<模块>`。下表标为“共用模块”的文件由同主题脚本导入，其余脚本提供命令行入口。模型基准和真实流程检查需要本地权重、数据或对应服务，具体参数与前提见 `--help` 及关联指南。
@@ -121,6 +122,7 @@ Python 导入使用 `tools.<分类>.<模块>`。下表标为“共用模块”�
 | [evaluate_core_upgrade.py](validation/evaluate_core_upgrade.py) | 中性预览上的探索性场景检索 |
 | [check_multimodal_upgrade.py](validation/check_multimodal_upgrade.py) | 本地模型和多模态组件冒烟检查 |
 | [check_real_workflow.py](validation/check_real_workflow.py) | 真实分析 → 复核 → 导出 → 整理验收 |
+| [evaluate_photo_agent.py](validation/evaluate_photo_agent.py) | `.env` 真实模型任务 smoke、持久任务和可选真实图片观察；新目录保存源码摘要，不评价身份/幕次质量 |
 
 相关说明：[使用指南](../docs/guides/workspace_guide.md)。
 

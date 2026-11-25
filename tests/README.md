@@ -5,6 +5,20 @@ that import Torch, OpenCV or model adapters. Each tracked script retains its
 existing path; `tests/.gitignore` explicitly selects files shipped with Git.
 Add a new regression to that allowlist before committing it.
 
+Agent graph checks run with `python tests/test_langchain_agent.py`. Shared
+contracts, durable task integration, project memory and budgeted image previews
+run with `python tests/test_agent_optimization.py` in an environment containing
+both `requirements/agent.txt` and the visual/API dependencies. Live model smoke
+checks use `tools/validation/evaluate_photo_agent.py` with a fresh output directory;
+they do not establish scene or identity accuracy.
+
+The agent API integration check keeps real chat routes and middleware, isolating
+only unrelated GPU-server, image-search and age-model imports. It sends in-process
+ASGI requests without model initialization. The normal visual `test_workspace.py`
+separately covers the full main-module import. If Python 3.11 thread wakeups stall
+in a restricted sandbox, repeat the bounded offline check on the host; do not
+count an incomplete sandbox run as passed.
+
 `local/` holds historical `tmp_*.py` experiments and patch scripts. Their bytes
 are preserved for reference; embedded historical paths are not migration commands.
 Other local acceptance scripts and real-data tests are also excluded unless
