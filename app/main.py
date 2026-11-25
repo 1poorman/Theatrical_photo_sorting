@@ -1137,54 +1137,22 @@ def _build_conversational_agent(use_llm=True, max_steps=4):
         client=client,
         max_steps=max_steps,
     )
-    agent.register_tool(
-        'scene_reason', _agent_scene_reason,
-        '对图片目录执行闭集场景推理并生成 scene_evidence.jsonl。',
-        parameters={
-            'type': 'object',
-            'properties': {
-                'input_dir': {'type': 'string'},
-                'knowledge_dir': {'type': 'string'},
-                'output_file': {'type': 'string'},
-                'top_k': {'type': 'integer'},
-                'use_llm': {'type': 'boolean'},
-                'use_embedder': {'type': 'boolean'},
-            },
-            'required': ['input_dir', 'knowledge_dir'],
-        },
-        aliases=['场景推理', '场景识别', '生成候选', 'reason'],
-    )
-    agent.register_tool(
-        'knowledge_summary', _agent_knowledge_summary,
-        '查询剧目知识库中的幕次、角色、别名、来源和统计。',
-        parameters={
-            'type': 'object',
-            'properties': {'knowledge_dir': {'type': 'string'}},
-            'required': ['knowledge_dir'],
-        },
-        aliases=['知识库', '幕次', '角色', 'knowledge'],
-    )
-    agent.register_tool(
-        'review_summary', _agent_review_summary,
-        '查询人工复核队列统计和待审核记录，不修改审核结果。',
-        parameters={
-            'type': 'object',
-            'properties': {
-                'review_dir': {'type': 'string'},
-                'status': {'type': 'string'},
-                'limit': {'type': 'integer'},
-            },
-            'required': ['review_dir'],
-        },
-        aliases=['复核队列', '审核状态', '待审核', 'review'],
-    )
-    from core_modules.organize.agent_tools import register_image_tools
-    register_image_tools(agent)
+    from core_modules.organize.photo_agent_tools import register_photo_tools
+    agent.services = _agent_task_service()
+    register_photo_tools(agent, services=agent.services)
     return agent
 
 
+def _agent_task_service():
+    from app.agent_services import PhotoTaskService
+    from config.base import SCENE_EMBEDDING_BACKEND
+    return PhotoTaskService(os.path.join(srv.DEFAULT_OUTPUT_DIR, 'agent'), capabilities=lambda: {
+        'face_recognition': srv.face_recognition_model is not None,
+        'visual_retrieval': True, 'embedding_backend': SCENE_EMBEDDING_BACKEND})
+
+
 @app.post("/api/organize/agent/chat")
-async def agent_chat(message: str = Form(...), session_id: str = Form(''),
+def agent_chat(message: str = Form(...), session_id: str = Form(''),
                      context_json: str = Form('{}'), use_llm: bool = Form(True),
                      max_steps: int = Form(4)):
     """连续对话智能体：持久化上下文，自主选择白名单工具，失败时降级。"""
@@ -1239,7 +1207,9 @@ def _agent_organize_photos(input_dir, output_dir, db_root, keep_per_bucket=2,
 @app.post('/api/organize/agent/advanced/chat')
 def advanced_agent_chat(message: str = Form(...), session_id: str = Form(''),
                         context_json: str = Form('{}'), model: str = Form('auto'),
-                        protocol: str = Form('json'), max_steps: int = Form(6)):
+                        protocol: str = Form('json'), max_steps: int = Form(6),
+                        turn_timeout: int = Form(180, ge=1, le=900),
+                        output_token_budget: int = Form(8192, ge=256, le=65536)):
     """LangChain 自主工具调用；同步路由在工作线程执行，避免阻塞事件循环。"""
     try:
         from core_modules.organize.langchain_agent import build_photo_agent
@@ -1248,7 +1218,8 @@ def advanced_agent_chat(message: str = Form(...), session_id: str = Form(''),
             raise ValueError('context_json 必须是 JSON 对象')
         agent = build_photo_agent(os.path.join(srv.DEFAULT_OUTPUT_DIR, 'agent'),
                                   selection=model, protocol=protocol, max_steps=max_steps,
-                                  organize=_agent_organize_photos)
+                                  services=_agent_task_service(), turn_timeout=turn_timeout,
+                                  output_token_budget=output_token_budget)
         result = agent.chat(message, session_id or None, context)
         return JSONResponse({'code': 200, 'message': 'Agent replied', 'data': result})
     except ValueError as exc:
@@ -1266,7 +1237,8 @@ def advanced_agent_tools():
     from core_modules.organize.conversational_agent import ConversationalAgent
     from core_modules.organize.photo_agent_tools import register_photo_tools
     agent = ConversationalAgent(os.path.join(srv.DEFAULT_OUTPUT_DIR, 'agent'))
-    register_photo_tools(agent, organize=_agent_organize_photos)
+    agent.services = _agent_task_service()
+    register_photo_tools(agent, services=agent.services)
     return JSONResponse({'code': 200, 'message': 'OK', 'data': {'tools': agent.tools()}})
 
 
@@ -1274,6 +1246,8 @@ def advanced_agent_tools():
 
 @app.on_event("startup")
 async def startup_event():
+    from core_modules.organize.agent_runtime import AgentRuntime
+    AgentRuntime(os.path.join(srv.DEFAULT_OUTPUT_DIR, 'agent', 'tasks')).recover_interrupted()
     app_logger.info("Server startup: initializing models...")
     ok = srv.initialize_models()
     app_logger.info("Model initialization %s", "succeeded" if ok else "failed (some models may be missing)")

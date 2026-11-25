@@ -11,6 +11,8 @@ def scan_dir_and_tag(input_dir, output_file):
     if not source.is_dir():
         raise ValueError('input_dir 必须是目录')
     target = Path(output_file).expanduser().absolute()
+    if target.resolve().is_relative_to(source.resolve()):
+        raise ValueError('输出必须位于输入目录之外')
     if target.suffix.lower() != '.jsonl':
         raise ValueError('output_file 必须是 JSONL 文件')
     if target.exists() or target.is_symlink():

@@ -590,27 +590,30 @@ def response(operation, status=200):
         return JSONResponse(status_code=400, content={'message': str(exc)})
 
 
+def submit_business_task(kind, params, idempotency_key=None, fresh_output=False):
+    preparers = {'scene_reason': prepare_scene, 'organize': prepare_organize, 'knowledge': prepare_knowledge,
+                 'face_cluster': prepare_face_cluster, 'face_database': prepare_face_database}
+    if kind not in preparers:
+        raise ValueError('后台任务支持 scene_reason、organize、knowledge、face_cluster、face_database')
+    if not isinstance(params, dict):
+        raise ValueError('params 必须为对象')
+    if idempotency_key is not None and not isinstance(idempotency_key, str):
+        raise ValueError('idempotency_key 必须为字符串')
+    prepared, items = preparers[kind](params, defer_hash=True)
+    prepared['_manifest_items'] = items
+    items = [dict(item, stage='fingerprint') for item in items]
+    output = ([prepared['db_root']] + ([prepared['output_dir']] if prepared.get('output_dir') else [])) \
+        if kind == 'face_database' else prepared.get('output_file') or prepared['output_dir']
+    task, created = manager().submit(kind, prepared, items, idempotency_key, output, fresh_output=fresh_output)
+    return dict(task, created=created)
+
+
 @router.post('')
 def create_task(body: dict = Body(...)):
     def create():
-        preparers = {'scene_reason': prepare_scene, 'organize': prepare_organize, 'knowledge': prepare_knowledge,
-                     'face_cluster': prepare_face_cluster, 'face_database': prepare_face_database}
-        kind = body.get('kind')
-        if set(body) - {'kind', 'params', 'idempotency_key'} or kind not in preparers:
-            raise ValueError('后台任务支持 scene_reason、organize、knowledge、face_cluster、face_database')
-        params = body.get('params')
-        if not isinstance(params, dict):
-            raise ValueError('params 必须为对象')
-        key = body.get('idempotency_key')
-        if key is not None and not isinstance(key, str):
-            raise ValueError('idempotency_key 必须为字符串')
-        prepared, items = preparers[kind](params, defer_hash=True)
-        prepared['_manifest_items'] = items
-        items = [dict(item, stage='fingerprint') for item in items]
-        output = ([prepared['db_root']] + ([prepared['output_dir']] if prepared.get('output_dir') else [])) \
-            if kind == 'face_database' else prepared.get('output_file') or prepared['output_dir']
-        task, created = manager().submit(kind, prepared, items, key, output)
-        return dict(task, created=created)
+        if set(body) - {'kind', 'params', 'idempotency_key'}:
+            raise ValueError('后台任务含未知字段')
+        return submit_business_task(body.get('kind'), body.get('params'), body.get('idempotency_key'))
     return response(create, 202)
 
 

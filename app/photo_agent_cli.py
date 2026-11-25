@@ -10,12 +10,15 @@ def main():
     parser.add_argument('--model', choices=['auto', 'small', 'big'], default='auto')
     parser.add_argument('--protocol', choices=['json', 'native'], default='json')
     parser.add_argument('--max-steps', type=int, default=6)
+    parser.add_argument('--turn-timeout', type=int, default=180)
+    parser.add_argument('--output-token-budget', type=int, default=8192)
     parser.add_argument('--context', default='{}')
     parser.add_argument('--message', help='单轮执行并输出 JSON；省略则进入连续对话')
     args = parser.parse_args()
     from core_modules.organize.langchain_agent import build_photo_agent
     agent = build_photo_agent(args.root, selection=args.model, protocol=args.protocol,
-                              max_steps=args.max_steps)
+                              max_steps=args.max_steps, turn_timeout=args.turn_timeout,
+                              output_token_budget=args.output_token_budget)
     context = json.loads(args.context)
     if not isinstance(context, dict):
         parser.error('--context 必须是 JSON 对象')

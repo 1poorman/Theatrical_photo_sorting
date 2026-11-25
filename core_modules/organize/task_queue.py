@@ -161,7 +161,7 @@ class TaskQueue:
                 connection.rollback()
                 raise
 
-    def submit(self, kind, params, items, idempotency_key=None, output=None):
+    def submit(self, kind, params, items, idempotency_key=None, output=None, fresh_output=False):
         if self._stop.is_set() or not self._thread.is_alive():
             raise TaskUnavailable('后台任务执行器不可用。')
         if kind not in self.handlers:
@@ -181,6 +181,8 @@ class TaskQueue:
                     if old['request_hash'] != digest:
                         raise TaskConflict('同一幂等键对应不同输入，请使用新的幂等键。')
                     return self.get(old['id']), False
+            if fresh_output and any(Path(path).exists() or Path(path).is_symlink() for path in outputs):
+                raise TaskConflict('输出路径已存在，请指定新路径；禁止覆盖')
             self._check_capacity(connection)
             self._check_output(connection, outputs)
             task_id = uuid.uuid4().hex
