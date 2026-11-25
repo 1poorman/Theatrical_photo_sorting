@@ -13,3 +13,8 @@ python -m pip install -r requirements/agent.txt
 
 Conda resolves the `vision.txt` reference relative to `environment.yml`.
 DALI remains an optional experiment; see the preprocessing guide before installing it.
+
+The visual API includes `jsonschema` for both agent entry points' shared argument
+validation. Advanced LangChain chat additionally requires `agent.txt`. Install
+these dependencies in one Python environment; do not combine site-packages from
+different Python minor versions.

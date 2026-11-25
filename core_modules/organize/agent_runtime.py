@@ -14,12 +14,14 @@ import uuid
 from contextlib import contextmanager
 from datetime import datetime, timezone
 
+from core_modules.organize.agent_contracts import outcome, redact
+
 try:
     import fcntl
 except ImportError:  # Windows 等无 fcntl 环境仍保留进程内锁
     fcntl = None
 
-STATES = ('queued', 'running', 'review', 'approved', 'failed')
+STATES = ('queued', 'running', 'waiting', 'review', 'approved', 'partial', 'failed', 'interrupted')
 _TASK_LOCK = threading.RLock()
 
 
@@ -36,15 +38,18 @@ class AgentRuntime:
         self.root = root
         self.allowed = set(allowed_tools or [])
         self.tools = {}
+        self.contextual = set()
         self.audit_path = os.path.join(root, 'agent_audit.jsonl')
         self.tasks_path = os.path.join(root, 'agent_tasks.json')
 
     # ---------- 工具注册 ----------
 
-    def register_tool(self, name, fn, allowed=True):
+    def register_tool(self, name, fn, allowed=True, contextual=False):
         if not callable(fn):
             raise TypeError(f'工具必须可调用: {name}')
         self.tools[name] = fn
+        if contextual:
+            self.contextual.add(name)
         if allowed:
             self.allowed.add(name)
         return name
@@ -68,8 +73,8 @@ class AgentRuntime:
     def _audit(self, task_id, event, **detail):
         with self._file_lock():
             with open(self.audit_path, 'a', encoding='utf-8') as f:
-                f.write(json.dumps({'at': _now(), 'task_id': task_id, 'event': event,
-                                    **detail}, ensure_ascii=False) + '\n')
+                f.write(json.dumps(redact({'at': _now(), 'task_id': task_id, 'event': event,
+                                           **detail}), ensure_ascii=False) + '\n')
 
     def _load_tasks_unlocked(self):
         if not os.path.exists(self.tasks_path):
@@ -84,7 +89,7 @@ class AgentRuntime:
     def _save_tasks_unlocked(self, tasks):
         tmp = self.tasks_path + '.' + uuid.uuid4().hex[:8] + '.tmp'
         with open(tmp, 'w', encoding='utf-8') as f:
-            json.dump(tasks, f, ensure_ascii=False, indent=2)
+            json.dump(redact(tasks), f, ensure_ascii=False, indent=2, default=str)
         os.replace(tmp, self.tasks_path)
 
     def _save_tasks(self, tasks):
@@ -109,7 +114,7 @@ class AgentRuntime:
 
     # ---------- 执行 ----------
 
-    def run(self, tool, params=None, task_id=None):
+    def run(self, tool, params=None, task_id=None, idempotency_key=None, context=None):
         params = params or {}
         if tool not in self.allowed or tool not in self.tools:
             raise ToolNotAllowed(f'工具未在白名单内: {tool}')
@@ -121,7 +126,24 @@ class AgentRuntime:
                 'input_hash': input_hash, 'state': 'queued',
                 'created_at': _now(), 'updated_at': _now(), 'result': None,
                 'error': None}
-        self._put_task(task)
+        task['idempotency_key'] = idempotency_key
+        with self._file_lock():
+            tasks = self._load_tasks_unlocked()
+            existing = tasks.get(task_id)
+            if idempotency_key:
+                matching_key = next((row for row in tasks.values()
+                                     if row.get('idempotency_key') == idempotency_key), None)
+                if matching_key and matching_key['input_hash'] != input_hash:
+                    raise ValueError('同一幂等键对应不同参数')
+                if existing and existing['input_hash'] != input_hash:
+                    raise ValueError('同一任务对应不同参数')
+                existing = existing or matching_key
+            if existing:
+                if existing['input_hash'] != input_hash:
+                    raise ValueError('同一任务或幂等键对应不同参数')
+                return dict(existing, reused=True)
+            tasks[task_id] = redact(task)
+            self._save_tasks_unlocked(tasks)
         self._audit(task_id, 'queued', tool=tool, input_hash=input_hash)
 
         task['state'] = 'running'
@@ -129,21 +151,47 @@ class AgentRuntime:
         self._put_task(task)
         self._audit(task_id, 'running', tool=tool)
         try:
-            result = self.tools[tool](**params)
+            arguments = dict(params)
+            if tool in self.contextual:
+                arguments['_execution_context'] = dict(context or {}, idempotency_key=idempotency_key)
+            result = self.tools[tool](**arguments)
         except Exception as e:  # 失败也必须收尾
             task['state'] = 'failed'
-            task['error'] = f'{type(e).__name__}: {e}'
+            task['error'] = redact(f'{type(e).__name__}: {e}')
+            task['outcome'] = outcome({'ok': False, 'error': task['error']})
             task['updated_at'] = _now()
             self._put_task(task)
             self._audit(task_id, 'failed', error=task['error'])
             return task
-        task['result'] = result
+        task['result'] = redact(result)
+        task['outcome'] = outcome(task['result'])
         auto = result.get('auto_approved') if isinstance(result, dict) else False
-        task['state'] = 'approved' if auto else 'review'
+        execution = task['outcome']['status']
+        task['state'] = {'submitted': 'waiting', 'failed': 'failed', 'partial': 'partial',
+                         'interrupted': 'interrupted', 'cancelled': 'interrupted'}.get(
+                             execution, 'approved' if auto else 'review')
+        if execution == 'failed':
+            task['error'] = task['outcome']['error'] or '业务处理失败，请查看失败计数与任务记录'
         task['updated_at'] = _now()
         self._put_task(task)
         self._audit(task_id, task['state'], tool=tool)
         return task
+
+    def recover_interrupted(self):
+        with self._file_lock():
+            tasks = self._load_tasks_unlocked()
+            changed = []
+            for task in tasks.values():
+                if task['state'] in ('queued', 'running'):
+                    task.update(state='interrupted', updated_at=_now(),
+                                error='服务中断；请查询业务任务或核对产物后恢复')
+                    task['outcome'] = dict(outcome(task.get('result')), status='interrupted',
+                                           ok=False, error=task['error'])
+                    changed.append(task['task_id'])
+            self._save_tasks_unlocked(tasks)
+        for task_id in changed:
+            self._audit(task_id, 'interrupted')
+        return changed
 
     def resolve(self, task_id, approve=True, reviewer='human', note=''):
         with self._file_lock():

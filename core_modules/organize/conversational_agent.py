@@ -5,10 +5,15 @@ import os
 import re
 import threading
 import uuid
+from pathlib import Path
 from contextlib import contextmanager
 from datetime import datetime, timezone
 
 from core_modules.organize.agent_runtime import AgentRuntime, ToolNotAllowed
+from core_modules.organize.agent_contracts import (
+    ARTIFACT_FIELDS, COMPLETION_RE, PATH_FIELDS, SENSITIVE_KEY_RE, bounded_json,
+    outcome, redact, request_key, validate_arguments,
+)
 
 try:
     import fcntl
@@ -17,10 +22,6 @@ except ImportError:  # Windows 等无 fcntl 环境仍保留进程内锁
 
 
 SESSION_ID_RE = re.compile(r'^[A-Za-z0-9_.-]{1,80}$')
-SENSITIVE_KEY_RE = re.compile(
-    r'(?:^|_)(?:api_?key|key|token|password|passwd|secret|authorization)(?:$|_)',
-    re.I,
-)
 KEY_VALUE_RE = re.compile(
     r'(?P<key>[A-Za-z_][A-Za-z0-9_]*)\s*[=:]\s*'
     r'(?P<value>"[^"]*"|\'[^\']*\'|[^\s,，;；]+)')
@@ -38,10 +39,7 @@ def _now():
 
 
 def _json_text(value, limit=12000):
-    text = json.dumps(value, ensure_ascii=False, default=str)
-    if len(text) > limit:
-        return text[:limit] + '...<truncated>'
-    return text
+    return bounded_json(value, limit)
 
 
 def _json_object(text):
@@ -123,12 +121,12 @@ class ConversationStore:
         tmp = path + '.' + uuid.uuid4().hex[:8] + '.tmp'
         with _STORE_LOCK:
             with open(tmp, 'w', encoding='utf-8') as f:
-                json.dump(session, f, ensure_ascii=False, indent=2, default=str)
+                json.dump(redact(session), f, ensure_ascii=False, indent=2, default=str)
             os.replace(tmp, path)
         return path
 
     def append(self, session, role, content, **extra):
-        row = {'role': role, 'content': str(content), 'at': _now()}
+        row = {'role': role, 'content': redact(str(content)), 'at': _now()}
         row.update(extra)
         session.setdefault('messages', []).append(row)
         self._refresh_summary(session)
@@ -171,16 +169,20 @@ class ConversationalAgent:
         )
         self.runtime = runtime or AgentRuntime(os.path.join(self.root, 'tasks'))
         self.tool_specs = {}
+        self.services = None
 
-    def register_tool(self, name, fn, description, parameters=None, aliases=None):
+    def register_tool(self, name, fn, description, parameters=None, aliases=None,
+                      side_effects='write', contextual=False, volatile=False):
         if not SESSION_ID_RE.fullmatch(name):
             raise ValueError(f'非法工具名: {name}')
-        self.runtime.register_tool(name, fn)
+        self.runtime.register_tool(name, fn, contextual=contextual)
         self.tool_specs[name] = {
             'name': name,
             'description': description,
             'parameters': parameters or {'type': 'object', 'properties': {}},
             'aliases': list(aliases or []),
+            'side_effects': side_effects,
+            'volatile': volatile,
         }
         return name
 
@@ -199,7 +201,7 @@ class ConversationalAgent:
             '{"action":"final","content":"给用户的回答","memory":{}}\n'
             '规则：工具名必须来自工具清单；参数不足时不要猜测，直接 final 询问；'
             '工具失败后可换工具、修正参数或解释失败；不得请求 shell、删除或越权网络访问。\n'
-            f'工具清单：{_json_text(self.tools())}\n'
+            f'工具清单：{_json_text(self.tools(), 48000)}\n'
             f'长期记忆：{_json_text(session.get("memory", {}))}\n'
             f'较早对话摘要：{session.get("summary") or "无"}'
         )
@@ -236,15 +238,135 @@ class ConversationalAgent:
         trace['fallback_reason'] = 'invalid_agent_json'
         return None, trace
 
-    def _merge_memory(self, session, values):
+    def _merge_memory(self, session, values, source='user'):
         if not isinstance(values, dict):
             return
+        values = redact(values)
+        if source == 'model':
+            values = {key: value for key, value in values.items() if key not in PATH_FIELDS and key != 'project_id'}
+        projects = session.setdefault('projects', {})
+        active = session.get('active_project_id', 'default')
+        projects.setdefault(active, {'memory': session.setdefault('memory', {}), 'tasks': {}, 'artifacts': {}})
+        projects[active]['memory'] = session.setdefault('memory', {})
+        project_id = values.get('project_id')
+        if project_id is not None and (not isinstance(project_id, str) or not SESSION_ID_RE.fullmatch(project_id)):
+            raise ValueError('project_id 必须为合法的项目名称')
+        if values.get('input_dir') and not isinstance(values['input_dir'], str):
+            raise ValueError('input_dir 必须为路径字符串')
+        if values.get('input_dir') and (project_id or source == 'user'
+                or session['memory'].get('input_dir') != values['input_dir']):
+            import hashlib
+            namespace = project_id or session['memory'].get('project_id', '')
+            digest = hashlib.sha256(str(Path(values['input_dir']).expanduser().resolve()).encode()).hexdigest()[:20]
+            project_id = namespace + '.' + digest if namespace else digest
+            if namespace:
+                values['project_id'] = namespace
+        if project_id and project_id != active:
+            previous = session['memory']
+            projects.setdefault(project_id, {'memory': {key: previous[key] for key in ('play',)
+                                                      if key in previous and active == 'default'},
+                                             'tasks': {}, 'artifacts': {}})
+            session['active_project_id'] = project_id
+            session['memory'] = projects[project_id]['memory']
+        else:
+            session.setdefault('active_project_id', active)
         memory = session.setdefault('memory', {})
         for key, value in values.items():
             if (isinstance(key, str) and len(key) <= 80
                     and not SENSITIVE_KEY_RE.search(key) and isinstance(
                     value, (str, int, float, bool, list, dict, type(None)))):
                 memory[key] = value
+
+    def _project(self, session):
+        self._merge_memory(session, {})
+        return session['projects'][session['active_project_id']]
+
+    def _remember_result(self, session, tool, arguments, result):
+        existing_id = outcome(result)['business_task_id']
+        if tool in ('get_task', 'cancel_task', 'resume_task') and existing_id in self._project(session)['tasks']:
+            previous = self._project(session)['tasks'][existing_id]
+            tool, arguments = previous['tool'], previous['arguments']
+        self._merge_memory(session, arguments, source='tool')
+        facts = outcome(result)
+        payload = result.get('result') if facts['business_task_id'] else result
+        payload = payload if isinstance(payload, dict) else {}
+        paths = {key: payload[key] for key in ARTIFACT_FIELDS if payload.get(key)}
+        if tool == 'build_play_knowledge' and payload.get('output_dir'):
+            paths['knowledge_dir'] = payload['output_dir']
+        if tool == 'scene_reason' and payload.get('output_file'):
+            paths['evidence_file'] = payload['output_file']
+        if tool == 'export_review' and payload.get('output_file'):
+            paths['scene_evidence_file'] = payload['output_file']
+        self._merge_memory(session, paths, source='tool')
+        project = self._project(session)
+        for artifact in facts['artifacts']:
+            project['artifacts'][artifact['kind']] = artifact
+        if facts['business_task_id']:
+            project['tasks'][facts['business_task_id']] = {
+                'tool': tool, 'arguments': arguments, 'snapshot': result, 'outcome': facts}
+
+    def _refresh_tasks(self, session):
+        if self.services is None:
+            return
+        for task_id, record in self._project(session)['tasks'].items():
+            try:
+                result = self.services.get(task_id)
+            except (KeyError, ValueError, RuntimeError, OSError):
+                continue
+            record.update(snapshot=result, outcome=outcome(result))
+            self._remember_result(session, record['tool'], record['arguments'], result)
+
+    def _execute_tool(self, session, spec, arguments, deadline=None):
+        arguments, missing = validate_arguments(spec['parameters'], arguments)
+        if missing:
+            raise ValueError('调用工具前还需要参数：' + '、'.join(missing))
+        if arguments.get('input_dir') and Path(arguments['input_dir']).expanduser().is_dir():
+            self._merge_memory(session, {'input_dir': arguments['input_dir']}, source='tool')
+        project = self._project(session)
+        if spec['name'] in ('get_task', 'cancel_task', 'resume_task') and arguments['task_id'] not in project['tasks']:
+            raise ValueError('只能操作当前会话项目已关联的业务任务')
+        key = request_key(session['session_id'] + ':' + session['active_project_id'], spec, arguments) if (
+            spec['side_effects'] == 'write' and not spec['volatile']) else None
+        task = self.runtime.run(spec['name'], arguments, idempotency_key=key,
+                                context={'session_id': session['session_id'], 'project_id': session['active_project_id'],
+                                         'deadline': deadline})
+        business_id = outcome(task.get('result'))['business_task_id']
+        if task.get('reused') and business_id and self.services is not None:
+            result = self.services.get(business_id)
+            task = dict(task, result=result, outcome=outcome(result))
+            task['state'] = {'submitted': 'waiting', 'partial': 'partial', 'failed': 'failed',
+                             'interrupted': 'interrupted', 'cancelled': 'interrupted'}.get(
+                                 task['outcome']['status'], 'review')
+        facts = task.get('outcome') or outcome(task.get('result'))
+        if task['state'] in ('failed', 'interrupted'):
+            facts = dict(facts, ok=False, status=task['state'], error=task['error'])
+        elif task['state'] in ('queued', 'running'):
+            facts = dict(facts, ok=True, status='submitted')
+        call = {'ok': facts['ok'], 'task_id': task['task_id'], 'state': task['state'],
+                'result': task['result'], 'outcome': facts, 'error': task['error'],
+                'reused': bool(task.get('reused')), 'project_id': session['active_project_id']}
+        if isinstance(task['result'], dict):
+            self._remember_result(session, spec['name'], arguments, task['result'])
+        return call
+
+    def _final_answer(self, session, answer, first_call):
+        current = session['tool_calls'][first_call:]
+        writes = any(self.tool_specs.get(call['tool'], {}).get('side_effects') == 'write' for call in current)
+        if current and (writes or any(not call.get('ok') for call in current) or COMPLETION_RE.search(answer)):
+            return '\n'.join(self._tool_result_answer(call) for call in current)
+        if not current and COMPLETION_RE.search(answer):
+            tasks = self._project(session)['tasks']
+            if tasks:
+                return '\n'.join(self._tool_result_answer(dict(record, tool=record['tool'],
+                    result=record['snapshot'], ok=record['outcome']['ok'])) for record in tasks.values())
+            previous = [call for call in session['tool_calls']
+                        if call.get('project_id') == session['active_project_id'] and call.get('ok')
+                        and self.tool_specs.get(call['tool'], {}).get('side_effects') == 'write'
+                        and any(Path(artifact['path']).exists() for artifact in call.get('outcome', {}).get('artifacts', []))]
+            if previous:
+                return '历史已核验的执行结果：\n' + self._tool_result_answer(previous[-1])
+            return '尚无可核验的执行记录，不能确认操作已完成。请明确操作并提供所需路径。'
+        return redact(answer)
 
     def _extract_inline_memory(self, message):
         values = {}
@@ -254,33 +376,7 @@ class ConversationalAgent:
         return values
 
     def _validate_arguments(self, spec, arguments, memory):
-        if not isinstance(arguments, dict):
-            arguments = {}
-        properties = spec.get('parameters', {}).get('properties', {})
-        allowed = set(properties)
-        merged = {k: v for k, v in memory.items() if k in allowed}
-        merged.update({k: v for k, v in arguments.items() if k in allowed})
-        for key, value in list(merged.items()):
-            expected = (properties.get(key) or {}).get('type')
-            if expected == 'integer' and isinstance(value, str):
-                try:
-                    merged[key] = int(value)
-                except ValueError:
-                    pass
-            elif expected == 'number' and isinstance(value, str):
-                try:
-                    merged[key] = float(value)
-                except ValueError:
-                    pass
-            elif expected == 'boolean' and isinstance(value, str):
-                lowered = value.strip().lower()
-                if lowered in ('1', 'true', 'yes', 'on'):
-                    merged[key] = True
-                elif lowered in ('0', 'false', 'no', 'off'):
-                    merged[key] = False
-        missing = [k for k in spec.get('parameters', {}).get('required', [])
-                   if merged.get(k) in (None, '')]
-        return merged, missing
+        return validate_arguments(spec.get('parameters', {}), arguments, memory, coerce=True)
 
     def _fallback_command(self, message, session):
         text = (message or '').strip()
@@ -333,8 +429,15 @@ class ConversationalAgent:
         return args
 
     def _tool_result_answer(self, call):
+        facts = call.get('outcome') or {}
+        status = facts.get('status')
+        if status == 'submitted':
+            return f'工具 {call.get("tool")} 已提交，尚未完成；业务任务 {facts.get("business_task_id") or call.get("task_id")}。'
+        if status in ('partial', 'failed', 'cancelled', 'interrupted'):
+            return f'工具 {call.get("tool")} 状态 {status}，失败条目 {facts.get("failed", 0)}：{_json_text(call.get("result"), 3000)}'
         if call.get('ok'):
-            return f'工具 {call.get("tool")} 已执行：{_json_text(call.get("result"), 3000)}'
+            review = '，待人工复核' if facts.get('requires_human_review') else ''
+            return f'工具 {call.get("tool")} 已执行{review}：{_json_text(call.get("result"), 3000)}'
         return f'工具 {call.get("tool")} 执行失败：{call.get("error")}'
 
     def chat(self, message, session_id=None, context=None):
@@ -345,10 +448,14 @@ class ConversationalAgent:
             return self._chat_locked(message, normalized_id, context)
 
     def _chat_locked(self, message, session_id, context=None):
+        if context is not None and not isinstance(context, dict):
+            raise ValueError('context 必须是 JSON 对象')
         session = self.store.load(session_id)
         self._merge_memory(session, context or {})
         self._merge_memory(session, self._extract_inline_memory(message))
+        self._refresh_tasks(session)
         self.store.append(session, 'user', message)
+        first_call = len(session['tool_calls'])
 
         traces = []
         used_fallback = False
@@ -368,13 +475,14 @@ class ConversationalAgent:
                     return self._response(session, answer, traces, True, path)
                 command = self._fallback_command(message, session)
                 used_fallback = True
-            self._merge_memory(session, command.get('memory'))
+            self._merge_memory(session, command.get('memory'), source='model')
 
             action = command.get('action')
             if action == 'final':
                 answer = str(command.get('content') or '').strip()
                 if not answer:
-                    answer = '任务已处理，但没有可展示的文本结果。'
+                    answer = '没有可展示的文本结果。'
+                answer = self._final_answer(session, answer, first_call)
                 self.store.append(session, 'assistant', answer,
                                   trace=trace, fallback=used_fallback)
                 path = self.store.save(session)
@@ -395,8 +503,13 @@ class ConversationalAgent:
             if spec is None:
                 tool_result = {'ok': False, 'error': f'工具不在白名单内: {tool_name}'}
             else:
-                arguments, missing = self._validate_arguments(
-                    spec, command.get('arguments'), session.get('memory', {}))
+                try:
+                    arguments, missing = self._validate_arguments(
+                        spec, command.get('arguments') or {}, session.get('memory', {}))
+                except ValueError as exc:
+                    arguments, missing = {}, []
+                    tool_result = {'ok': False, 'error': str(exc)}
+                    spec = None
                 executed_arguments = arguments
                 if missing:
                     answer = '调用工具前还需要参数：' + '、'.join(missing)
@@ -404,16 +517,8 @@ class ConversationalAgent:
                     path = self.store.save(session)
                     return self._response(session, answer, traces, used_fallback, path)
                 try:
-                    task = self.runtime.run(tool_name, arguments)
-                    tool_result = {
-                        'ok': task.get('state') != 'failed',
-                        'task_id': task.get('task_id'),
-                        'state': task.get('state'),
-                        'result': task.get('result'),
-                        'error': task.get('error'),
-                    }
-                    if tool_result['ok']:
-                        self._merge_memory(session, arguments)
+                    if spec is not None:
+                        tool_result = self._execute_tool(session, spec, arguments)
                 except (ToolNotAllowed, TypeError, ValueError) as exc:
                     tool_result = {'ok': False, 'error': f'{type(exc).__name__}: {exc}'}
 
@@ -445,4 +550,11 @@ class ConversationalAgent:
             'trace': traces,
             'fallback': bool(fallback),
             'session_file': path,
+            'project_id': session.get('active_project_id'),
+            'workflow': self._project(session),
+            'execution_report': [dict(tool=record['tool'], **record['outcome'])
+                                 for record in self._project(session)['tasks'].values()],
+            'operation_report': [dict(tool=call['tool'], task_id=call.get('task_id'), **call['outcome'])
+                                 for call in session.get('tool_calls', [])
+                                 if call.get('project_id') == session.get('active_project_id') and call.get('outcome')],
         }
