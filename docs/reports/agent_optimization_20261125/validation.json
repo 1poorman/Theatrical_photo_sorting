@@ -1,0 +1,226 @@
+{
+  "schema": 1,
+  "date": "2026-11-25",
+  "baseline_commit": "8c3c59b1a4c98e5427d28395fe3f09a924d34fa1",
+  "status": "backend_engineering_stage_verified",
+  "committed_at_validation": false,
+  "deployed": false,
+  "regressions": [
+    {
+      "test": "tests/test_agent_optimization.py",
+      "passed": 21,
+      "kind": "unittest",
+      "environment": "Python 3.11 host, modern agent packages + basic API/vision",
+      "log": "outputs/acceptance/agent_optimization_20261125/regressions/integration_host.log",
+      "log_sha256": "4d85a9f564f0ed637631bc2eebdd039f116658b46ad3c10345274fce2470f896",
+      "test_sha256": "6bb23c7f8d031725ebfebc387924f39b34ca6ca0c90298cf0eafe25618bb2e7a"
+    },
+    {
+      "test": "tests/test_langchain_agent.py",
+      "passed": 14,
+      "kind": "unittest",
+      "environment": "agent Python 3.11",
+      "log": "outputs/acceptance/agent_optimization_20261125/regressions/langchain.log",
+      "log_sha256": "cc57f3bf2819732f17e08c3e8c940e1f278551a410f247fc095fae4f87f832ce",
+      "test_sha256": "2a0b9b3f63be3aaf2288d7cd08edbb1d80897b186107c9d2f925fc6edcf57177"
+    },
+    {
+      "test": "tests/test_agent_runtime.py",
+      "passed": 6,
+      "kind": "assertion_groups",
+      "environment": "agent Python 3.11",
+      "log": "outputs/acceptance/agent_optimization_20261125/regressions/runtime.log",
+      "log_sha256": "696a334a11505533496c47ac2d13d7e6e3108f07422ce974efe1507680716cfc",
+      "test_sha256": "089d88a69b4f3c3c8b13fa7c1a9d90ae1f1a71b499e5c4013e403f1068a42b61"
+    },
+    {
+      "test": "tests/test_conversational_agent.py",
+      "passed": 9,
+      "kind": "assertion_groups",
+      "environment": "agent Python 3.11",
+      "log": "outputs/acceptance/agent_optimization_20261125/regressions/conversation.log",
+      "log_sha256": "ee3657e0a6fefa48464b36dec317df3c79f2b539d2f07520fa4390ce9c276fcb",
+      "test_sha256": "fe85ba8b40dfb76eda3e4537635a703f5c2d94efafc6ce0585fdcf1c207728e5"
+    },
+    {
+      "test": "tests/test_core_upgrade_tasks.py",
+      "passed": 10,
+      "kind": "unittest",
+      "environment": "visual Python 3.10",
+      "log": "outputs/acceptance/agent_optimization_20261125/regressions/task_queue.log",
+      "log_sha256": "496096ab20d387bb506450f59db2cd29af20db7f91f0397c72e1a5868931c062",
+      "test_sha256": "8ed7bc42c8ae7952cead41e43c946d473c479b032e4cc2a8aedf73804de8ca14"
+    },
+    {
+      "test": "tests/test_organize_tasks.py",
+      "passed": 18,
+      "kind": "unittest",
+      "environment": "visual Python 3.10",
+      "log": "outputs/acceptance/agent_optimization_20261125/regressions/organize.log",
+      "log_sha256": "33c1e79016b9b53dc2aedab5e9df35fbfb991c14bbc3f93028d8838d0b50ed94",
+      "test_sha256": "e7176b5a5b4ac2404f3aab7132e5ef78570aaa9833a504a9ba1a56a2af4ba399"
+    },
+    {
+      "test": "tests/test_visual_evidence.py",
+      "passed": 14,
+      "kind": "unittest",
+      "environment": "visual Python 3.10",
+      "log": "outputs/acceptance/agent_optimization_20261125/regressions/visual.log",
+      "log_sha256": "21d106ed70d9054e4f2c9bf9c2569413b8a63049df7066d9beb7834a193e9767",
+      "test_sha256": "db8a5434c1a89b2aea3620488fb2c9742b155c0c817525de64bae048bbcd19f5"
+    },
+    {
+      "test": "tests/test_workspace.py",
+      "passed": 27,
+      "kind": "unittest",
+      "environment": "visual Python 3.10 host",
+      "log": "outputs/acceptance/agent_optimization_20261125/regressions/workspace_host.log",
+      "log_sha256": "552e1c3af03b3d3a09061a233775fa548613fee3b3a87be5c5a85f684b10ed5e",
+      "test_sha256": "bb26ec5a2738fefae996f66d0a952b55df4c52e36e572cea721e62659fcbb74c"
+    }
+  ],
+  "unittest_passed": 104,
+  "assertion_groups_passed": 15,
+  "final_source_sha256": {
+    "core_modules/organize/agent_contracts.py": "8fe2fb145357bcbe9860aa1a0555be4bbb5fa64882eec9f7d1b04697a9271316",
+    "core_modules/organize/agent_budget.py": "4e9d159b071044bd08d63f7cd6b59e8ed3ae7f49818763706042aee33891d38c",
+    "core_modules/organize/agent_runtime.py": "dfaaaa3fc283ecd70aaade05dbbc70ab129bba8d898508216a810ec2e1f51c6b",
+    "core_modules/organize/conversational_agent.py": "d4fdbb678a36e66fc59f46de4156146dd921ee7982e183aaaebc2f60b5f4e75d",
+    "core_modules/organize/langchain_agent.py": "11bab831e7a1cba8790ffedf34f3eee6c97559e22304c06da03142e5da0f8ad7",
+    "core_modules/organize/photo_agent_tools.py": "291b230d02dd222adae0252fe03f99ee1d5d70eacfeb41cfab7a5bb57b50a2cd",
+    "core_modules/organize/agent_tools.py": "a94b7385cbe03987d27ef3f2a2d96212f9326d57a8fb63177edec964e11f60f9",
+    "core_modules/organize/task_queue.py": "c4327ca219e98b036ba6556062999b306bf0104dfe543a19747ae43704cba927",
+    "app/agent_services.py": "d0d2755c47f9e52370a64de1a7672011bee9a3f0216de43e087e43033ae6d2f2",
+    "app/organize_tasks.py": "938947e513367723b96800345ba4442c267cfcd2541ef163c07e4403924e3f92",
+    "app/main.py": "cc87c2e72fd1e29e5c46afc4195507859831dafac20f1d72d9499e43f80c8fbb",
+    "tools/validation/evaluate_photo_agent.py": "b7283f8fd91f51b08ee46322ad432f5d71138bdd08018727ac9f59efffb234da"
+  },
+  "requirements_sha256": {
+    "requirements/vision.txt": "43d6d2ac3d3c4a6f04a74041f6858c68e1acbea180af53750d4444bbc450e342",
+    "requirements/agent.txt": "42790fcb84922f60b356f5b5b9d848dd938242633575bdf2d5f2d5f86750e431"
+  },
+  "static_validation": {
+    "compiled_changed_python_files": 16,
+    "ast_checked_python_files": 17,
+    "visual_runtime_import": "passed",
+    "git_diff_check": "passed"
+  },
+  "live_smoke": {
+    "model": "Qwen3.6-27B",
+    "protocol": "json",
+    "passed": 7,
+    "expected": 7,
+    "execution_complete": true,
+    "report": "outputs/acceptance/agent_optimization_20261125/live_big_final/report.json",
+    "report_sha256": "b09710c72b7551213729936dc3e7ad974eea7af77f4e655f55e192a05ae21fdb",
+    "cases": [
+      {
+        "name": "inspect",
+        "passed": true,
+        "elapsed_seconds": 4.617,
+        "endpoint_calls": 2,
+        "reported_usage": {
+          "input_tokens": 5658,
+          "output_tokens": 354,
+          "total_tokens": 6012
+        }
+      },
+      {
+        "name": "manifest",
+        "passed": true,
+        "elapsed_seconds": 15.288,
+        "endpoint_calls": 2,
+        "reported_usage": {
+          "input_tokens": 5872,
+          "output_tokens": 1253,
+          "total_tokens": 7125
+        }
+      },
+      {
+        "name": "repeat_write",
+        "passed": true,
+        "elapsed_seconds": 26.245,
+        "endpoint_calls": 2,
+        "reported_usage": {
+          "input_tokens": 7023,
+          "output_tokens": 2161,
+          "total_tokens": 9184
+        }
+      },
+      {
+        "name": "missing_arguments",
+        "passed": true,
+        "elapsed_seconds": 4.497,
+        "endpoint_calls": 1,
+        "reported_usage": {
+          "input_tokens": 2452,
+          "output_tokens": 370,
+          "total_tokens": 2822
+        }
+      },
+      {
+        "name": "knowledge_submit",
+        "passed": true,
+        "elapsed_seconds": 8.314,
+        "endpoint_calls": 2,
+        "reported_usage": {
+          "input_tokens": 6412,
+          "output_tokens": 659,
+          "total_tokens": 7071
+        }
+      },
+      {
+        "name": "knowledge_resume",
+        "passed": true,
+        "elapsed_seconds": 4.527,
+        "endpoint_calls": 2,
+        "reported_usage": {
+          "input_tokens": 10954,
+          "output_tokens": 303,
+          "total_tokens": 11257
+        }
+      },
+      {
+        "name": "visual_observation",
+        "passed": true,
+        "elapsed_seconds": 9.702,
+        "endpoint_calls": 2,
+        "reported_usage": {
+          "input_tokens": 6988,
+          "output_tokens": 529,
+          "total_tokens": 7517
+        }
+      }
+    ],
+    "elapsed_seconds_sum": 73.19,
+    "orchestration_endpoint_calls": 13,
+    "orchestration_reported_usage": {
+      "input_tokens": 45359,
+      "output_tokens": 5629,
+      "total_tokens": 50988
+    },
+    "vision": {
+      "image": "data/sample_images/2.jpg",
+      "sha256": "159efe6ab7877eb076f4e570bb3b61879483b892e97debeb3fea557492fd6565",
+      "model": "Qwen3.6-27B",
+      "called": true,
+      "requires_human_review": true,
+      "initial_sample_image_bytes_unchanged": true
+    }
+  },
+  "preserved_initial_smoke": {
+    "report": "outputs/acceptance/agent_optimization_20261125/live_big_host/report.json",
+    "passed": 7,
+    "total": 7,
+    "boundary": "earlier source version; final smoke binds the current implementation"
+  },
+  "limitations": [
+    "functional smoke, not independent scene/identity/visual fact quality or P50/P95 evaluation",
+    "agent API test isolates unrelated GPU-server/image-search/age-model imports; no full model startup",
+    "Python 3.11 ASGI thread wakeups timed out in sandbox; host test passed",
+    "repeat visual workspace sandbox font-cache initialization timed out; host test passed",
+    "output reservation budget excludes input tokens and separate vision calls; legacy budget not aligned",
+    "no UI integration, incremental session storage, large model comparison, SFT/RL or deployment",
+    "original photos and formal face galleries are not modified; U2 remains closed"
+  ]
+}

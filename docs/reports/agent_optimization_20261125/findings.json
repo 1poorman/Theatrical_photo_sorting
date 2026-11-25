@@ -1,0 +1,56 @@
+{
+  "baseline_commit": "8c3c59b",
+  "cases": [
+    {
+      "case": "legacy_schema_constraints",
+      "observed": "range and enum violations executed; unknown argument silently discarded"
+    },
+    {
+      "case": "runtime_task_id_replay",
+      "executions": 2,
+      "stored_tasks": 1
+    },
+    {
+      "case": "cross_turn_deduplication",
+      "executions": 2
+    },
+    {
+      "case": "tool_result_memory",
+      "knowledge_dir_saved": false,
+      "output_dir_saved": true
+    },
+    {
+      "case": "project_memory_scope",
+      "old_project_output_retained": true
+    },
+    {
+      "case": "business_failure_status",
+      "call_ok": true,
+      "state": "review",
+      "failed_items": 2
+    },
+    {
+      "case": "completion_evidence",
+      "accepted_completion_without_tool": true
+    },
+    {
+      "case": "redaction_boundary",
+      "top_level_key_filtered": true,
+      "nested_key_retained": true,
+      "message_retained": true
+    },
+    {
+      "case": "json_protocol_usage",
+      "endpoint_usage_preserved": false
+    },
+    {
+      "case": "rolling_summary",
+      "old_unresolved_task_retained_in_prompt": false
+    },
+    {
+      "case": "result_truncation",
+      "valid_json": false,
+      "report_path_retained": false
+    }
+  ]
+}
