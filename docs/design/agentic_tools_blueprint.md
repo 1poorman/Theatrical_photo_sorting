@@ -72,11 +72,15 @@
 
 ## 会话与记忆
 
-会话持久化在 `outputs/agent/conversations/<session_id>.json`。`projects` 保存各输入目录项目的记忆、业务任务快照和产物；顶层 `memory` 为当前项目视图，兼容已有客户端。成功工具结果自动映射 `knowledge_dir`、`evidence_file`、`review_dir` 和已审核 `scene_evidence_file`。再次聊天时刷新关联业务任务，恢复真实结果路径。
+会话持久化在 `outputs/agent/conversations/<session_id>.sqlite3`。每步在同一事务中追加新消息和工具调用，更新会话元数据及有变动的业务任务快照。续聊读取最近的提示和滚动摘要窗口，不加载全部消息或调用。`memory`、`projects` 和已核验产物的含义不变，仍会刷新当前项目关联的业务任务；这不意味着单轮成本与项目任务数无关。
+
+升级前停止所有旧 worker 并备份 `outputs/agent/`。首次访问每个旧会话或运行时目录时，在事务中导入原 JSON；不删除、不覆盖、不再双写旧文件。导入失败回滚，可修复旧文件后重试。迁移后的权威记录是 SQLite；不要混用新旧写入进程。回退旧代码只能看到原快照，不能恢复升级后的新轮次。备份 SQLite 请停写复制或使用 SQLite 备份 API。
+
+`GET /api/organize/agent/session/{session_id}/history?kind=messages&limit=24` 返回最近一页，`items` 按时间正序；将非空 `next_before` 原样作为下次 `before` 获取更早记录。`kind=tool_calls` 独立分页，游标不能混用；默认每页 30 条，最多 100 条，未知会话返回 404。最新消息页还提供当前项目的任务摘要和产物，任务状态以后台队列为准。原无 `/history` 的 GET 接口保留完整快照，仅供显式全量读取。
 
 调用记录与审计保存在 `outputs/agent/tasks/`，实际业务任务保存在 `TRANS_TASK_DIR` 指定的 TaskQueue 数据库。写入幂等键绑定会话、项目、工具 schema、参数及输入文件状态；同 ID 不同参数拒绝，相同写入请求复用记录。后台队列继续执行完整哈希与版本校验。只读查询允许状态刷新；取消/恢复不使用永久写入去重。
 
-返回值中 `outcome.status` 分别为 `submitted`、`succeeded`、`partial`、`failed`、`cancelled`、`interrupted`。`submitted` 仅表示任务已受理，`partial`/`failed` 的 `ok=False`；人工复核通过独立字段表示。`workflow`、`execution_report`、`operation_report` 提供实际状态，`turn_tool_calls` 表示高级智能体本轮调用，`model_usage` 保存编排模型尝试、用量及预算。写入操作后的摘要由真实工具结果生成，普通问答仍是模型文本，不能把自由文本当作业务终态。
+返回值中 `outcome.status` 分别为 `submitted`、`succeeded`、`partial`、`failed`、`cancelled`、`interrupted`。`submitted` 仅表示任务已受理，`partial`/`failed` 的 `ok=False`；人工复核通过独立字段表示。两聊天入口的 `tool_calls`、`turn_tool_calls` 和 `operation_report` 只含本轮；`workflow`、`execution_report` 是当前项目状态，`message_count` 仍为完整消息数。`session_file` 现在指向数据库。高级入口的 `model_usage` 保存编排模型尝试、用量及预算。写入操作后的摘要由真实工具结果生成，普通问答仍是模型文本，不能把自由文本当作业务终态。
 
 存储与消息边界递归过滤敏感键，并处理带键名的文本赋值；保留非凭据的幂等键、缓存键和 token usage。该规则不能识别所有无键名凭据或任意自由文本密钥，聊天中仍不应传递凭据。长工具结果先结构化缩减，再生成合法 JSON，产物引用保留；完整结果仍在任务与会话记录中。
 

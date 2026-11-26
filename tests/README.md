@@ -12,6 +12,12 @@ both `requirements/agent.txt` and the visual/API dependencies. Live model smoke
 checks use `tools/validation/evaluate_photo_agent.py` with a fresh output directory;
 they do not establish scene or identity accuracy.
 
+`python tests/test_agent_storage.py` checks one-time legacy imports, incremental
+checkpoints, stable cursors and runtime idempotency using temporary databases.
+`node tests/test_workspace_chat_browser.cjs` runs the actual workspace page in
+Chromium against local HTTP fixtures, including project switching during a reply.
+Use `PLAYWRIGHT_PATH` / `CHROMIUM_PATH` to select local browser dependencies.
+
 The agent API integration check keeps real chat routes and middleware, isolating
 only unrelated GPU-server, image-search and age-model imports. It sends in-process
 ASGI requests without model initialization. The normal visual `test_workspace.py`

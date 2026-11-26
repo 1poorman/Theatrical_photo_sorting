@@ -153,6 +153,7 @@ python app/server.py       # 纯 API，端口 8198
 | POST | `/api/organize/agent/run` | 执行一次受限智能体任务（工具白名单 + 审计） |
 | POST | `/api/organize/agent/chat` | 连续对话智能体：持久化 session、记忆、自主工具调用与兜底 |
 | GET | `/api/organize/agent/session/{session_id}` | 查询会话历史、记忆和工具调用记录 |
+| GET | `/api/organize/agent/session/{session_id}/history` | 分页读取消息或工具记录；`kind`、`before`、`limit` |
 | GET | `/api/organize/agent/tools` | 查询原对话智能体工具白名单和参数契约 |
 | POST | `/api/organize/agent/advanced/chat` | LangChain 高级智能体：多步工具调用、持久会话（需额外依赖） |
 | GET | `/api/organize/agent/advanced/tools` | 查询高级智能体工具契约 |
@@ -188,7 +189,7 @@ python -m app.photo_agent_cli --model auto --protocol json --session demo
 
 `auto` 使用 `small_diag_*` 小模型配置优先、`.env` 大模型兜底；可用 `--model big` 单独选择大模型。
 CLI 支持目录检查、知识库、场景候选与复核准备；完整整理需在主服务环境安装智能体依赖后，调用高级智能体 API。
-原 `/api/organize/agent/chat` 保留不变。详细示例与限制见 [高级智能体蓝图](docs/design/agentic_tools_blueprint.md)。
+工作台 `/organize` 的「项目对话」自动带入当前目录并接续会话，可选择高级对话或离线指令。两套聊天接口的 `tool_calls` 现在只返回本轮；完整历史仍可读取，长会话优先用分页接口。升级与备份说明见[高级智能体蓝图](docs/design/agentic_tools_blueprint.md)。
 
 ## 人脸识别
 

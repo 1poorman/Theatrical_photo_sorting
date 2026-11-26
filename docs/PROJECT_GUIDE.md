@@ -132,8 +132,8 @@ Dockerfile 安装视觉服务、ModelScope framework 和 `requirements/agent.txt
 | `scene_evidence.jsonl` | 每张图的候选、证据、判定和复核信息 |
 | `review_queue.jsonl` | 复核记录；`revisions.jsonl` 为人工修订记录 |
 | `scene_labels.json` | 已批准的标签映射 |
-| `agent/conversations/<session_id>.json` | 会话历史、结构化记忆、摘要和工具结果 |
-| `agent/tasks/agent_tasks.json`、`agent/tasks/agent_audit.jsonl` | 对话智能体任务状态及审计；单次 `agent/run` 使用不同的运行根目录 |
+| `agent/conversations/<session_id>.sqlite3` | 每个会话的消息、工具结果、结构化记忆和业务任务快照；旧 JSON 在首次访问时导入并保留 |
+| `agent/tasks/agent_tasks.sqlite3`、`agent/tasks/agent_audit.jsonl` | 按任务 ID 增量更新运行时状态，审计继续追加；单次 `agent/run` 使用不同的运行根目录 |
 
 ### 智能体操作
 
