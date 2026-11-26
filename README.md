@@ -183,9 +183,9 @@ curl -X POST http://localhost:8198/api/organize/agent/chat \
 
 ### 项目对话实机演示
 
-[![播放视频：项目助手检查剧照、生成清单并恢复对话](./assets/agent-workspace-preview.jpg)](./assets/agent-workspace-demo.mp4)
+![项目助手实录：检查 7 张剧照，生成待复核清单，刷新后恢复对话](./assets/agent-workspace-demo.gif)
 
-[观看或下载 MP4](./assets/agent-workspace-demo.mp4) · 约 16 秒，无声，含中文字幕。录自已部署的工作台；两轮对话均直接调用 `Qwen3.6-27B`，仅剪短了等待时间。
+上方 GIF 可在 GitHub README 中直接观看。需要暂停或看清界面文字，可[下载高清 MP4](./assets/agent-workspace-demo.mp4?raw=true)。实录约 16 秒，无声，含中文字幕；两轮对话均直接调用 `Qwen3.6-27B`，仅剪短了等待时间。
 
 1. 打开工作台 `/organize`，导入 `/app/data/sample_images`，将结果目录设为独立的新目录（例如 `/app/outputs/demo-01`）。这些是 Docker 容器内路径。
 2. 进入「项目对话」，保留「高级对话（直接使用大模型）」，发送：「请用 `inspect_photos` 检查当前剧照目录，最多取两个样例；只回答照片数量。」实录中返回 **7 张**。
