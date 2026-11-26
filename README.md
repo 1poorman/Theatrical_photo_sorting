@@ -11,7 +11,7 @@
 | 背景修复 | 人物去除后背景修复 | LAMA (ModelScope) |
 | 图像检索 | embedding 索引、相似检索、聚类分组 | ResNet50/101、DINOv2、SigLIP2 (faiss) |
 | 智能整理 | 连拍去重选优、半自动人脸库、人脸聚类建库（无标注自举）、按演员视图、场景划分、行当分类、规范命名流水线 | SCRFD+ArcFace、YOLO11l-pose、SigLIP2 zero-shot（详见 `docs/design/smart_organize_blueprint.md`） |
-| 多模态整理 | 官方剧目信息/剧情知识库、图文向量候选召回、本地大模型闭集幕次判定、人工复核队列（详见 `docs/design/multimodal_context_blueprint.md`） | 离线词法 + SigLIP2 图文向量、OpenAI 兼容本地模型级联 |
+| 多模态整理 | 官方剧目信息/剧情知识库、图文向量候选召回、本地大模型闭集幕次判定、人工复核队列（详见 `docs/design/multimodal_context_blueprint.md`） | 离线词法 + SigLIP2 图文向量、OpenAI 兼容大模型 |
 
 可视化入口已整合为「幕间」工作台，按 **影像资料 → 剧目与剧情 → 演员与角色 → 场景复核 → 整理与导出** 组织功能。剧照、剧情和人工标签共享一个项目上下文；支持看图复核并自动将最新标签传给整理流水线。
 
@@ -70,7 +70,7 @@
 │   │   ├── play_source.py          #     剧目来源（URL/robots/限速重试/快照/离线读取）
 │   │   ├── play_knowledge.py       #     剧情/幕次/角色知识库抽取（别名与人物证据映射）
 │   │   ├── multimodal_evidence.py  #     图文向量候选召回（磁盘缓存、缺图降级）
-│   │   ├── llm_client.py           #     OpenAI 兼容本地模型客户端与级联
+│   │   ├── llm_client.py           #     OpenAI 兼容的本地大模型客户端
 │   │   ├── scene_reasoner.py       #     闭集幕次判定 + JSON 校验 + 防幻觉
 │   │   ├── review_queue.py         #     人工复核队列、修订日志、最终标签导出
 │   │   └── agent_runtime.py        #     受限智能体（工具白名单、状态机、审计日志）
@@ -184,10 +184,10 @@ curl -X POST http://localhost:8198/api/organize/agent/chat \
 ```bash
 conda activate agent
 python -m pip install -r requirements/agent.txt
-python -m app.photo_agent_cli --model auto --protocol json --session demo
+python -m app.photo_agent_cli --model big --protocol json --session demo
 ```
 
-`auto` 使用 `small_diag_*` 小模型配置优先、`.env` 大模型兜底；可用 `--model big` 单独选择大模型。
+工作台、CLI 和聊天 API 均直接使用 `.env` 中配置的大模型。旧参数 `auto` 等价于 `big`；`small` 已停用，不会作为首选或回退。
 CLI 支持目录检查、知识库、场景候选与复核准备；完整整理需在主服务环境安装智能体依赖后，调用高级智能体 API。
 工作台 `/organize` 的「项目对话」自动带入当前目录并接续会话，可选择高级对话或离线指令。两套聊天接口的 `tool_calls` 现在只返回本轮；完整历史仍可读取，长会话优先用分页接口。升级与备份说明见[高级智能体蓝图](docs/design/agentic_tools_blueprint.md)。
 
@@ -214,7 +214,7 @@ Docker 默认将人脸与图像向量存入 Qdrant；本地直接运行仍兼容
 按工作台导航使用；[使用指南](docs/guides/workspace_guide.md) 说明完整操作链。下文卡片编号对应
 `/organize/advanced` 中保留的高级表单；设计细节见 `docs/design/smart_organize_blueprint.md`）。
 
-图文结合、官方剧目信息知识库、本地大模型级联和高级智能体扩展见
+图文结合、官方剧目信息知识库、本地大模型和高级智能体扩展见
 [`docs/design/multimodal_context_blueprint.md`](docs/design/multimodal_context_blueprint.md)。
 
 ### 使用流程
@@ -299,7 +299,7 @@ Docker 默认将人脸与图像向量存入 Qdrant；本地直接运行仍兼容
   → play_source（robots/限速/快照）→ play_knowledge（幕次/角色/别名知识库）
 剧照
   → multimodal_evidence（词法 + SigLIP2 图文向量，缓存去重）
-  → scene_reasoner（规则/人物/视觉/语言证据 → 本地模型级联闭集判定）
+  → scene_reasoner（规则/人物/视觉/语言证据 → 大模型闭集判定）
   → review_queue（人工接受/修改/拒绝，修订日志）
   → SmartOrganizer.organize(scene_evidence_file=...) 写出规范文件名
 ```
@@ -307,7 +307,7 @@ Docker 默认将人脸与图像向量存入 Qdrant；本地直接运行仍兼容
 - **证据权重**：规则 0.35 / 人物 0.20 / 时间 0.15 / 视觉 0.20 / 语言 0.10；无有效证据置信度 ≤0.49，
   低于 0.75 转人工队列，未审核/`unknown` 保持 `scene-XX` 占位，不写入最终文件名
 - **防幻觉**：模型只能从候选 `scene_id` 或 `unknown` 中返回，引用必须来自输入证据 id，越界即判无效
-- **模型配置**：`.env`（优先使用完整 `small_diag_url` + `small_diag_model` 组合，否则使用 `small_model_name` 配置；小模型失败时按级联配置升级 `big_model_name`），
+- **模型配置**：在 `.env` 设置大模型的 `url`、`big_model_name` 和 `key`，
   密钥仅运行时读取、不写入代码/报告/`model_trace`
 - **人工复核 API**：`/api/organize/scene/review`（seed/list/decide/export），
   修订日志 `revisions.jsonl` 不可变、可回放，人工标签不会被重跑覆盖

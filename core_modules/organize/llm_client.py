@@ -186,26 +186,17 @@ def vision_client_from_env(env_path=DEFAULT_ENV_PATH, opener=urlopen):
     return client
 
 
-def client_from_env(env_path=DEFAULT_ENV_PATH, cascade_enabled=None, opener=urlopen):
-    """根据 `.env` 构造级联客户端；缺少配置时返回 ``None``。"""
+def big_model_config(env_path=DEFAULT_ENV_PATH):
     cfg = load_env(env_path)
-    if cfg.get('small_diag_url') and cfg.get('small_diag_model'):
-        small_url = cfg['small_diag_url']
-        small_key = cfg.get('small_diag_key')
-        small_model = cfg['small_diag_model']
-    else:
-        small_url = cfg.get('base_url')
-        small_key = cfg.get('api_key')
-        small_model = cfg.get('small_model_name')
-    big_url = cfg.get('url') or cfg.get('big_diag_url')
-    big_key = cfg.get('key') or cfg.get('big_diag_key')
-    big_model = cfg.get('big_model_name')
-    small = (OpenAICompatClient(small_url, small_key, small_model, opener=opener)
-             if small_url and small_model else None)
-    big = (OpenAICompatClient(big_url, big_key, big_model, opener=opener)
-           if big_url and big_model else None)
-    if small is None and big is None:
+    cfg.update({key: value for key, value in os.environ.items() if key in cfg or key.startswith('AGENT_BIG_')})
+    return (cfg.get('AGENT_BIG_URL') or cfg.get('url') or cfg.get('big_diag_url'),
+            cfg.get('AGENT_BIG_MODEL') or cfg.get('big_model_name'),
+            cfg.get('AGENT_BIG_KEY') or cfg.get('key') or cfg.get('big_diag_key'))
+
+
+def client_from_env(env_path=DEFAULT_ENV_PATH, cascade_enabled=None, opener=urlopen):
+    """旧级联参数仅保留签名兼容；生产入口只构造大模型客户端。"""
+    url, model, key = big_model_config(env_path)
+    if not url or not model:
         return None
-    if cascade_enabled is None:
-        cascade_enabled = str(cfg.get('cascade_enabled', 'true')).lower() in ('1', 'true', 'yes')
-    return CascadeClient(small, big, cascade_enabled=cascade_enabled)
+    return OpenAICompatClient(url, key, model, opener=opener)

@@ -1,6 +1,5 @@
 """LangChain 自主工具循环，复用现有持久会话和任务审计。"""
 import json
-import os
 import threading
 import time
 import uuid
@@ -19,7 +18,7 @@ from pydantic import Field
 from core_modules.organize.conversational_agent import (
     ConversationalAgent, _json_object, _json_text, _now,
 )
-from core_modules.organize.llm_client import DEFAULT_ENV_PATH, load_env
+from core_modules.organize.llm_client import DEFAULT_ENV_PATH, big_model_config
 from core_modules.organize.agent_budget import AgentBudget
 from core_modules.organize.agent_contracts import redact
 
@@ -89,7 +88,7 @@ class CompatibleToolModel(BaseChatModel):
                                       else [{'type': 'text', 'text': part} if isinstance(part, str) else part
                                             for part in system_parts])
                     converted.insert(0, SystemMessage(content=system_content))
-                    raw = endpoint.invoke(converted, **request_options)
+                    raw = endpoint.invoke(converted, response_format={'type': 'json_object'}, **request_options)
                     if record is not None:
                         record['usage'] = raw.usage_metadata
                     command = _json_object(raw.content)
@@ -127,31 +126,17 @@ class CompatibleToolModel(BaseChatModel):
         raise RuntimeError('所有模型调用失败：' + '; '.join(failures))
 
 
-def model_from_env(env_path=DEFAULT_ENV_PATH, selection='auto', protocol='json'):
-    if selection not in ('auto', 'small', 'big'):
-        raise ValueError('model 必须是 auto、small 或 big')
+def model_from_env(env_path=DEFAULT_ENV_PATH, selection='big', protocol='json'):
+    if selection not in ('auto', 'big'):
+        raise ValueError('小模型已停用；model 请使用 big（或兼容值 auto）')
     if protocol not in ('json', 'native'):
         raise ValueError('protocol 必须是 json 或 native')
-    config = load_env(env_path)
-    config.update({key: value for key, value in os.environ.items()
-                   if key in config or key.startswith('AGENT_')})
-    small = (config.get('AGENT_SMALL_URL') or config.get('small_diag_url'),
-             config.get('AGENT_SMALL_MODEL') or config.get('small_diag_model'),
-             config.get('AGENT_SMALL_KEY') or config.get('small_diag_key'))
-    big = (config.get('AGENT_BIG_URL') or config.get('url'),
-           config.get('AGENT_BIG_MODEL') or config.get('big_model_name'),
-           config.get('AGENT_BIG_KEY') or config.get('key'))
-    candidates = [small, big] if selection == 'auto' else [small if selection == 'small' else big]
-    endpoints = []
-    for url, name, key in candidates:
-        if url and name:
-            endpoints.append(ChatOpenAI(
-                base_url=url, api_key=key or 'empty', model=name,
-                temperature=0, max_tokens=2048, timeout=60, max_retries=0,
-            ))
-    if not endpoints:
-        raise ValueError('没有配置所选模型端点，请配置 .env 或 AGENT_* 环境变量')
-    return CompatibleToolModel(endpoints=endpoints, protocol=protocol)
+    url, name, key = big_model_config(env_path)
+    if not url or not name:
+        raise ValueError('没有配置大模型端点，请配置 .env 或 AGENT_BIG_* 环境变量')
+    endpoint = ChatOpenAI(base_url=url, api_key=key or 'empty', model=name,
+                          temperature=0, max_tokens=2048, timeout=60, max_retries=0)
+    return CompatibleToolModel(endpoints=[endpoint], protocol=protocol)
 
 
 class LangChainPhotoAgent(ConversationalAgent):
@@ -255,7 +240,7 @@ class LangChainPhotoAgent(ConversationalAgent):
         return response
 
 
-def build_photo_agent(root, model=None, selection='auto', protocol='json', max_steps=6,
+def build_photo_agent(root, model=None, selection='big', protocol='json', max_steps=6,
                       env_path=DEFAULT_ENV_PATH, organize=None, services=None,
                       turn_timeout=180, output_token_budget=8192):
     from core_modules.organize.photo_agent_tools import register_photo_tools

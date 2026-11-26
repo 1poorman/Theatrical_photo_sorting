@@ -1229,7 +1229,7 @@ def _agent_organize_photos(input_dir, output_dir, db_root, keep_per_bucket=2,
 
 @app.post('/api/organize/agent/advanced/chat')
 def advanced_agent_chat(message: str = Form(...), session_id: str = Form(''),
-                        context_json: str = Form('{}'), model: str = Form('auto'),
+                        context_json: str = Form('{}'), model: str = Form('big'),
                         protocol: str = Form('json'), max_steps: int = Form(6),
                         turn_timeout: int = Form(180, ge=1, le=900),
                         output_token_budget: int = Form(8192, ge=256, le=65536)):

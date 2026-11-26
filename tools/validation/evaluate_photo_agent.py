@@ -14,7 +14,7 @@ sys.path.insert(0, str(ROOT))
 def main():
     parser = argparse.ArgumentParser(description='Evaluate real agent routing, artifacts and optional vision')
     parser.add_argument('--output', type=Path, required=True)
-    parser.add_argument('--model', choices=['auto', 'small', 'big'], default='big')
+    parser.add_argument('--model', choices=['big', 'auto'], default='big')
     parser.add_argument('--protocol', choices=['json', 'native'], default='json')
     parser.add_argument('--image', type=Path)
     parser.add_argument('--env-path', default=str(ROOT / '.env'))

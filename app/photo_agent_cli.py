@@ -7,7 +7,7 @@ def main():
     parser = argparse.ArgumentParser(description='LangChain 戏剧照片整理智能体')
     parser.add_argument('--root', default='outputs/agent')
     parser.add_argument('--session', default=None)
-    parser.add_argument('--model', choices=['auto', 'small', 'big'], default='auto')
+    parser.add_argument('--model', choices=['big', 'auto'], default='big', help='auto 为 big 的兼容别名')
     parser.add_argument('--protocol', choices=['json', 'native'], default='json')
     parser.add_argument('--max-steps', type=int, default=6)
     parser.add_argument('--turn-timeout', type=int, default=180)

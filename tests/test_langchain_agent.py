@@ -1,9 +1,11 @@
 """离线运行真实 LangChain graph，仅替换模型传输层。"""
 import json
+import os
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -12,7 +14,8 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, Tool
 from langchain_core.outputs import ChatGeneration, ChatResult
 from pydantic import Field
 
-from core_modules.organize.langchain_agent import CompatibleToolModel, build_photo_agent
+from core_modules.organize.langchain_agent import CompatibleToolModel, build_photo_agent, model_from_env
+from core_modules.organize.llm_client import client_from_env
 from core_modules.organize.photo_agent_tools import prepare_review, scene_reason
 
 
@@ -82,6 +85,22 @@ class AgentTests(unittest.TestCase):
         result = CompatibleToolModel(endpoints=[small, big]).invoke('你好')
         self.assertEqual(result.content, '大模型接管')
         self.assertTrue(result.response_metadata['cascade'])
+
+    def test_production_routes_never_select_a_retired_small_model(self):
+        config = self.root / 'models.env'
+        small = 'small_diag_url=http://small.invalid/v1\nsmall_diag_model=retired\ncascade_enabled=true\n'
+        config.write_text(small)
+        with patch.dict(os.environ, {'AGENT_SMALL_URL': 'http://small.invalid/v1', 'AGENT_SMALL_MODEL': 'retired'}, clear=True):
+            self.assertIsNone(client_from_env(config))
+            with self.assertRaisesRegex(ValueError, '没有配置大模型'):
+                model_from_env(config)
+            config.write_text(small + 'url=http://big.invalid/v1\nbig_model_name=large\n')
+            for mode in ('auto', 'big'):
+                graph = model_from_env(config, mode)
+                self.assertEqual([endpoint.model_name for endpoint in graph.endpoints], ['large'])
+            with self.assertRaisesRegex(ValueError, '小模型已停用'):
+                model_from_env(config, 'small')
+            self.assertEqual(client_from_env(config, cascade_enabled=True).model, 'large')
 
     def test_json_protocol_uses_one_initial_system_message(self):
         endpoint = ScriptedModel(responses=[final()])

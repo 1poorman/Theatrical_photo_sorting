@@ -21,32 +21,20 @@
 ## 运行方式
 
 - 依赖：`requirements/agent.txt`；可用 Conda 环境 `agent`。
-- 对话模式：`python -m app.photo_agent_cli --model auto --protocol json --max-steps 6`
+- 对话模式：`python -m app.photo_agent_cli --model big --protocol json --max-steps 6`
 - 单轮模式：`python -m app.photo_agent_cli --session live --message '检查目录并生成清单' --context '{"input_dir":"/path/photos","output_file":"/path/new.jsonl"}'`
 - 主服务接口：`POST /api/organize/agent/advanced/chat`
 - 工具契约：`GET /api/organize/agent/advanced/tools`
-- API 参数：`model=auto|small|big`、`protocol=json|native`、`max_steps=1..8`、`session_id`、`context_json`、`turn_timeout=1..900`、`output_token_budget=256..65536`
-- 高级入口默认时间预算 180 秒、编排模型最大输出预留 8192 tokens；每个实际端点尝试预留最多 2048 tokens，包括失败与级联，实际 SDK 请求使用剩余时间/输出上限。不是包含输入 tokens 的账单硬上限，也不能强制停止同步文件工具。大流程可显式提高预算。视觉调用另由视觉策略管理，不计入聊天编排模型的 usage；旧聊天入口尚未对齐整轮预算。
+- API 参数：`model=big`（兼容旧值 `auto`）、`protocol=json|native`、`max_steps=1..8`、`session_id`、`context_json`、`turn_timeout=1..900`、`output_token_budget=256..65536`
+- 高级入口默认时间预算 180 秒、编排模型最大输出预留 8192 tokens；每次请求大模型预留最多 2048 tokens，失败的尝试也计入预算，实际 SDK 请求使用剩余时间/输出上限。不是包含输入 tokens 的账单硬上限，也不能强制停止同步文件工具。大流程可显式提高预算。视觉调用另由视觉策略管理，不计入聊天编排模型的 usage；旧聊天入口尚未对齐整轮预算。
 
 ## 模型
 
-默认 `auto` 使用小模型优先、大模型兜底。`.env` 已配置：
+工作台高级对话、CLI 和旧聊天的模型入口直接使用大模型；`auto` 与 `big` 等价。`small` 请求被拒绝，即使还留有 `small_diag_*` 或 `AGENT_SMALL_*` 配置也不会连接。无需启动小模型服务。离线指令仍可显式选择，不调用对话模型。
 
-- 小模型：`small_diag_url`、`small_diag_model`、`small_diag_key`
-- 大模型：`url`、`big_model_name`、`key`
-- 可用 `AGENT_SMALL_URL`、`AGENT_BIG_URL` 等环境变量覆盖同名运行时值。
+在 `.env` 中设置 `url`、`big_model_name`、`key`；聊天模型可用 `AGENT_BIG_URL`、`AGENT_BIG_MODEL`、`AGENT_BIG_KEY` 覆盖。Docker 部署通过 `docker-compose.llm.yml` 只读挂载 `.env`。
 
-本地 2B 权重位于 `~/models/MiniCPM5-2B`。已发现的服务环境为 `mff_sft_serve`（最初提供的 `mff_sft_server` 名称未在环境列表出现）；在有 GPU 权限的环境启动 OpenAI 兼容服务。参考命令：
-
-```bash
-/home/huachenghao/.conda/envs/mff_sft_serve/bin/vllm serve ~/models/MiniCPM5-2B \
-  --served-model-name mff-sft-minicpm5-2b --host 127.0.0.1 --port 3761 \
-  --max-model-len 32768 --gpu-memory-utilization 0.5
-```
-
-历史 2B vLLM 启动需要具备 GPU 权限的宿主机或容器。当前大模型联调使用 `.env` 中已部署的服务；无需启动新的本地 GPU 模型。沙箱网络若无法连接该端点，保留失败记录并在允许的宿主网络复验。
-
-`protocol=json` 适合不支持原生 tool calls 的模型：LangChain 循环把模型 JSON 行动转换成 tool calls，把 ToolMessage 转换成数据消息。`protocol=native` 直接使用 OpenAI 兼容工具调用。
+`protocol=json` 请求服务端以 `response_format={"type":"json_object"}` 输出，仍在本地校验行动和参数；此模式不要求原生工具调用，但端点需支持 JSON 输出。`protocol=native` 直接使用 OpenAI 兼容工具调用，不附加 JSON 输出限制。
 
 ## 工具
 

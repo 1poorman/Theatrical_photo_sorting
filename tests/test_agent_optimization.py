@@ -241,14 +241,16 @@ class OptimizationTests(unittest.TestCase):
 
     def test_remaining_budget_reaches_actual_sdk_request(self):
         client = Mock()
-        client.with_raw_response.create.return_value.parse.return_value = {
+        completions = client.chat.completions
+        completions.with_raw_response.parse.return_value.parse.return_value = {
             'choices': [{'message': {'role': 'assistant', 'content': json.dumps({
                 'action': 'final', 'content': 'hello'})}, 'finish_reason': 'stop'}],
             'usage': {'prompt_tokens': 10, 'completion_tokens': 5, 'total_tokens': 15}}
-        endpoint = ChatOpenAI(model='fake', api_key='synthetic', client=client, timeout=60, max_retries=0)
+        endpoint = ChatOpenAI(model='fake', api_key='synthetic', root_client=client, client=completions, timeout=60, max_retries=0)
         budget = AgentBudget(seconds=1, output_tokens=256)
         CompatibleToolModel(endpoints=[endpoint], budget=budget).invoke('hello')
-        request = client.with_raw_response.create.call_args.kwargs
+        request = completions.with_raw_response.parse.call_args.kwargs
+        self.assertEqual(request['response_format'], {'type': 'json_object'})
         self.assertGreater(request['timeout'], 0)
         self.assertLessEqual(request['timeout'], 1)
         self.assertEqual(request['max_completion_tokens'], 256)
