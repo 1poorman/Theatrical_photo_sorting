@@ -17,6 +17,8 @@
 
 ![幕间整理工作台](./assets/workspace-desktop.png)
 
+[观看智能体实机演示（约 16 秒）](#项目对话实机演示)：检查 7 张剧照、生成待复核清单，刷新后接续同一项目。
+
 操作与验证说明见 [工作台使用指南](docs/guides/workspace_guide.md)。之前的可视化界面完整保留，可通过工作台右上角「旧版界面」或 `/legacy` 进入。
 
 
@@ -178,6 +180,19 @@ curl -X POST http://localhost:8198/api/organize/agent/chat \
 ```
 
 ## LangChain 高级智能体
+
+### 项目对话实机演示
+
+[![播放视频：项目助手检查剧照、生成清单并恢复对话](./assets/agent-workspace-preview.jpg)](./assets/agent-workspace-demo.mp4)
+
+[观看或下载 MP4](./assets/agent-workspace-demo.mp4) · 约 16 秒，无声，含中文字幕。录自已部署的工作台；两轮对话均直接调用 `Qwen3.6-27B`，仅剪短了等待时间。
+
+1. 打开工作台 `/organize`，导入 `/app/data/sample_images`，将结果目录设为独立的新目录（例如 `/app/outputs/demo-01`）。这些是 Docker 容器内路径。
+2. 进入「项目对话」，保留「高级对话（直接使用大模型）」，发送：「请用 `inspect_photos` 检查当前剧照目录，最多取两个样例；只回答照片数量。」实录中返回 **7 张**。
+3. 接着发送：「请用 `scan_dir_and_tag` 为刚才的目录生成待复核清单，输出到 `/app/outputs/demo-01/candidates.jsonl`。不要推断幕次或修改原图。」请换成自己的新输出路径；实录中的 7 条记录均为 `pending`，场景 `unknown` 是占位，不是识别结果。
+4. 刷新工作台，回到同一项目的「项目对话」，可看到两轮历史和清单路径。清单另存，原图不变。
+
+### 使用 CLI
 
 在项目根目录运行；独立 CLI 不加载视觉模型，也不注册完整视觉整理工具：
 
