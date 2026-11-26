@@ -10,6 +10,7 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 
 from core_modules.organize.agent_runtime import AgentRuntime, ToolNotAllowed
+from core_modules.organize.agent_storage import SessionHistory
 from core_modules.organize.agent_contracts import (
     ARTIFACT_FIELDS, COMPLETION_RE, PATH_FIELDS, SENSITIVE_KEY_RE, bounded_json,
     outcome, redact, request_key, validate_arguments,
@@ -60,7 +61,7 @@ def _json_object(text):
 
 
 class ConversationStore:
-    """将完整消息历史、滚动摘要和结构化记忆原子写入 JSON。"""
+    """保留完整历史，聊天仅载入提示窗口并追加本轮记录。"""
 
     def __init__(self, root, prompt_history=24, summary_chars=6000):
         self.root = os.path.abspath(root)
@@ -73,9 +74,8 @@ class ConversationStore:
             raise ValueError('session_id 只能包含字母、数字、点、下划线和连字符')
         return session_id
 
-    def _path(self, session_id):
-        session_id = self.normalize_id(session_id)
-        return os.path.join(self.root, session_id + '.json')
+    def history(self, session_id):
+        return SessionHistory(self.root, self.normalize_id(session_id))
 
     @contextmanager
     def turn_lock(self, session_id):
@@ -94,36 +94,15 @@ class ConversationStore:
                     if fcntl is not None:
                         fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
 
-    def load(self, session_id=None):
+    def load(self, session_id=None, for_turn=False):
         session_id = self.normalize_id(session_id)
-        path = self._path(session_id)
-        with _STORE_LOCK:
-            if os.path.exists(path):
-                with open(path, encoding='utf-8') as f:
-                    return json.load(f)
         now = _now()
-        return {
-            'session_id': session_id,
-            'created_at': now,
-            'updated_at': now,
-            'memory': {},
-            'summary': '',
-            'messages': [],
-            'tool_calls': [],
-        }
+        default = dict(session_id=session_id, created_at=now, updated_at=now, memory={}, summary='')
+        return self.history(session_id).read(default, self.prompt_history + 40 if for_turn else None)
 
     def save(self, session):
-        session_id = self.normalize_id(session.get('session_id'))
-        session['session_id'] = session_id
         session['updated_at'] = _now()
-        path = self._path(session_id)
-        os.makedirs(self.root, exist_ok=True)
-        tmp = path + '.' + uuid.uuid4().hex[:8] + '.tmp'
-        with _STORE_LOCK:
-            with open(tmp, 'w', encoding='utf-8') as f:
-                json.dump(redact(session), f, ensure_ascii=False, indent=2, default=str)
-            os.replace(tmp, path)
-        return path
+        return self.history(session['session_id']).checkpoint(session)
 
     def append(self, session, role, content, **extra):
         row = {'role': role, 'content': redact(str(content)), 'at': _now()}
@@ -302,8 +281,11 @@ class ConversationalAgent:
         for artifact in facts['artifacts']:
             project['artifacts'][artifact['kind']] = artifact
         if facts['business_task_id']:
-            project['tasks'][facts['business_task_id']] = {
-                'tool': tool, 'arguments': arguments, 'snapshot': result, 'outcome': facts}
+            task_id = facts['business_task_id']
+            record = {'tool': tool, 'arguments': arguments, 'snapshot': result, 'outcome': facts}
+            if record != project['tasks'].get(task_id):
+                project['tasks'][task_id] = record
+                session.dirty_tasks.add((session['active_project_id'], task_id))
 
     def _refresh_tasks(self, session):
         if self.services is None:
@@ -313,7 +295,6 @@ class ConversationalAgent:
                 result = self.services.get(task_id)
             except (KeyError, ValueError, RuntimeError, OSError):
                 continue
-            record.update(snapshot=result, outcome=outcome(result))
             self._remember_result(session, record['tool'], record['arguments'], result)
 
     def _execute_tool(self, session, spec, arguments, deadline=None):
@@ -359,12 +340,10 @@ class ConversationalAgent:
             if tasks:
                 return '\n'.join(self._tool_result_answer(dict(record, tool=record['tool'],
                     result=record['snapshot'], ok=record['outcome']['ok'])) for record in tasks.values())
-            previous = [call for call in session['tool_calls']
-                        if call.get('project_id') == session['active_project_id'] and call.get('ok')
-                        and self.tool_specs.get(call['tool'], {}).get('side_effects') == 'write'
-                        and any(Path(artifact['path']).exists() for artifact in call.get('outcome', {}).get('artifacts', []))]
+            previous = self.store.history(session['session_id']).previous_write(session['active_project_id'],
+                {name for name, spec in self.tool_specs.items() if spec['side_effects'] == 'write'})
             if previous:
-                return '历史已核验的执行结果：\n' + self._tool_result_answer(previous[-1])
+                return '历史已核验的执行结果：\n' + self._tool_result_answer(previous)
             return '尚无可核验的执行记录，不能确认操作已完成。请明确操作并提供所需路径。'
         return redact(answer)
 
@@ -450,11 +429,12 @@ class ConversationalAgent:
     def _chat_locked(self, message, session_id, context=None):
         if context is not None and not isinstance(context, dict):
             raise ValueError('context 必须是 JSON 对象')
-        session = self.store.load(session_id)
+        session = self.store.load(session_id, for_turn=True)
         self._merge_memory(session, context or {})
         self._merge_memory(session, self._extract_inline_memory(message))
         self._refresh_tasks(session)
         self.store.append(session, 'user', message)
+        self.store.save(session)
         first_call = len(session['tool_calls'])
 
         traces = []
@@ -545,8 +525,9 @@ class ConversationalAgent:
             'session_id': session['session_id'],
             'answer': answer,
             'memory': session.get('memory', {}),
-            'message_count': len(session.get('messages', [])),
+            'message_count': session.older_messages + len(session['messages']),
             'tool_calls': session.get('tool_calls', []),
+            'turn_tool_calls': session['tool_calls'],
             'trace': traces,
             'fallback': bool(fallback),
             'session_file': path,

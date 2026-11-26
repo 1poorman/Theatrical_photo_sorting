@@ -189,7 +189,7 @@ class OptimizationTests(unittest.TestCase):
         result = self.agent([final('hello')]).chat('api_key=synthetic-value', context={
             'settings': {'api_key': 'synthetic-nested', 'theme': 'dark'}})
         self.assertEqual(result['memory']['settings'], {'theme': 'dark'})
-        self.assertNotIn('synthetic', Path(result['session_file']).read_text())
+        self.assertNotIn(b'synthetic', Path(result['session_file']).read_bytes())
 
     def test_explicit_project_name_still_isolates_changed_input(self):
         agent = self.agent([final('A'), final('B'), final('A')])
@@ -336,6 +336,16 @@ class OptimizationTests(unittest.TestCase):
                             'input_dir': str(self.photos), 'output_file': str(output)})})
                     self.assertEqual(response.status_code, 200, response.text)
                     self.assertTrue(output.exists())
+                    history = '/api/organize/agent/session/' + response.json()['data']['session_id'] + '/history'
+                    page = (await client.get(history, params={'limit': 1})).json()['data']
+                    self.assertEqual(page['items'][0]['role'], 'assistant')
+                    previous = await client.get(history, params={'limit': 1, 'before': page['next_before']})
+                    self.assertEqual(previous.json()['data']['items'][0]['role'], 'tool')
+                    calls = (await client.get(history, params={'kind': 'tool_calls'})).json()['data']
+                    self.assertEqual(calls['items'][0]['tool'], 'scan_dir_and_tag')
+                    self.assertEqual((await client.get(history, params={'limit': 101})).status_code, 422)
+                    self.assertEqual((await client.get(history, params={'kind': 'unknown'})).status_code, 400)
+                    self.assertEqual((await client.get('/api/organize/agent/session/unknown/history')).status_code, 404)
                     model = CompatibleToolModel(endpoints=[ScriptedModel(responses=[
                         action('inspect_photos', {'input_dir': str(self.photos), 'limit': -1}), final()])])
                     with patch.object(langchain_agent, 'model_from_env', return_value=model):

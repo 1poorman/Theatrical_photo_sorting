@@ -164,7 +164,7 @@ class LangChainPhotoAgent(ConversationalAgent):
     def _chat_locked(self, message, session_id, context=None):
         if context is not None and not isinstance(context, dict):
             raise ValueError('context 必须是 JSON 对象')
-        session = self.store.load(session_id)
+        session = self.store.load(session_id, for_turn=True)
         self._merge_memory(session, context or {})
         self._merge_memory(session, self._extract_inline_memory(message))
         self._refresh_tasks(session)
@@ -250,7 +250,7 @@ class LangChainPhotoAgent(ConversationalAgent):
         self.store.append(session, 'assistant', answer, fallback=fallback)
         path = self.store.save(session)
         response = self._response(session, answer, traces, fallback, path)
-        response.update(engine='langchain', turn_tool_calls=session['tool_calls'][first_call:])
+        response['engine'] = 'langchain'
         response['model_usage'] = budget.summary()
         return response
 

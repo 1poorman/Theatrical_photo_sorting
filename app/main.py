@@ -24,7 +24,7 @@ from typing import Optional
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, PROJECT_ROOT)
 
-from fastapi import FastAPI, Request, UploadFile, File, Form, Body
+from fastapi import FastAPI, Request, UploadFile, File, Form, Body, Query
 from fastapi.responses import JSONResponse, FileResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -1170,7 +1170,7 @@ def agent_chat(message: str = Form(...), session_id: str = Form(''),
 
 
 @app.get("/api/organize/agent/session/{session_id}")
-async def agent_session(session_id: str):
+def agent_session(session_id: str):
     """读取持久化会话、上下文记忆、历史消息与工具审计记录。"""
     try:
         agent = _build_conversational_agent(use_llm=False)
@@ -1180,6 +1180,20 @@ async def agent_session(session_id: str):
         return JSONResponse(status_code=400, content=srv.get_error(message=str(e)))
     except Exception as e:
         return JSONResponse(status_code=500, content=srv.get_error(message=f"Error reading agent session: {str(e)}"))
+
+
+@app.get('/api/organize/agent/session/{session_id}/history')
+def agent_history(session_id: str, kind: str = 'messages', before: Optional[int] = Query(None, ge=1, le=2**63-1),
+                  limit: int = Query(30, ge=1, le=100)):
+    from core_modules.organize.conversational_agent import ConversationStore
+    store = ConversationStore(os.path.join(srv.DEFAULT_OUTPUT_DIR, 'agent', 'conversations'))
+    try:
+        page = store.history(session_id).page(kind, before, limit)
+    except FileNotFoundError:
+        return JSONResponse(status_code=404, content=srv.get_error(message='会话不存在'))
+    except ValueError as exc:
+        return JSONResponse(status_code=400, content=srv.get_error(message=str(exc)))
+    return {'code': 200, 'message': 'OK', 'data': page}
 
 
 @app.get("/api/organize/agent/tools")

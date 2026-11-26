@@ -15,6 +15,7 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 
 from core_modules.organize.agent_contracts import outcome, redact
+from core_modules.organize.agent_storage import encode, transaction
 
 try:
     import fcntl
@@ -40,7 +41,7 @@ class AgentRuntime:
         self.tools = {}
         self.contextual = set()
         self.audit_path = os.path.join(root, 'agent_audit.jsonl')
-        self.tasks_path = os.path.join(root, 'agent_tasks.json')
+        self.tasks_path = os.path.join(root, 'agent_tasks.sqlite3')
 
     # ---------- 工具注册 ----------
 
@@ -76,40 +77,42 @@ class AgentRuntime:
                 f.write(json.dumps(redact({'at': _now(), 'task_id': task_id, 'event': event,
                                            **detail}), ensure_ascii=False) + '\n')
 
-    def _load_tasks_unlocked(self):
-        if not os.path.exists(self.tasks_path):
-            return {}
-        with open(self.tasks_path, encoding='utf-8') as f:
-            return json.load(f)
+    def _initialize(self, connection):
+        connection.execute('CREATE TABLE tasks (task_id TEXT PRIMARY KEY, idempotency_key TEXT UNIQUE,'
+                           ' state TEXT NOT NULL, data TEXT NOT NULL)')
+        connection.execute('CREATE INDEX tasks_state ON tasks(state)')
+        legacy = os.path.join(self.root, 'agent_tasks.json')
+        if os.path.exists(legacy):
+            with open(legacy, encoding='utf-8') as stream:
+                for task in json.load(stream).values():
+                    self._insert(connection, task)
 
-    def _load_tasks(self):
-        with self._file_lock():
-            return self._load_tasks_unlocked()
+    def _open(self, write=False):
+        return transaction(self.tasks_path, 'tasks', self._initialize, write)
 
-    def _save_tasks_unlocked(self, tasks):
-        tmp = self.tasks_path + '.' + uuid.uuid4().hex[:8] + '.tmp'
-        with open(tmp, 'w', encoding='utf-8') as f:
-            json.dump(redact(tasks), f, ensure_ascii=False, indent=2, default=str)
-        os.replace(tmp, self.tasks_path)
+    @staticmethod
+    def _insert(connection, task):
+        connection.execute('INSERT INTO tasks VALUES (?,?,?,?)', (task['task_id'],
+                           task.get('idempotency_key') or None, task['state'], encode(task)))
 
-    def _save_tasks(self, tasks):
-        with self._file_lock():
-            self._save_tasks_unlocked(tasks)
+    @staticmethod
+    def _update(connection, task):
+        connection.execute('UPDATE tasks SET state=?,data=? WHERE task_id=?',
+                           (task['state'], encode(task), task['task_id']))
 
     def _put_task(self, task):
-        """合并写入单个任务，避免并发会话用陈旧快照覆盖其它任务。"""
-        with self._file_lock():
-            tasks = self._load_tasks_unlocked()
-            tasks[task['task_id']] = task
-            self._save_tasks_unlocked(tasks)
+        with self._open(write=True) as connection:
+            self._update(connection, task)
 
     def get_task(self, task_id):
-        return self._load_tasks().get(task_id)
+        with self._open() as connection:
+            row = connection.execute('SELECT data FROM tasks WHERE task_id=?', (task_id,)).fetchone()
+            return json.loads(row[0]) if row else None
 
     def list_tasks(self, state=None):
-        rows = list(self._load_tasks().values())
-        if state:
-            rows = [r for r in rows if r['state'] == state]
+        with self._open() as connection:
+            query = 'SELECT data FROM tasks' + (' WHERE state=?' if state else '')
+            rows = [json.loads(data) for data, in connection.execute(query, (state,) if state else ())]
         return sorted(rows, key=lambda r: r.get('created_at', ''))
 
     # ---------- 执行 ----------
@@ -127,23 +130,17 @@ class AgentRuntime:
                 'created_at': _now(), 'updated_at': _now(), 'result': None,
                 'error': None}
         task['idempotency_key'] = idempotency_key
-        with self._file_lock():
-            tasks = self._load_tasks_unlocked()
-            existing = tasks.get(task_id)
-            if idempotency_key:
-                matching_key = next((row for row in tasks.values()
-                                     if row.get('idempotency_key') == idempotency_key), None)
-                if matching_key and matching_key['input_hash'] != input_hash:
-                    raise ValueError('同一幂等键对应不同参数')
-                if existing and existing['input_hash'] != input_hash:
-                    raise ValueError('同一任务对应不同参数')
-                existing = existing or matching_key
-            if existing:
+        with self._open(write=True) as connection:
+            rows = connection.execute('SELECT data FROM tasks WHERE task_id=? OR idempotency_key=?',
+                                      (task_id, idempotency_key or None)).fetchall()
+            if len(rows) > 1:
+                raise ValueError('任务 ID 与幂等键引用了不同的记录')
+            if rows:
+                existing = json.loads(rows[0][0])
                 if existing['input_hash'] != input_hash:
                     raise ValueError('同一任务或幂等键对应不同参数')
                 return dict(existing, reused=True)
-            tasks[task_id] = redact(task)
-            self._save_tasks_unlocked(tasks)
+            self._insert(connection, task)
         self._audit(task_id, 'queued', tool=tool, input_hash=input_hash)
 
         task['state'] = 'running'
@@ -178,34 +175,34 @@ class AgentRuntime:
         return task
 
     def recover_interrupted(self):
-        with self._file_lock():
-            tasks = self._load_tasks_unlocked()
+        with self._open(write=True) as connection:
+            rows = connection.execute("SELECT data FROM tasks WHERE state IN ('queued','running')").fetchall()
             changed = []
-            for task in tasks.values():
-                if task['state'] in ('queued', 'running'):
-                    task.update(state='interrupted', updated_at=_now(),
-                                error='服务中断；请查询业务任务或核对产物后恢复')
-                    task['outcome'] = dict(outcome(task.get('result')), status='interrupted',
-                                           ok=False, error=task['error'])
-                    changed.append(task['task_id'])
-            self._save_tasks_unlocked(tasks)
+            for data, in rows:
+                task = json.loads(data)
+                task.update(state='interrupted', updated_at=_now(),
+                            error='服务中断；请查询业务任务或核对产物后恢复')
+                task['outcome'] = dict(outcome(task.get('result')), status='interrupted',
+                                       ok=False, error=task['error'])
+                self._update(connection, task)
+                changed.append(task['task_id'])
         for task_id in changed:
             self._audit(task_id, 'interrupted')
         return changed
 
     def resolve(self, task_id, approve=True, reviewer='human', note=''):
-        with self._file_lock():
-            tasks = self._load_tasks_unlocked()
-            if task_id not in tasks:
+        with self._open(write=True) as connection:
+            row = connection.execute('SELECT data FROM tasks WHERE task_id=?', (task_id,)).fetchone()
+            if not row:
                 raise KeyError(f'任务不存在: {task_id}')
-            task = tasks[task_id]
+            task = json.loads(row[0])
             if task['state'] not in ('review',):
                 raise ValueError(f'任务状态不可仲裁: {task["state"]}')
             task['state'] = 'approved' if approve else 'failed'
             task['reviewer'] = reviewer
             task['note'] = note
             task['updated_at'] = _now()
-            self._save_tasks_unlocked(tasks)
+            self._update(connection, task)
         self._audit(task_id, task['state'], reviewer=reviewer, note=note)
         return task
 
