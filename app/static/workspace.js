@@ -72,7 +72,7 @@
     selected: null, view: 'photos', filter: 'all', query: '', page: 0, busy: false, taskId: null, generation: 0,
     reviewPending: new Map(), ageResults: new Map()};
   const pageSize = 36;
-  const titles = {photos: '影像资料', knowledge: '剧目与剧情', actors: '演员与角色', review: '场景复核', export: '整理与导出'};
+  const titles = {photos: '影像资料', knowledge: '剧目与剧情', actors: '演员与角色', review: '场景复核', export: '整理与导出', chat: '项目对话'};
   const statuses = {pending: '待复核', approved: '已确认', rejected: '已拒绝', unprocessed: '待分析'};
   const evidenceNames = {filename: '文件名线索', knowledge: '剧情依据', rule: '文件名规则', person: '人物线索', people: '人物线索', visual: '图文相似度', observation: '画面观察', ocr: '可见文字识别', language: '语言模型', time: '时间线索'};
 
@@ -119,6 +119,7 @@
       $('task-status').hidden = true;
       document.body.removeAttribute('aria-busy');
       updateControls();
+      chat.controls();
       renderInspector();
     }
   }
@@ -139,6 +140,7 @@
       : `/api/workspace/artifact?${new URLSearchParams({output_dir: root, name})}`;
   };
   function recordFor(photo) { return state.records.get(photo.path) || state.records.get(photo.name); }
+  const chat = createWorkspaceChat({api, fileURL, notify: notice, state, openReview: openAgentReview});
   function statusFor(photo) { return recordFor(photo)?.review?.status || (recordFor(photo) ? 'pending' : 'unprocessed'); }
   function filteredPhotos() {
     return state.photos.filter(photo => {
@@ -194,6 +196,7 @@
     $('gallery-caption').textContent = view === 'review' ? '对照剧照与依据，确认它属于哪一幕' : '浏览本次剧照，关联人物与故事';
     if (changed && (view === 'review' || view === 'photos')) { state.filter = view === 'review' ? 'pending' : 'all'; state.page = 0; }
     history.replaceState(null, '', `#${view}`);
+    chat.viewChanged();
     renderGallery();
   }
   function renderGallery(hydrate = true) {
@@ -290,6 +293,22 @@
     if (target) { state.page = Math.floor((index + delta) / pageSize); selectPhoto(target.path); }
   }
 
+  function openAgentReview(reviewDir, evidence) {
+    return task('正在载入复核队列…', async () => {
+      const project = state.project, previous = project.review;
+      if (evidence) {
+        if (state.queueMismatch) throw new Error('请先选择此项目专用的复核目录。');
+        await api('/api/organize/scene/review/seed', {review_dir: reviewDir, evidence_file: evidence, candidate_input_dir: project.input});
+        project.evidence = evidence; $('evidence-file').value = evidence;
+      }
+      project.review = reviewDir;
+      state.records = new Map(); state.reviewPending = new Map(); state.generation++;
+      try { await loadReviews(); }
+      catch (error) { project.review = previous; state.records.clear(); await loadReviews(); throw error; }
+      project.labels = ''; $('scene-evidence-file').value = ''; $('labels-download').replaceChildren();
+      saveProject(); setView('review');
+    });
+  }
   async function loadReviews() {
     const project = state.project, generation = state.generation;
     const result = await api(`/api/organize/scene/review/metadata?${new URLSearchParams({review_dir: project.review})}`);
@@ -378,6 +397,7 @@
     $('analysis-task').hidden = true;
     state.generation++;
     state.project = {...project, input: result.input_dir};
+    chat.activate(state.project);
     state.photos = result.photos; state.records = new Map(); state.knowledge = null; state.summary = null;
     state.reviewPending = new Map(); state.ageResults = new Map();
     state.selected = result.photos.some(photo => photo.path === project.selected) ? project.selected : null;

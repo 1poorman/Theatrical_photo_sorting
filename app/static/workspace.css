@@ -12,5 +12,7 @@
 .brand small{white-space:nowrap;font-size:10px;letter-spacing:.4px}
 .sidebar-guide small{white-space:nowrap;letter-spacing:.3px;font-size:10px}
 .page-heading>div{min-width:0}
+#chat-view .panel{min-width:0;overflow-wrap:anywhere}#chat-message{width:100%;padding:10px;border:1px solid var(--line);border-radius:6px;resize:vertical;font:inherit}#chat-send{margin-top:12px}#chat-log{max-height:55vh;overflow:auto}#chat-log article,#chat-workflow>div{padding:12px 0;border-bottom:1px solid var(--line)}#chat-log p,#chat-log pre{white-space:pre-wrap;overflow-wrap:anywhere}#chat-log summary{cursor:pointer}#chat-workflow button,#chat-workflow a{display:block;margin-top:6px}#chat-status{min-height:1.5em;color:var(--green-dark)}
+@media(max-width:720px){.sidebar .nav-item{width:calc(100% / 6)}}
 .page-heading p{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .age-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}.age-face{min-width:0;padding:8px;border:1px solid var(--line);border-radius:6px;background:#fff;text-align:center}.age-face img{display:block;width:100%;aspect-ratio:1;object-fit:cover;border-radius:4px;margin-bottom:7px}.age-face strong{font-size:11px;font-weight:500;display:block}.age-face small{display:block;font-size:10px;color:var(--muted);margin-top:5px}#age-results .detail-preview{margin-top:12px}

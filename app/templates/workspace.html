@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#182b29">
   <title>幕间 · 戏剧影像整理</title>
   <link rel="stylesheet" href="/static/workspace.css">
+  <script src="/static/workspace_chat.js" defer></script>
   <script src="/static/workspace.js" defer></script>
 </head>
 <body>
@@ -19,6 +20,7 @@
       <button class="nav-item" data-view="actors"><i data-icon="people"></i><span>演员与角色</span></button>
       <button class="nav-item" data-view="review"><i data-icon="check"></i><span>场景复核</span><span id="nav-pending" class="nav-count">—</span></button>
       <button class="nav-item" data-view="export"><i data-icon="export"></i><span>整理与导出</span></button>
+      <button class="nav-item" data-view="chat" aria-label="项目对话"><i data-icon="sparkles"></i><span>项目对话</span></button>
     </nav>
     <div class="sidebar-guide"><span class="eyebrow">从影像到档案</span><p>让每一张剧照，<br>回到它的故事里。</p><div class="guide-line"></div><small>图像 · 人物 · 剧情 · 幕次</small></div>
     <div class="sidebar-bottom"><a href="/tools"><i data-icon="sliders"></i>单图处理与检索<i data-icon="arrow-up-right"></i></a><a href="/organize/advanced"><i data-icon="folder"></i>高级整理工具<i data-icon="arrow-up-right"></i></a><div id="service-status" class="service-status"><span></span>正在连接服务</div></div>
@@ -71,6 +73,15 @@
       <section id="export-view" class="view" hidden>
         <div class="section-title"><div><h2>为影像建立清晰的归档</h2><span>使用确认后的场景标签，完成连拍选优、演员识别与规范命名。</span></div></div>
         <div class="two-column"><article class="panel"><div class="panel-heading"><i data-icon="check"></i><h3>复核进度</h3></div><div id="export-summary" class="export-summary">尚未载入复核队列</div><p>已确认且有明确幕次的标签用于归档。待复核、已拒绝和未知场景保留场景编号。</p><button class="button secondary" id="export-labels"><i data-icon="export"></i>导出已确认标签</button><div id="labels-download"></div></article><article class="panel"><div class="panel-heading"><i data-icon="folder"></i><h3>整理设置</h3></div><form id="organize-form"><div class="form-row"><div><label for="keep-per-bucket">每组每景别保留</label><select id="keep-per-bucket"><option value="1">1 张 · 精选</option><option value="2" selected>2 张 · 推荐</option><option value="3">3 张 · 多保留</option><option value="5">5 张</option></select></div><div><label for="gap-seconds">场景分段时间</label><select id="gap-seconds"><option value="120">2 分钟</option><option value="300" selected>5 分钟 · 推荐</option><option value="600">10 分钟</option></select></div></div><label class="check-label"><input id="classify-role" type="checkbox"> 辅助识别戏曲行当 <small>实验性，可按需开启</small></label><label for="identity-registry-file">演员与角色表（可选）</label><input id="identity-registry-file" name="identity_registry_file" placeholder="填写演员与剧目角色表路径"><p class="field-hint">有当前剧目的明确对应关系时写入角色；其余照片只写演员名。留空使用人脸库内的角色表。</p><label for="scene-evidence-file">已确认场景标签文件</label><input id="scene-evidence-file" name="scene_evidence_file" readonly placeholder="导出标签后自动关联"><p class="field-hint">执行整理前会重新导出当前复核结果，避免遗漏最新修改。</p><div class="naming-preview"><span>归档命名示例</span><p>序号－日期－剧场－剧目 幕次－演员－摄影师.jpg</p></div><p class="field-hint" id="output-location"></p><button type="submit" class="button primary"><i data-icon="export"></i>执行整理并生成档案</button></form></article></div><div id="organize-result" class="panel" hidden></div>
+      </section>
+      <section id="chat-view" class="view" hidden>
+        <div class="section-title"><div><h2>项目对话</h2><span id="chat-context">导入剧照目录后开始对话。</span></div></div>
+        <div class="two-column"><article class="panel"><div class="inline-actions"><button id="chat-older" class="button subtle" hidden>查看更早消息</button><button id="chat-refresh" class="button subtle">刷新记录</button></div>
+          <div id="chat-log" aria-label="对话历史"></div><p id="chat-status" role="status"></p>
+          <form id="chat-form"><label for="chat-message">给项目助手留言</label><textarea id="chat-message" rows="3" placeholder="例如：检查当前目录有多少张剧照" required></textarea>
+            <label for="chat-mode">对话方式</label><select id="chat-mode"><option value="advanced">高级对话（使用模型）</option><option value="offline">离线指令（不使用对话模型）</option></select>
+            <button id="chat-send" class="button primary" type="submit">发送</button></form></article>
+          <aside class="panel"><h3>业务任务与产物</h3><p>任务提交后会在后台继续。候选场景仍需人工复核。</p><div id="chat-workflow"></div></aside></div>
       </section>
       <footer class="page-footer"><span>幕间 · 戏剧影像整理</span><span>影像有序，故事完整。</span></footer>
     </main>

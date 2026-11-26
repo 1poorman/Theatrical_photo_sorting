@@ -66,6 +66,7 @@ class WorkspaceTest(unittest.TestCase):
         for path in ['/ui', '/organize']:
             response = self.client.get(path)
             self.assertIn('data-view="review"', response.text)
+            self.assertIn('data-view="chat"', response.text)
             self.assertIn('/static/workspace.js', response.text)
             self.assertIn('href="/legacy"', response.text)
         self.assertEqual(self.client.get('/', follow_redirects=False).headers['location'], '/organize')
@@ -79,7 +80,7 @@ class WorkspaceTest(unittest.TestCase):
             self.assertIn('href="/legacy/ui"', response.text)
             self.assertIn('href="/legacy/organize"', response.text)
             self.assertIn('href="/organize">返回新版工作台', response.text)
-        for path in ['/tools', '/organize/advanced', '/static/workspace.js', '/static/workspace.css']:
+        for path in ['/tools', '/organize/advanced', '/static/workspace.js', '/static/workspace_chat.js', '/static/workspace.css']:
             self.assertEqual(self.client.get(path).status_code, 200)
 
     def wait_task(self, task_id):
@@ -503,6 +504,18 @@ class WorkspaceTest(unittest.TestCase):
             self.assertEqual(self.client.get('/api/workspace/artifact', params={'output_dir': str(self.root), 'name': name}).status_code, 403)
         (self.photos / 'scene_labels.json').symlink_to(self.root / 'scene_labels.json')
         self.assertEqual(self.client.get('/api/workspace/artifact', params={'output_dir': str(self.photos), 'name': 'scene_labels.json'}).status_code, 403)
+
+    def test_agent_review_handoff_only_seeds_current_project_as_pending(self):
+        review, evidence = self.root / 'agent-review', self.root / 'candidate.jsonl'
+        row = {'image': str(self.photos / self.names[0]), 'label': '第一幕', 'review': {'status': 'approved'}}
+        data = {'review_dir': str(review), 'evidence_file': str(evidence), 'candidate_input_dir': str(self.photos)}
+        evidence.write_text(json.dumps(row) + '\n' + json.dumps(dict(row, image=str(self.root / 'outside.jpg'))))
+        self.assertEqual(self.client.post('/api/organize/scene/review/seed', data=data).status_code, 400)
+        self.assertFalse(review.exists())
+        evidence.write_text(json.dumps(row))
+        self.assertEqual(self.post('/api/organize/scene/review/seed', **data)['summary']['pending'], 1)
+        self.post('/api/organize/scene/review', review_dir=review, image=row['image'], action='accept')
+        self.assertEqual(self.post('/api/organize/scene/review/seed', **data)['summary']['approved'], 1)
 
     def test_real_knowledge_reason_review_export_flow(self):
         knowledge = self.knowledge()

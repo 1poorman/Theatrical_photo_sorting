@@ -23,6 +23,7 @@
 !test_conversational_agent.py
 !test_agent_optimization.py
 !test_agent_storage.py
+!test_workspace_chat_browser.cjs
 !test_multimodal_evidence.py
 !test_ocr_evidence.py
 !test_organize_tasks.py

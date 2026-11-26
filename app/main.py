@@ -865,14 +865,23 @@ def _read_scene_evidence(path):
 
 @app.post("/api/organize/scene/review/seed")
 def scene_review_seed(review_dir: str = Form(...),
-                            evidence_file: str = Form(...)):
+                      evidence_file: str = Form(...), candidate_input_dir: str = Form('')):
     """将场景判定结果并入复核队列；已人工确认的记录不被覆盖。"""
     try:
         if not os.path.exists(evidence_file):
             return JSONResponse(status_code=400, content=srv.get_error(message=f"Evidence file does not exist: {evidence_file}"))
         from core_modules.organize.review_queue import ReviewQueue
+        rows = _read_scene_evidence(evidence_file)
+        if candidate_input_dir:
+            root = os.path.realpath(candidate_input_dir)
+            for row in rows:
+                image = row.get('image') if isinstance(row, dict) else None
+                if (not isinstance(image, str) or not os.path.isabs(image)
+                        or os.path.dirname(os.path.realpath(image)) != root):
+                    raise ValueError('场景候选包含不属于当前剧照目录的图片')
+                row['review'] = {'status': 'pending', 'reviewer': None}
         queue = ReviewQueue(review_dir)
-        stats = queue.seed(_read_scene_evidence(evidence_file))
+        stats = queue.seed(rows)
         return JSONResponse({"code": 200, "message": "Review queue seeded",
                              "data": {**stats, "summary": queue.summary()}})
     except ValueError as e:
