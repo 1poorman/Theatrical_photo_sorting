@@ -1,5 +1,7 @@
 """独立于 Web/GPU 服务的剧照工具；重型模块按需加载。"""
 import json
+import shutil
+import uuid
 from pathlib import Path
 
 from core_modules.organize.agent_tools import IMAGE_EXTENSIONS, register_image_tools
@@ -31,6 +33,46 @@ def inspect_photos(input_dir, limit=20):
             'samples': [{'image': str(path), 'metadata': parse_filename(path.name)}
                         for path in images[:limit]],
             'evidence_type': 'filename_only', 'auto_approved': True}
+
+
+def group_photos_by_actor(input_dir, workspace_output_dir):
+    from core_modules.organize.filename_parser import parse_filename
+    source = _directory(input_dir)
+    workspace = Path(workspace_output_dir).expanduser().resolve()
+    if workspace.is_relative_to(source):
+        raise ValueError('项目输出必须位于剧照目录之外')
+    images = sorted(path for path in source.iterdir() if not path.is_symlink() and path.is_file()
+                    and path.suffix.lower() in IMAGE_EXTENSIONS)
+    if not images:
+        raise ValueError('输入目录没有支持的图片')
+    groups = {}
+    unlabelled = []
+    for image in images:
+        actors = {actor for actor, role in parse_filename(image.name)['people'] if actor and role}
+        if not actors:
+            unlabelled.append(image.name)
+        for actor in sorted(actors):
+            groups.setdefault(actor, []).append(image.name)
+    summary = {'evidence_type': 'filename_only', 'n_images': len(images),
+               'n_grouped': len(images) - len(unlabelled), 'n_actors': len(groups),
+               'n_unlabelled': len(unlabelled), 'requires_human_review': bool(unlabelled)}
+    if not groups:
+        return summary
+    target = workspace / ('actor-albums-' + uuid.uuid4().hex)
+    target.mkdir(parents=True, exist_ok=False)
+    report = target / 'actor_groups.json'
+    try:
+        for actor, names in groups.items():
+            album = target / actor
+            album.mkdir()
+            for name in names:
+                shutil.copy2(source / name, album / name)
+        report.write_text(json.dumps(dict(summary, actors=groups, unlabelled=unlabelled),
+                                     ensure_ascii=False, indent=2), encoding='utf-8')
+    except Exception:
+        shutil.rmtree(target)
+        raise
+    return dict(summary, output_dir=str(target), report_path=str(report))
 
 
 def knowledge_summary(knowledge_dir):
@@ -101,6 +143,10 @@ def register_photo_tools(agent, organize=None, services=None):
     register('inspect_photos', inspect_photos,
              '只读检查图片目录、计数与文件名元数据，非视觉识别，不递归子目录。',
              {'input_dir': text, 'limit': limit}, ['input_dir'], side_effects='read')
+    register('group_photos_by_actor', group_photos_by_actor,
+             '按演员分类图片：根据文件名已有的「演员饰角色」标注，复制到项目输出目录下的新演员专辑。'
+             '合照可进入多个专辑；未标注只计数，不猜身份。不是人脸识别。无需参数，使用当前项目目录。',
+             {}, [])
     register('knowledge_summary', knowledge_summary, '读取本地剧目知识库的场景与角色。',
              {'knowledge_dir': text}, ['knowledge_dir'], side_effects='read', aliases=['知识库', '幕次', '角色'])
     register('build_play_knowledge', build_play_knowledge if services is None else

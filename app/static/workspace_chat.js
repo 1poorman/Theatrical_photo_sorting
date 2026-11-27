@@ -7,7 +7,7 @@ function createWorkspaceChat({api, fileURL, notify, state, openReview}) {
   const labels = {submitted: '已提交，尚未完成', queued: '排队中', running: '执行中', cancel_requested: '正在取消',
     succeeded: '执行成功', completed: '已完成', completed_with_errors: '部分失败', partial: '部分失败',
     interrupted: '已中断', cancelled: '已取消', failed: '失败'};
-  const reports = new Set(['scene_labels.json', 'organize_report.json', 'actor_view_report.json', 'face_database_report.json']);
+  const reports = new Set(['scene_labels.json', 'organize_report.json', 'actor_view_report.json', 'face_database_report.json', 'actor_groups.json']);
   let active = null, timer, pollVersion = 0;
 
   function controls() {

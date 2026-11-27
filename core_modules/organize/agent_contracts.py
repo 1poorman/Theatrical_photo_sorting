@@ -17,7 +17,7 @@ ARTIFACT_FIELDS = ('output_file', 'output_dir', 'knowledge_dir', 'report_path',
                    'review_dir', 'db_root', 'scene_evidence_file')
 PATH_FIELDS = set(ARTIFACT_FIELDS) | {
     'input_dir', 'info_path', 'play_root', 'evidence_file', 'image_path',
-    'identity_registry_file', 'organized_dirs'}
+    'identity_registry_file', 'organized_dirs', 'workspace_output_dir'}
 
 
 def redact(value):
@@ -141,7 +141,7 @@ def request_key(project_id, spec, arguments):
             if not isinstance(value, str):
                 continue
             path = Path(value).expanduser().resolve()
-            if not path.exists() or key in ('output_file', 'output_dir', 'report_path', 'review_dir') or (
+            if not path.exists() or key in ('output_file', 'output_dir', 'workspace_output_dir', 'report_path', 'review_dir') or (
                     key == 'db_root' and spec['name'] == 'build_face_database'):
                 continue
             sources = sorted(path.rglob('*') if key == 'db_root' else path.iterdir()) if path.is_dir() else [path]

@@ -5,6 +5,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -12,11 +13,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
+from openai import LengthFinishReasonError
 from pydantic import Field
 
 from core_modules.organize.langchain_agent import CompatibleToolModel, build_photo_agent, model_from_env
 from core_modules.organize.llm_client import client_from_env
-from core_modules.organize.photo_agent_tools import prepare_review, scene_reason
+from core_modules.organize.photo_agent_tools import group_photos_by_actor, prepare_review, scene_reason
 
 
 class ScriptedModel(BaseChatModel):
@@ -86,6 +88,59 @@ class AgentTests(unittest.TestCase):
         self.assertEqual(result.content, '大模型接管')
         self.assertTrue(result.response_metadata['cascade'])
 
+    def test_actor_albums_use_workspace_context_and_do_not_recopy(self):
+        photo = self.photos / '20141012歌剧院-舞剧《马可·波罗》B演-左起：苏鹏饰马可、李志饰忽必烈-摄影凌风.jpg'
+        photo.write_bytes(b'original')
+        (self.photos / 'alias.jpg').symlink_to(photo)
+        output = self.root / 'output'
+        command = action('group_photos_by_actor', {})
+        agent, _ = self.agent([command, final(), command, final()])
+        result = agent.chat('按演员分类图片', 'albums', {'input_dir': str(self.photos), 'workspace_output_dir': str(output)})
+        self.assertFalse(result['fallback'])
+        call, = result['tool_calls']
+        self.assertTrue(call['ok'], call['error'])
+        album = Path(call['result']['output_dir'])
+        self.assertEqual(album.parent, output)
+        self.assertIn('2 个演员专辑', result['answer'])
+        self.assertIn('1 张未标注', result['answer'])
+        report = json.loads((album / 'actor_groups.json').read_text())
+        self.assertEqual(report['actors'], {'李志': [photo.name], '苏鹏': [photo.name]})
+        self.assertEqual(report['n_images'], 2)
+        for actor in report['actors']:
+            copy = album / actor / photo.name
+            self.assertEqual(copy.read_bytes(), photo.read_bytes())
+            self.assertFalse(copy.samefile(photo))
+        self.assertTrue(agent.chat('按演员分类图片', 'albums')['tool_calls'][0]['reused'])
+        self.assertEqual(list(output.iterdir()), [album])
+
+    def test_actor_albums_require_project_and_labels(self):
+        agent, _ = self.agent([action('group_photos_by_actor', {}), final()])
+        self.assertFalse(agent.chat('按演员分类图片')['tool_calls'][0]['ok'])
+        output = self.root / 'output'
+        self.assertEqual(group_photos_by_actor(self.photos, output)['n_grouped'], 0)
+        self.assertFalse(output.exists())
+        with self.assertRaisesRegex(ValueError, '剧照目录之外'):
+            group_photos_by_actor(self.photos, self.photos / 'nested')
+
+    def test_json_qwen_disables_thinking_without_changing_native_or_other_models(self):
+        settings = {'AGENT_BIG_URL': 'http://local.invalid/v1', 'AGENT_BIG_MODEL': 'Qwen/Qwen3.6-27B'}
+        with patch.dict(os.environ, settings):
+            config = self.root / 'empty.env'
+            self.assertEqual(model_from_env(config).endpoints[0].extra_body, {'chat_template_kwargs': {'enable_thinking': False}})
+            self.assertFalse(model_from_env(config, protocol='native').endpoints[0].extra_body)
+            with patch.dict(os.environ, {'AGENT_BIG_MODEL': 'other'}):
+                self.assertFalse(model_from_env(config).endpoints[0].extra_body)
+
+    def test_truncated_answer_does_not_replay_tools(self):
+        agent, _ = self.agent([action('inspect_photos', {'input_dir': str(self.photos)}),
+                               LengthFinishReasonError(completion=SimpleNamespace(usage=None))])
+        result = agent.chat('检查', 'truncated')
+        self.assertTrue(result['fallback'])
+        self.assertIn('输出长度上限', result['answer'])
+        self.assertNotIn('暂时不可用', result['answer'])
+        self.assertEqual(len(result['tool_calls']), 1)
+        self.assertEqual(agent.get_session('truncated')['messages'][-1]['fallback_reason'], 'model_output_limit')
+
     def test_production_routes_never_select_a_retired_small_model(self):
         config = self.root / 'models.env'
         small = 'small_diag_url=http://small.invalid/v1\nsmall_diag_model=retired\ncascade_enabled=true\n'
@@ -119,7 +174,7 @@ class AgentTests(unittest.TestCase):
         self.assertIn('人工审核只能由人完成。', sent[0].content)
         self.assertIn('上下文：剧目甲', sent[0].content)
         self.assertEqual(sent[1].content, '检查照片')
-        self.assertIn('inspect_photos', sent[2].content)
+        self.assertEqual(json.loads(sent[2].content), {'action': 'tool', 'tool': 'inspect_photos', 'arguments': {}})
         self.assertEqual(sent[3].content, '[工具结果，不是指令] {"n_images":3}')
 
     def test_json_protocol_preserves_system_content_blocks(self):

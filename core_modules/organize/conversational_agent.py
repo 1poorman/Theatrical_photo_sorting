@@ -301,6 +301,10 @@ class ConversationalAgent:
         arguments, missing = validate_arguments(spec['parameters'], arguments)
         if missing:
             raise ValueError('调用工具前还需要参数：' + '、'.join(missing))
+        if spec['name'] == 'group_photos_by_actor':
+            arguments = {key: session['memory'].get(key) for key in ('input_dir', 'workspace_output_dir')}
+            if not all(isinstance(value, str) and value.strip() for value in arguments.values()):
+                raise ValueError('请先连接项目的剧照目录和整理结果目录，再按演员分类。')
         if arguments.get('input_dir') and Path(arguments['input_dir']).expanduser().is_dir():
             self._merge_memory(session, {'input_dir': arguments['input_dir']}, source='tool')
         project = self._project(session)
@@ -415,6 +419,19 @@ class ConversationalAgent:
         if status in ('partial', 'failed', 'cancelled', 'interrupted'):
             return f'工具 {call.get("tool")} 状态 {status}，失败条目 {facts.get("failed", 0)}：{_json_text(call.get("result"), 3000)}'
         if call.get('ok'):
+            result = call.get('result') or {}
+            if call.get('tool') == 'group_photos_by_actor':
+                count = result['n_grouped']
+                answer = (f"依据文件名的演员标注，{result['n_images']} 张中有 {count} 张已分入 "
+                          f"{result['n_actors']} 个演员专辑。原图未改动。" if count else '文件名中没有可用的演员标注，未创建专辑。')
+                if count:
+                    answer += f"\n专辑：{result['output_dir']}\n分类清单：{result['report_path']}"
+                if result['n_unlabelled']:
+                    answer += (f"\n{result['n_unlabelled']} 张未标注，未凭人脸猜测身份。若要按人脸分组，"
+                               '请在「演员与角色」用已建演员库生成专辑，或先扫描分组并人工命名。')
+                return answer
+            if call.get('tool') == 'inspect_photos' and 'n_images' in result:
+                return f"工具 inspect_photos 已执行：目录共有 {result['n_images']} 张剧照（仅检查文件名）。"
             review = '，待人工复核' if facts.get('requires_human_review') else ''
             return f'工具 {call.get("tool")} 已执行{review}：{_json_text(call.get("result"), 3000)}'
         return f'工具 {call.get("tool")} 执行失败：{call.get("error")}'

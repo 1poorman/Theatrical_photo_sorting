@@ -72,7 +72,7 @@ def thumbnail(request: Request, input_dir: str, name: str, size: int = Query(640
 @router.get('/artifact')
 def artifact(output_dir: str, name: str):
     """Download the known workspace reports, including projects outside this repo."""
-    if name not in {'scene_labels.json', 'organize_report.json', 'actor_view_report.json', 'face_database_report.json'}:
+    if name not in {'scene_labels.json', 'organize_report.json', 'actor_view_report.json', 'face_database_report.json', 'actor_groups.json'}:
         raise HTTPException(403, '仅支持下载工作台报告与已确认标签。')
     root = directory(output_dir)
     path = (root / name).resolve()

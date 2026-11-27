@@ -496,10 +496,11 @@ class WorkspaceTest(unittest.TestCase):
         self.assertEqual([p.name for p in cache.root.iterdir() if not p.name.endswith('.thumb')], ['.publication.lock'])
 
     def test_artifact_download_restrictions(self):
-        (self.root / 'scene_labels.json').write_text('{}')
-        response = self.client.get('/api/workspace/artifact', params={'output_dir': str(self.root), 'name': 'scene_labels.json'})
-        self.assertEqual(response.status_code, 200)
-        self.assertIn('attachment', response.headers['content-disposition'])
+        for name in ['scene_labels.json', 'actor_groups.json']:
+            (self.root / name).write_text('{}')
+            response = self.client.get('/api/workspace/artifact', params={'output_dir': str(self.root), 'name': name})
+            self.assertEqual(response.status_code, 200)
+            self.assertIn('attachment', response.headers['content-disposition'])
         for name in ['.env', '../scene_labels.json', 'entities.json', '../face_database_report.json']:
             self.assertEqual(self.client.get('/api/workspace/artifact', params={'output_dir': str(self.root), 'name': name}).status_code, 403)
         (self.photos / 'scene_labels.json').symlink_to(self.root / 'scene_labels.json')
