@@ -70,7 +70,7 @@
   }
   const state = {project: null, photos: [], records: new Map(), knowledge: null, summary: null,
     selected: null, view: 'photos', filter: 'all', query: '', page: 0, busy: false, taskId: null, generation: 0,
-    reviewPending: new Map(), ageResults: new Map()};
+    reviewPending: new Map(), ageResults: new Map(), taskView: null, analysisStatusAvailable: false};
   const pageSize = 36;
   const titles = {photos: '影像资料', knowledge: '剧目与剧情', actors: '演员与角色', review: '场景复核', export: '整理与导出', chat: '项目对话'};
   const statuses = {pending: '待复核', approved: '已确认', rejected: '已拒绝', unprocessed: '待分析'};
@@ -100,13 +100,23 @@
     $('notice').hidden = false;
     $('notice').querySelector('button').onclick = () => { $('notice').hidden = true; };
   }
-  function progress(message) { $('task-status').textContent = message; }
-  async function task(message, operation) {
+  const isSceneAnalysis = project => (project?.analysisKind || 'scene_reason') === 'scene_reason';
+  function renderTaskStatus() {
+    $('task-status').hidden = !state.busy || (state.taskView !== null && state.view !== state.taskView);
+    $('analysis-task').hidden = !state.analysisStatusAvailable || (isSceneAnalysis(state.project) && state.view !== 'review');
+  }
+  function showAnalysisStatus(available, spinning = false) {
+    state.analysisStatusAvailable = available;
+    $('analysis-task').toggleAttribute('data-spinning', spinning);
+    renderTaskStatus();
+  }
+  async function task(message, operation, view = null) {
     if (state.busy) return;
     state.busy = true;
+    state.taskView = view;
     $('notice').hidden = true;
-    $('task-status').hidden = false;
-    progress(message);
+    $('task-status').textContent = message;
+    renderTaskStatus();
     document.body.setAttribute('aria-busy', 'true');
     const controls = [...document.querySelectorAll('button:not([data-view]):not([data-filter]):not([data-photo]):not([data-close]):not([data-task-control]), input, select')];
     const previous = controls.map(el => el.disabled);
@@ -116,7 +126,8 @@
     finally {
       controls.forEach((el, i) => { if (el.isConnected) el.disabled = previous[i]; });
       state.busy = false;
-      $('task-status').hidden = true;
+      state.taskView = null;
+      renderTaskStatus();
       document.body.removeAttribute('aria-busy');
       updateControls();
       chat.controls();
@@ -196,6 +207,7 @@
     $('gallery-caption').textContent = view === 'review' ? '对照剧照与依据，确认它属于哪一幕' : '浏览本次剧照，关联人物与故事';
     if (changed && (view === 'review' || view === 'photos')) { state.filter = view === 'review' ? 'pending' : 'all'; state.page = 0; }
     history.replaceState(null, '', `#${view}`);
+    renderTaskStatus();
     chat.viewChanged();
     renderGallery();
   }
@@ -394,7 +406,7 @@
   async function activateProject(project, result) {
     clearTimeout(analysisTimer);
     analysisRunning = false;
-    $('analysis-task').hidden = true;
+    showAnalysisStatus(false);
     state.generation++;
     state.project = {...project, input: result.input_dir};
     chat.activate(state.project);
@@ -482,41 +494,51 @@
     await task('分析完成，正在载入场景复核队列…', async () => {
       project.evidence = result.output_file; saveProject(); $('evidence-file').value = result.output_file;
       await api('/api/organize/scene/review/seed', {review_dir: project.review, evidence_file: result.output_file});
-      await loadReviews(); setView('review');
-      const first = filteredPhotos()[0]; if (first) selectPhoto(first.path);
+      await loadReviews();
+      if (state.view === 'review') {
+        const first = filteredPhotos()[0]; if (first) selectPhoto(first.path);
+      }
       project.analysisApplied = project.analysisTask; saveProject();
-      if (!state.queueMismatch) notice(`已分析 ${result.n_images} 张剧照，${result.n_unknown} 张幕次未确定。${result.n_failed ? `${result.n_failed} 张处理失败，已保留错误记录供复核。` : ''}${result.n_visual ? `${result.n_visual} 张使用了图文匹配。` : '本次使用文件名与剧情线索；图文匹配未参与或不可用。'}${result.llm ? '已连接语言模型；实际调用及回退以证据记录为准。' : ''}已有复核记录保留原结果。`);
-    });
+      $('analysis-task-message').textContent = `已分析 ${result.n_images} 张剧照，${result.n_unknown} 张幕次未确定。${result.n_failed ? `${result.n_failed} 张处理失败，已保留错误记录供复核。` : ''}${result.n_visual ? `${result.n_visual} 张使用了图文匹配。` : '本次使用文件名与剧情线索；图文匹配未参与或不可用。'}${result.llm ? '已连接语言模型；实际调用及回退以证据记录为准。' : ''}已有复核记录保留原结果。`;
+    }, 'review');
   }
   async function pollAnalysis(project) {
-    clearTimeout(analysisTimer);
     if (state.project !== project || !project.analysisTask) return;
+    clearTimeout(analysisTimer);
+    const taskId = project.analysisTask;
+    const isCurrent = () => state.project === project && project.analysisTask === taskId;
     try {
-      const status = await api(`/api/organize/tasks/${encodeURIComponent(project.analysisTask)}`);
-      if (state.project !== project) return;
+      const status = await api(`/api/organize/tasks/${encodeURIComponent(taskId)}`);
+      if (!isCurrent()) return;
       analysisRunning = ['queued', 'running', 'cancel_requested'].includes(status.status);
       const name = {knowledge: '知识库构建', organize: '整理', scene_reason: '场景分析', face_cluster: '演员扫描', face_database: '人脸建库'}[project.analysisKind || 'scene_reason'];
       const labels = {queued: '排队中', running: '执行中', cancel_requested: '等待当前操作结束后取消', cancelled: '已取消', interrupted: '已中断', failed: '执行失败', completed: '完成', completed_with_errors: '完成，部分条目失败'};
-      $('analysis-task').hidden = false;
       $('analysis-task-message').textContent = `${name}${labels[status.status] || status.status}：${status.preparing ? `${status.preparing} 张图片待校验；` : ''}${status.succeeded} 项完成，${status.failed} 项失败，${status.pending} 项待处理。${status.error || ''}`;
       $('analysis-cancel').textContent = `取消${name}`;
       $('analysis-cancel').hidden = !analysisRunning || status.status === 'cancel_requested';
       $('analysis-resume').hidden = !['cancelled', 'interrupted', 'failed'].includes(status.status);
       $('analysis-new').hidden = !['cancelled', 'interrupted', 'failed', 'completed_with_errors'].includes(status.status);
       $('analysis-new').textContent = project.analysisKind && project.analysisKind !== 'scene_reason' ? '结束此任务，保留已有文件' : '按当前资料重新分析';
+      showAnalysisStatus(true, analysisRunning);
       if (project.analysisKind === 'face_database' && status.result && project.analysisApplied === project.analysisTask && $('actor-result').hidden) {
         showFaceDatabaseResult(status.result);
       }
-      if (['completed', 'completed_with_errors'].includes(status.status) && project.analysisApplied !== project.analysisTask && !state.busy) {
+      const needsApply = ['completed', 'completed_with_errors'].includes(status.status) && status.result && project.analysisApplied !== taskId;
+      const deferred = needsApply && state.busy;
+      if (needsApply && !deferred) {
         await applyAnalysis(project, status.result);
+        if (!isCurrent()) return;
+        if (isSceneAnalysis(project) && project.analysisApplied !== taskId) {
+          $('analysis-task-message').textContent += '复核队列未载入，可点击「分析场景」重试。';
+        }
       }
-      if (analysisRunning || (status.result && project.analysisApplied !== project.analysisTask)) {
+      if (analysisRunning || deferred || (!isSceneAnalysis(project) && needsApply && project.analysisApplied !== taskId)) {
         analysisTimer = setTimeout(() => pollAnalysis(project), 1000);
       }
     } catch (error) {
-      if (state.project !== project) return;
-      $('analysis-task').hidden = false;
+      if (!isCurrent()) return;
       $('analysis-task-message').textContent = `暂时无法查询分析任务：${error.message}。将自动重试。`;
+      showAnalysisStatus(true, analysisRunning);
       analysisTimer = setTimeout(() => pollAnalysis(project), 3000);
     }
   }
@@ -536,18 +558,24 @@
     try {
       await api(`/api/organize/tasks/${encodeURIComponent(project.analysisTask)}/cancel`, {});
       clearTimeout(analysisTimer); analysisRunning = false;
+      showAnalysisStatus(false);
       project.analysisTask = ''; project.analysisApplied = ''; project.analysisKey = ''; saveProject();
       if (!project.analysisKind || project.analysisKind === 'scene_reason') await analyze();
-      else { $('analysis-task').hidden = true; notice('已结束此任务，已生成文件保留。可以重新提交任务。'); }
+      else notice('已结束此任务，已生成文件保留。可以重新提交任务。');
     } catch (error) { notice(error.message, true); }
   };
   async function analyze() {
     if (!needProject() || state.busy) return;
-    if (analysisRunning) { notice('场景分析正在后台运行；可以继续看图复核或取消当前分析。'); return; }
-    if (state.project.analysisTask && state.project.analysisApplied !== state.project.analysisTask) { await pollAnalysis(state.project); notice('请先继续未完成图片或完成结果载入。'); return; }
+    const project = state.project;
+    if (project.analysisTask && project.analysisApplied !== project.analysisTask) {
+      if (isSceneAnalysis(project)) setView('review');
+      else notice('请先完成、取消或恢复当前后台任务。');
+      if (!analysisRunning) await pollAnalysis(project);
+      return;
+    }
     if (!state.knowledge?.scenes.length) { setView('knowledge'); notice('请先建立或载入包含幕次的剧目知识库。'); return; }
+    setView('review');
     await task('正在提交场景分析任务…', async () => {
-      const project = state.project;
       if (!project.analysisKey) {
         project.analysisKey = typeof crypto.randomUUID === 'function' ? crypto.randomUUID()
           : Array.from(crypto.getRandomValues(new Uint8Array(16)), value => value.toString(16).padStart(2, '0')).join('');
@@ -559,11 +587,11 @@
           use_embedder: $('use-embedder').checked, use_llm: $('use-llm').checked}})});
       const body = await response.json();
       if (!response.ok) throw new Error(body.message || '无法创建分析任务');
-      project.analysisTask = body.data.task_id; project.analysisKey = ''; saveProject();
-      project.analysisKind = 'scene_reason'; saveProject();
+      showAnalysisStatus(false);
+      project.analysisTask = body.data.task_id; project.analysisKey = ''; project.analysisKind = 'scene_reason'; saveProject();
       analysisRunning = true;
-    });
-    if (state.project.analysisTask) await pollAnalysis(state.project);
+    }, 'review');
+    if (analysisRunning) await pollAnalysis(project);
   }
   async function submitBackground(project, kind, params) {
     if (analysisRunning || (project.analysisTask && project.analysisApplied !== project.analysisTask)) {

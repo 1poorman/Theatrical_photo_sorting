@@ -120,9 +120,12 @@ fs.mkdirSync(shots, {recursive: true});
     await idle();
     assert.equal(await page.locator('.knowledge-scene').count(), 5);
     await page.locator('#use-embedder').uncheck();
-    let releaseTaskView = false, taskCreates = 0;
+    let releaseTaskView = false, taskCreates = 0, scenePolls = 0;
+    const analysisBanner = page.locator('#analysis-task');
+    const animation = () => analysisBanner.evaluate(element => getComputedStyle(element, '::before').animationName);
     page.on('request', request => { if (request.url() === base + '/api/organize/tasks' && request.method() === 'POST') taskCreates++; });
     await page.route('**/api/organize/tasks/*', async route => {
+      scenePolls++;
       const response = await route.fetch();
       const body = await response.json();
       if (!releaseTaskView && body.data) {
@@ -132,18 +135,39 @@ fs.mkdirSync(shots, {recursive: true});
     });
     await page.locator('#knowledge-analyze').click();
     await idle();
-    await page.locator('#analysis-task').waitFor();
+    await analysisBanner.waitFor();
+    assert.equal(await animation(), 'spin');
     const analysisId = await page.evaluate(() => JSON.parse(localStorage.getItem('theatre-workspace-v1')).analysisTask);
     assert.ok(analysisId);
     await page.reload(); await idle();
     await page.locator('#analysis-cancel').waitFor();
     assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('theatre-workspace-v1')).analysisTask), analysisId);
     assert.equal(taskCreates, 1, 'refresh must query the existing task without submitting again');
+    await clickView('photos');
+    assert.equal(await analysisBanner.isVisible(), false, 'running scene analysis is scoped to review');
     releaseTaskView = true;
-    await page.waitForFunction(() => Number(document.querySelector('#metric-pending').textContent) > 0, null, {timeout: 45000});
+    await page.waitForFunction(id => JSON.parse(localStorage.getItem('theatre-workspace-v1')).analysisApplied === id,
+      analysisId, {timeout: 45000});
     await idle();
+    assert.equal(await page.locator('#breadcrumb-view').textContent(), '影像资料', 'completion does not change the current view');
+    assert.equal(await analysisBanner.isVisible(), false);
+    await clickView('review');
+    assert.match(await analysisBanner.textContent(), /已分析/);
+    assert.equal(await animation(), 'none', 'terminal scene analysis has no spinner');
+    for (const view of ['knowledge', 'actors', 'export', 'chat', 'photos']) {
+      await clickView(view);
+      assert.equal(await analysisBanner.isVisible(), false, `scene status must not appear in ${view}`);
+    }
+    const completedPolls = scenePolls;
+    await page.waitForTimeout(1200);
+    assert.equal(scenePolls, completedPolls, 'completed scene analysis stops polling');
+    await page.reload(); await idle();
+    await page.waitForFunction(() => document.querySelector('#analysis-task-message').textContent.includes('场景分析完成'));
+    assert.equal(await analysisBanner.isVisible(), false, 'completed state stays scoped on reload');
+    await clickView('review');
+    assert.equal(await animation(), 'none');
     await page.unroute('**/api/organize/tasks/*');
-    assert.equal(await page.locator('#breadcrumb-view').textContent(), '场景复核');
+    await page.locator('.photo-card').first().click();
     assert.ok(Number(await page.locator('#metric-pending').textContent()) > 0);
     assert.ok(await page.locator('.evidence-item').count() > 0);
     await page.locator('.photo-card img').first().waitFor();
