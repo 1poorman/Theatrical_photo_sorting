@@ -34,13 +34,14 @@
 
 在 `.env` 中设置 `url`、`big_model_name`、`key`；聊天模型可用 `AGENT_BIG_URL`、`AGENT_BIG_MODEL`、`AGENT_BIG_KEY` 覆盖。Docker 部署通过 `docker-compose.llm.yml` 只读挂载 `.env`。
 
-`protocol=json` 请求服务端以 `response_format={"type":"json_object"}` 输出，仍在本地校验行动和参数；此模式不要求原生工具调用，但端点需支持 JSON 输出。`protocol=native` 直接使用 OpenAI 兼容工具调用，不附加 JSON 输出限制。
+`protocol=json` 请求服务端以 `response_format={"type":"json_object"}` 输出，仍在本地校验行动和参数。Qwen3 系列的 JSON 编排请求关闭思考模式，避免推理耗尽单次输出预算；若回复仍被截断，会明确提示长度上限，不重放工具。`protocol=native` 直接使用 OpenAI 兼容工具调用，不附加 JSON 输出限制。
 
 ## 工具
 
 | 工具 | 用途 | 安全边界 |
 | --- | --- | --- |
 | `inspect_photos` | 只读目录、计数和文件名元数据 | 非递归、非视觉识别 |
+| `group_photos_by_actor` | 按文件名中「演员饰角色」标注将剧照复制到演员专辑 | 使用当前项目输入与结果目录，新建子目录；合照可进入多个专辑，未标注不猜测 |
 | `scan_dir_and_tag` | 生成新 JSONL，场景为 `unknown` | 输出必须不存在 |
 | `knowledge_summary` | 读取实体和角色 | 只读 |
 | `build_play_knowledge` | 从本地剧目文本构建知识库；服务模式返回业务任务 | 不抓网络，新目录，查询完成后使用产物 |

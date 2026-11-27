@@ -1,5 +1,7 @@
 # 工作状态与中断接续
 
+> **2026-11-27「按演员分类图片」降级已修复并在 8199 工作台复验。** 原轮次只完成能力与目录检查；只读回放最终模型请求复现了 2048-token 输出截断，并非小模型回退。运行镜像 `theatrical-photo-sorting:actor-chat-20261126`（`99fc6e11e82c`，代码 `ff3882c`）；上一版 `theatrical-photo-sorting:big-only-20261126` 保留。用真实浏览器、同一剧照目录、独立会话和输出路径发送原句，`Qwen3.6-27B` 调用演员分组工具一次，没有降级。11 张中 8 张按文件名标注分入 3 个演员专辑，另 3 张无可用标注；没有用文件名冒充人脸识别。已核对副本与原图哈希、下载清单及刷新恢复。验收记录：`outputs/acceptance/actor-chat-20261126-dgPP6t/verified.json`。
+
 > **2026-11-26 大模型直连已部署，含项目对话和 SQLite 增量存储。** 工作台 `http://127.0.0.1:8199/organize` 已运行 `theatrical-photo-sorting:big-only-20261126`（镜像 ID `8238421aa3ae`，对应代码提交 `7ef466c`）。本次复用本机依赖镜像离线构建，仅重建应用，未重建 Qdrant 或清空卷。部署后两容器均健康。部署前会话备份在 `outputs/agent-deploy-backup-q0ygGJ3N/agent-before.tar.gz`，旧镜像保留为 `theatrical-photo-sorting:pre-big-only-ba9903ac`。
 >
 > [README 视频演示](README.md#项目对话实机演示)来自部署后的浏览器实录：`Qwen3.6-27B` 两轮直接调用、无降级；目录检查返回 7 张，清单写入 7 条待复核记录，刷新后历史和产物可见。原图校验和未变。原始录像和核对结果在 `outputs/acceptance/agent_video_20261126_5hLqY4/`；下文“未部署”指此前状态。
